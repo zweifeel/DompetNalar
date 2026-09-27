@@ -50,3 +50,10 @@ jobs:
           name: FinSmart-v${{ steps.version_step.outputs.VERSION_NAME }}-APK
           path: build-output/*.apk
           retention-days: 30
+- name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
