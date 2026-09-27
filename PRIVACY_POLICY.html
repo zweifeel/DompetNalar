@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kebijakan Privasi - FinSmart</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 32px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0B57D0;
+            font-size: 26px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #0f172a;
+            font-size: 18px;
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+        p, li {
+            font-size: 14px;
+            color: #475569;
+        }
+        .badge {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .highlight-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #16a34a;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .warning-box {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        footer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="badge">Kebijakan Privasi Resmi & Standar Google Play Store / GDPR</div>
+    <h1>Kebijakan Privasi Aplikasi FinSmart</h1>
+    <p><em>Terakhir diperbarui: 27 September 2026</em></p>
+
+    <div class="highlight-box">
+        <strong>Komitmen Privasi Utama:</strong> FinSmart memprioritaskan privasi dan kedaulatan data pengguna. Seluruh data keuangan, riwayat mutasi, dan saldo akun Anda disimpan dan dienkripsi secara lokal di perangkat Anda (AES-256).
+    </div>
+
+    <h2>1. Identitas Aplikasi & Pengembang</h2>
+    <p>Aplikasi <strong>FinSmart</strong> (Manajemen Keuangan Cerdas & Komprehensif) dikembangkan secara independen oleh <strong>Lukas</strong>. Hubungi tim kami di <a href="mailto:lunachroc07@gmail.com">lunachroc07@gmail.com</a> untuk pertanyaan dan dukungan teknis.</p>
+
+    <h2>2. Pengumpulan & Penggunaan Data</h2>
+    <ul>
+        <li><strong>Penyimpanan Lokal:</strong> Semua data saldo, catatan mutasi pemasukan/pengeluaran, kategori, anggaran, dan hutang piutang diproses dan disimpan di database lokal perangkat Anda.</li>
+        <li><strong>Enkripsi:</strong> Kami menerapkan standar enkripsi AES-256 pada penyimpanan data lokal untuk melindungi kerahasiaan Anda.</li>
+        <li><strong>Tanpa Penjualan Data:</strong> Kami tidak pernah menjual, menyewakan, atau mendistribusikan data transaksi atau profil keuangan Anda kepada pihak ketiga mana pun.</li>
+    </ul>
+
+    <h2>3. Akses Izin Sensitif (Prominent Disclosures)</h2>
+    <p>FinSmart hanya meminta izin saat fitur terkait diaktifkan secara kontekstual (Just-In-Time):</p>
+    <ul>
+        <li><strong>Auto-Read Notification Listener & SMS (Pencatatan Otomatis):</strong> Akses membaca notifikasi transaksi SMS/Bank digunakan <em>HANYA</em> untuk pencatatan nominal dan kategori mutasi secara lokal di HP Anda tanpa memerlukan API perbankan langsung atau izin OJK. Data notifikasi <strong>TIDAK PERNAH</strong> dikirim ke server luar.</li>
+        <li><strong>Kamera (Camera Access):</strong> Digunakan <em>HANYA</em> saat Anda mengambil foto nota/struk belanja fisik untuk diekstrak oleh AI Gemini OCR secara otomatis.</li>
+        <li><strong>Mikrofon (Audio Record):</strong> Digunakan <em>HANYA</em> saat Anda menekan tombol mikrofon pada fitur Voice-to-Text Expense Logging untuk mendiktekan transaksi.</li>
+        <li><strong>Google Drive Sync & OAuth:</strong> Digunakan <em>HANYA</em> untuk menyimpan dan mengunduh file cadangan terenkripsi pengguna di folder pribadi <code>FinSmart/Backup Data</code> pada akun Google Drive pengguna.</li>
+    </ul>
+
+    <h2>4. Penggunaan Layanan Pihak Ketiga (Third-Party Services)</h2>
+    <p>Aplikasi ini dapat berinteraksi dengan layanan pihak ketiga resmi berikut:</p>
+    <ul>
+        <li><strong>Google Gemini AI API:</strong> Digunakan untuk pemrosesan teks dan analisis OCR gambar nota saat pengguna menggunakan fitur AI.</li>
+        <li><strong>Google Play Billing / In-App Purchases:</strong> Digunakan untuk memproses transaksi langganan pada versi Google Play Store resmi.</li>
+        <li><strong>Google AdMob:</strong> Menampilkan iklan non-intrusif khusus untuk pengguna paket gratis (FinSmart Member), dan dinonaktifkan sepenuhnya untuk pelanggan Smart Master 👑.</li>
+    </ul>
+
+    <h2>5. Hak Pengguna & Penghapusan Data Permanen (Account Deletion)</h2>
+    <div class="warning-box">
+        <strong>Penghapusan Akun & Data:</strong> Sesuai kebijakan Google Play Store dan GDPR, pengguna memiliki hak mutlak untuk menghapus akun dan seluruh data keuangan secara instan.
+    </div>
+    <p>Anda dapat menghapus seluruh data kapan saja dengan membuka menu <strong>Pengaturan & Akun &rarr; Hapus Akun & Data Permanen</strong>, lalu mengonfirmasi kata sandi/PIN Anda. Seluruh catatan transaksi dan database lokal akan segera dimusnahkan.</p>
+
+    <h2>6. Kontak Pengembang</h2>
+    <p>Jika Anda memiliki pertanyaan mengenai kebijakan privasi ini atau pengelolaan data Anda, silakan hubungi:</p>
+    <ul>
+        <li><strong>Nama Pengembang:</strong> Lukas</li>
+        <li><strong>Email Dukungan:</strong> <a href="mailto:lunachroc07@gmail.com">lunachroc07@gmail.com</a></li>
+        <li><strong>Aplikasi:</strong> FinSmart (Dual-Mode Architecture Edition)</li>
+    </ul>
+
+    <footer>
+        &copy; 2026 Lukas. FinSmart Application. All Rights Reserved.
+    </footer>
+</div>
+</body>
+</html>

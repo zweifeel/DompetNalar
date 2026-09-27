@@ -1,0 +1,6 @@
+{
+  "name": "FinSmart",
+  "description": "Aplikasi Manajemen Keuangan Cerdas & Komprehensif dengan Analisis Grafik, Multi-Dompet, dan AI Input",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
