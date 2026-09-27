@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -49,7 +50,9 @@ import com.example.data.model.AccountMode
 import com.example.data.model.CategoryItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.data.model.User
 import com.example.data.model.Wallet
+import com.example.ui.components.AdMobBanner
 import com.example.ui.components.TransactionItemRow
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.IncomeGreen
@@ -72,6 +75,8 @@ fun TransactionsScreen(
     onWalletFilterChange: (Long?) -> Unit,
     onTimeframeChange: (TimeframeFilter) -> Unit,
     onDeleteTransaction: (TransactionItem) -> Unit,
+    onOpenExportReport: () -> Unit,
+    currentUser: User? = null,
     modifier: Modifier = Modifier
 ) {
     var walletMenuExpanded by remember { mutableStateOf(false) }
@@ -94,18 +99,34 @@ fun TransactionsScreen(
     ) {
         // Header
         item {
-            Column {
-                Text(
-                    text = "Riwayat Transaksi (Mutasi)",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "Catatan keuangan mode ${accountMode.displayName}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Riwayat Transaksi (Mutasi)",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Catatan keuangan mode ${accountMode.displayName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(
+                    onClick = onOpenExportReport,
+                    modifier = Modifier.testTag("btn_export_transactions_header")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Print,
+                        contentDescription = "Ekspor Laporan Keuangan",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
@@ -212,37 +233,61 @@ fun TransactionsScreen(
             }
         }
 
-        // Summary Bar for filtered items
+        // Summary Bar for filtered items (Daily/Period Summary Breakdown)
         item {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("summary_card_period"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Column {
-                        Text("Pemasukan", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatRupiah(totalIncome),
-                            color = IncomeGreen,
+                            text = "Rekapitulasi Arus Kas (${selectedTimeframe.label})",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        val netDiff = totalIncome - totalExpense
+                        Text(
+                            text = if (isPrivacyMode) "Net: Rp •••" else "Net: ${if (netDiff >= 0) "+" else ""}${CurrencyFormatter.formatRupiah(netDiff)}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (netDiff >= 0) IncomeGreen else ExpenseRed
                         )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Pengeluaran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatRupiah(totalExpense),
-                            color = ExpenseRed,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Total Pemasukan", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatRupiah(totalIncome),
+                                color = IncomeGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("Total Pengeluaran", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatRupiah(totalExpense),
+                                color = ExpenseRed,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             }
@@ -289,14 +334,42 @@ fun TransactionsScreen(
             }
         } else {
             groupedByDate.forEach { (dateHeader, txList) ->
+                val dayIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+                val dayExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+
                 item {
-                    Text(
-                        text = dateHeader,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, bottom = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = dateHeader,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (dayIncome > 0.0) {
+                                Text(
+                                    text = if (isPrivacyMode) "+Rp •••" else "+${CurrencyFormatter.formatRupiah(dayIncome)}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = IncomeGreen
+                                )
+                            }
+                            if (dayExpense > 0.0) {
+                                Text(
+                                    text = if (isPrivacyMode) "-Rp •••" else "-${CurrencyFormatter.formatRupiah(dayExpense)}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = ExpenseRed
+                                )
+                            }
+                        }
+                    }
                 }
 
                 items(txList, key = { it.id }) { tx ->
@@ -307,6 +380,16 @@ fun TransactionsScreen(
                     )
                 }
             }
+        }
+
+        // AdMob Banner Ad at bottom for Free users
+        item {
+            AdMobBanner(
+                user = currentUser,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+            )
         }
     }
 }

@@ -48,6 +48,10 @@ import com.example.ui.components.WalletCard
 import com.example.ui.theme.FinSmartPrimary
 import com.example.util.CurrencyFormatter
 
+import androidx.compose.material.icons.filled.CorporateFare
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material3.OutlinedButton
+
 @Composable
 fun WalletsScreen(
     wallets: List<Wallet>,
@@ -57,6 +61,8 @@ fun WalletsScreen(
     onEditWallet: (Wallet) -> Unit,
     onDeleteWallet: (Wallet) -> Unit,
     onTransferClick: () -> Unit,
+    onOpenAssetTracker: () -> Unit = {},
+    onOpenDebtPlanner: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val totalNetWorth = wallets.sumOf { it.balance }
@@ -151,6 +157,34 @@ fun WalletsScreen(
                             Text("Transfer")
                         }
                     }
+                }
+            }
+        }
+
+        // Bab 12 Action Cards: Asset Tracker & AI Debt Planner
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onOpenAssetTracker,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.weight(1f).testTag("btn_asset_tracker_wallets")
+                ) {
+                    Icon(Icons.Default.CorporateFare, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Asset Tracker", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+
+                OutlinedButton(
+                    onClick = onOpenDebtPlanner,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.weight(1f).testTag("btn_debt_planner_wallets")
+                ) {
+                    Icon(Icons.Default.TrendingDown, contentDescription = null, tint = com.example.ui.theme.ExpenseRed, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("AI Debt Planner", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

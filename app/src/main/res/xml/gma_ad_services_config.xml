@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ad-services-config>
+    <!-- Opt-out of AdServices on test/emulator environments where measurement service is not running -->
+    <custom-audiences allowAdServices="false" />
+    <attribution allowAdServices="false" />
+    <topics allowAdServices="false" />
+</ad-services-config>

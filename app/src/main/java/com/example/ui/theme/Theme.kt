@@ -8,15 +8,20 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.example.util.AppAccentColor
+import com.example.util.AppThemeMode
+import com.example.util.ThemeEngine
 
-private val DarkColorScheme = darkColorScheme(
-    primary = FinSmartPrimaryLight,
+fun buildDarkColorScheme(accent: AppAccentColor) = darkColorScheme(
+    primary = accent.primaryLight,
     onPrimary = Color.White,
-    primaryContainer = FinSmartPrimaryDark,
+    primaryContainer = accent.primaryDark,
     onPrimaryContainer = Color.White,
-    secondary = FinSmartSecondary,
+    secondary = accent.primary,
     onSecondary = Color.White,
     tertiary = FinSmartTertiary,
     background = BgDark,
@@ -28,12 +33,12 @@ private val DarkColorScheme = darkColorScheme(
     outline = SlateBorder
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = FinSmartPrimary,
+fun buildLightColorScheme(accent: AppAccentColor) = lightColorScheme(
+    primary = accent.primary,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE0E7FF),
-    onPrimaryContainer = FinSmartPrimaryDark,
-    secondary = FinSmartSecondary,
+    primaryContainer = accent.primaryLight.copy(alpha = 0.2f),
+    onPrimaryContainer = accent.primaryDark,
+    secondary = accent.primaryLight,
     onSecondary = Color.White,
     tertiary = FinSmartTertiary,
     background = BgLight,
@@ -47,17 +52,22 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun FinSmartTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Use our custom refined palette for consistent branding
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val themeMode by ThemeEngine.currentThemeMode.collectAsState()
+    val accentColor by ThemeEngine.currentAccentColor.collectAsState()
+
+    val isDark = ThemeEngine.isDarkThemeActive(themeMode, systemDark)
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        isDark -> buildDarkColorScheme(accentColor)
+        else -> buildLightColorScheme(accentColor)
     }
 
     MaterialTheme(
@@ -66,3 +76,4 @@ fun FinSmartTheme(
         content = content
     )
 }
+

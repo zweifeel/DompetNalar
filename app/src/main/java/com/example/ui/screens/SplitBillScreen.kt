@@ -29,14 +29,21 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -51,14 +58,20 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,8 +90,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ReceiptItem
 import com.example.data.model.ReceiptScanResult
+import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.SplitBillPerson
 import com.example.data.model.Wallet
+import com.example.data.model.WalletType
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.theme.IncomeGreen
 import com.example.util.CurrencyFormatter
@@ -91,7 +106,11 @@ fun SplitBillScreen(
     receipt: ReceiptScanResult,
     wallets: List<Wallet>,
     currentUsername: String,
+    splitBillHistory: List<SplitBillHistoryItem>,
+    onSaveSplitBillHistory: (merchantName: String, date: String, totalAmount: Double, formattedText: String) -> Unit,
+    onDeleteSplitBillHistory: (SplitBillHistoryItem) -> Unit,
     onNavigateBack: () -> Unit,
+    onAddNewWallet: ((name: String, type: WalletType, accountNumber: String, initialBalance: Double, colorHex: String, iconName: String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -137,6 +156,26 @@ fun SplitBillScreen(
         }
     }
     var paymentTargetInfo by remember { mutableStateOf(defaultAccount) }
+    var selectedTab by remember { mutableStateOf(0) }
+    var isResetDialogOpen by remember { mutableStateOf(false) }
+
+    fun resetSplitBill() {
+        currentReceiptState = receipt.copy(
+            merchantName = "",
+            date = "",
+            subtotal = 0.0,
+            tax = 0.0,
+            serviceCharge = 0.0,
+            discount = 0.0,
+            totalAmount = 0.0,
+            items = emptyList()
+        )
+        people = listOf(
+            SplitBillPerson(id = "user_me", name = currentUsername.ifBlank { "Saya" }, colorHex = defaultColors[0])
+        )
+        items = emptyList()
+        paymentTargetInfo = defaultAccount
+    }
 
     // Dialog state for adding new person
     var isAddPersonDialogOpen by remember { mutableStateOf(false) }
@@ -148,6 +187,13 @@ fun SplitBillScreen(
     var editingItemQty by remember { mutableStateOf("1") }
     var editingItemPrice by remember { mutableStateOf("") }
     var editingItemId by remember { mutableStateOf<String?>(null) }
+    var isAllItemsSheetOpen by remember { mutableStateOf(false) }
+
+    // Dialog state for adding a new wallet
+    var isAddWalletDialogOpen by remember { mutableStateOf(false) }
+    var newWalletNameInput by remember { mutableStateOf("") }
+    var newWalletNumberInput by remember { mutableStateOf("") }
+    var newWalletTypeSelection by remember { mutableStateOf<WalletType>(WalletType.EWALLET) }
 
     // Helper to recalculate receipt total when items change
     fun updateReceiptTotals(newItems: List<ReceiptItem>) {
@@ -218,7 +264,7 @@ fun SplitBillScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Split Bill AI",
+                            text = "Split Bill",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
@@ -242,142 +288,397 @@ fun SplitBillScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
+                actions = {
+                    IconButton(
+                        onClick = { isResetDialogOpen = true },
+                        modifier = Modifier.testTag("btn_reset_split_bill")
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Reset Sesi Split Bill", tint = MaterialTheme.colorScheme.error)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
         ) {
-            // Receipt Header Overview Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = currentReceiptState.merchantName.ifBlank { "Struk Belanja" },
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                            Text(
-                                text = "Total Tagihan (${items.size} Item + Pajak/Service):",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+            // Elegant Tab Selection Header
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Calculate, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Kalkulator", fontWeight = FontWeight.Bold)
                         }
-                        Text(
-                            text = CurrencyFormatter.formatRupiah(currentReceiptState.totalAmount),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = FinSmartPrimary
-                        )
-                    }
-                }
+                    },
+                    modifier = Modifier.testTag("tab_split_bill_calculator")
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Riwayat (${splitBillHistory.size})", fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    modifier = Modifier.testTag("tab_split_bill_history")
+                )
             }
 
-            // 1. People Section (Daftar Orang/Teman)
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            if (selectedTab == 0) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    // Receipt Header Overview Card
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = currentReceiptState.merchantName.ifBlank { "Struk Belanja" },
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
+                                    Text(
+                                        text = "Total Tagihan (${items.size} Item + Pajak/Service):",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = CurrencyFormatter.formatRupiah(currentReceiptState.totalAmount),
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 18.sp,
+                                    color = FinSmartPrimary
+                                )
+                            }
+                        }
+                    }
+
+                    // 1. People Section (Daftar Orang/Teman)
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Group, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Daftar Teman (${people.size} Orang)",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                    TextButton(
+                                        onClick = {
+                                            newPersonName = ""
+                                            isAddPersonDialogOpen = true
+                                        },
+                                        modifier = Modifier.testTag("btn_add_friend_split_bill")
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Tambah Teman", fontSize = 12.sp)
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    people.forEach { person ->
+                                        val pColor = try {
+                                            Color(android.graphics.Color.parseColor(person.colorHex))
+                                        } catch (e: Exception) {
+                                            FinSmartPrimary
+                                        }
+
+                                        Surface(
+                                            color = pColor.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(20.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, pColor.copy(alpha = 0.4f))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(10.dp)
+                                                        .background(pColor, CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = person.name,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+
+                                                // Allow deleting non-primary friends and clean up their item allocations automatically
+                                                if (people.size > 1 && person.id != "user_me") {
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Icon(
+                                                        imageVector = Icons.Default.Delete,
+                                                        contentDescription = "Hapus Teman",
+                                                        tint = MaterialTheme.colorScheme.error,
+                                                        modifier = Modifier
+                                                            .size(15.dp)
+                                                            .clickable {
+                                                                val deletedId = person.id
+                                                                people = people.filter { it.id != deletedId }
+                                                                items = items.map { it.copy(assignedPersonIds = it.assignedPersonIds.filter { pid -> pid != deletedId }) }
+                                                            }
+                                                            .testTag("btn_delete_friend_${person.id}")
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Assign Items Section with Add/Edit/Delete Item controls
+                    item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Group, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Daftar Teman (${people.size} Orang)",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                            }
-                            TextButton(
+                            Text(
+                                text = "Bagi Item ke Teman:",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+
+                            // + Tambah Item Manual Button
+                            FilledTonalButton(
                                 onClick = {
-                                    newPersonName = ""
-                                    isAddPersonDialogOpen = true
+                                    editingItemId = null
+                                    editingItemName = ""
+                                    editingItemQty = "1"
+                                    editingItemPrice = ""
+                                    isItemDialogOpen = true
                                 },
-                                modifier = Modifier.testTag("btn_add_friend_split_bill")
+                                modifier = Modifier.testTag("btn_add_manual_item_split_bill"),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Tambah Teman", fontSize = 12.sp)
+                                Text("Tambah Item", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                    val maxDisplayCount = 2
+                    val displayedItems = items.take(maxDisplayCount)
 
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            people.forEach { person ->
-                                val pColor = try {
-                                    Color(android.graphics.Color.parseColor(person.colorHex))
-                                } catch (e: Exception) {
-                                    FinSmartPrimary
+                    items(displayedItems, key = { it.id }) { item ->
+                        SplitBillItemCard(
+                            item = item,
+                            people = people,
+                            onEdit = {
+                                editingItemId = item.id
+                                editingItemName = item.name
+                                editingItemQty = item.qty.toString()
+                                editingItemPrice = item.price.toLong().toString()
+                                isItemDialogOpen = true
+                            },
+                            onDelete = {
+                                val updatedItems = items.filter { it.id != item.id }
+                                items = updatedItems
+                                updateReceiptTotals(updatedItems)
+                            },
+                            onTogglePerson = { personId ->
+                                val isAssigned = item.assignedPersonIds.contains(personId)
+                                val updatedAssigned = if (isAssigned) {
+                                    item.assignedPersonIds.filter { it != personId }
+                                } else {
+                                    item.assignedPersonIds + personId
                                 }
+                                items = items.map { if (it.id == item.id) it.copy(assignedPersonIds = updatedAssigned) else it }
+                            }
+                        )
+                    }
 
-                                Surface(
-                                    color = pColor.copy(alpha = 0.15f),
-                                    shape = RoundedCornerShape(20.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, pColor.copy(alpha = 0.4f))
+                    if (items.size > maxDisplayCount) {
+                        item {
+                            OutlinedButton(
+                                onClick = { isAllItemsSheetOpen = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .testTag("btn_view_more_split_bill_items"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.ReceiptLong, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Lihat Selengkapnya / Riwayat Split Bill (${items.size} item)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    // 3. Proportional Breakdown Per Person
+                    item {
+                        Text(
+                            text = "Rincian Tagihan Per Orang (Proporsional Pajak & Service):",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    items(splitResult.breakdowns, key = { it.person.id }) { breakdown ->
+                        val personColor = try {
+                            Color(android.graphics.Color.parseColor(breakdown.person.colorHex))
+                        } catch (e: Exception) {
+                            FinSmartPrimary
+                        }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, personColor.copy(alpha = 0.3f))
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(
                                             modifier = Modifier
-                                                .size(10.dp)
-                                                .background(pColor, CircleShape)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = person.name,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
+                                                .size(32.dp)
+                                                .background(personColor.copy(alpha = 0.15f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = breakdown.person.name.take(1).uppercase(),
+                                                fontWeight = FontWeight.Bold,
+                                                color = personColor,
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = breakdown.person.name,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp
+                                            )
+                                            Text(
+                                                text = "${breakdown.assignedItems.size} Item pesanan",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
 
-                                        // Allow deleting non-primary friends and clean up their item allocations automatically
-                                        if (people.size > 1 && person.id != "user_me") {
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Hapus Teman",
-                                                tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier
-                                                    .size(15.dp)
-                                                    .clickable {
-                                                        val deletedId = person.id
-                                                        people = people.filter { it.id != deletedId }
-                                                        items = items.map { it.copy(assignedPersonIds = it.assignedPersonIds.filter { pid -> pid != deletedId }) }
-                                                    }
-                                                    .testTag("btn_delete_friend_${person.id}")
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            text = "Total Bayar:",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = CurrencyFormatter.formatRupiah(breakdown.totalToPay),
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 16.sp,
+                                            color = personColor
+                                        )
+                                    }
+                                }
+
+                                if (breakdown.assignedItems.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Divider()
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    breakdown.assignedItems.forEach { item ->
+                                        val isShared = item.assignedPersonIds.size > 1
+                                        val itemShare = if (isShared) item.total / item.assignedPersonIds.size else item.total
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 2.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "${item.qty}x ${item.name}" + if (isShared) " (dibagi ${item.assignedPersonIds.size})" else "",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = CurrencyFormatter.formatRupiah(itemShare),
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+
+                                    if (breakdown.taxShare > 0 || breakdown.serviceShare > 0) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Porsi PB1 & Service:",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "+ " + CurrencyFormatter.formatRupiah(breakdown.taxShare + breakdown.serviceShare),
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -385,425 +686,337 @@ fun SplitBillScreen(
                             }
                         }
                     }
-                }
-            }
 
-            // 2. Assign Items Section with Add/Edit/Delete Item controls
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Bagi Item ke Teman:",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-
-                    // + Tambah Item Manual Button
-                    FilledTonalButton(
-                        onClick = {
-                            editingItemId = null
-                            editingItemName = ""
-                            editingItemQty = "1"
-                            editingItemPrice = ""
-                            isItemDialogOpen = true
-                        },
-                        modifier = Modifier.testTag("btn_add_manual_item_split_bill"),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Tambah Item", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            items(items, key = { it.id }) { item ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
+                    // 4. Payment Target Info Input with Quick Wallet Selector
+                    item {
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.name,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                                Text(
-                                    text = "${item.qty}x @ ${CurrencyFormatter.formatRupiah(item.price)}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Payments, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Rekening / E-Wallet Penyelenggara (Tujuan Transfer):",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = CurrencyFormatter.formatRupiah(item.total),
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 14.sp,
-                                    color = FinSmartPrimary
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                                // Edit Item Button
-                                IconButton(
-                                    onClick = {
-                                        editingItemId = item.id
-                                        editingItemName = item.name
-                                        editingItemQty = item.qty.toString()
-                                        editingItemPrice = item.price.toLong().toString()
-                                        isItemDialogOpen = true
-                                    },
-                                    modifier = Modifier.size(28.dp)
+                                // Quick Select from user's active Wallets & Add New Wallet Button
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit Item", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                    Text(
+                                        text = "Pilih Cepat dari Dompet Aktif:",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    TextButton(
+                                        onClick = {
+                                            newWalletNameInput = ""
+                                            newWalletNumberInput = ""
+                                            newWalletTypeSelection = WalletType.EWALLET
+                                            isAddWalletDialogOpen = true
+                                        },
+                                        modifier = Modifier.testTag("btn_add_new_wallet_split_bill")
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text("+ Tambah Dompet Baru", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FinSmartPrimary)
+                                    }
                                 }
 
-                                // Delete Item Button
-                                IconButton(
-                                    onClick = {
-                                        val updatedItems = items.filter { it.id != item.id }
-                                        items = updatedItems
-                                        updateReceiptTotals(updatedItems)
-                                    },
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Hapus Item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Pilih siapa yang pesan/ikut patungan item ini:",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Chips for assigning person
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            people.forEach { person ->
-                                val isAssigned = item.assignedPersonIds.contains(person.id)
-                                val personColor = try {
-                                    Color(android.graphics.Color.parseColor(person.colorHex))
-                                } catch (e: Exception) {
-                                    FinSmartPrimary
-                                }
-
-                                FilterChip(
-                                    selected = isAssigned,
-                                    onClick = {
-                                        val updatedAssigned = if (isAssigned) {
-                                            item.assignedPersonIds.filter { it != person.id }
-                                        } else {
-                                            item.assignedPersonIds + person.id
+                                if (wallets.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        wallets.forEach { w ->
+                                            val accStr = if (w.accountNumber.isNotBlank()) "${w.name}: ${w.accountNumber} ($currentUsername)" else "${w.name} ($currentUsername)"
+                                            FilterChip(
+                                                selected = paymentTargetInfo == accStr,
+                                                onClick = { paymentTargetInfo = accStr },
+                                                label = { Text(if (w.accountNumber.isNotBlank()) "${w.name} (${w.accountNumber})" else w.name, fontSize = 10.sp) },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = FinSmartPrimary,
+                                                    selectedLabelColor = Color.White
+                                                )
+                                            )
                                         }
-                                        items = items.map { if (it.id == item.id) it.copy(assignedPersonIds = updatedAssigned) else it }
-                                    },
-                                    label = {
-                                        Text(
-                                            text = person.name,
-                                            fontSize = 11.sp,
-                                            fontWeight = if (isAssigned) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    leadingIcon = if (isAssigned) {
-                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                    } else null,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = personColor.copy(alpha = 0.2f),
-                                        selectedLabelColor = personColor
-                                    )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                OutlinedTextField(
+                                    value = paymentTargetInfo,
+                                    onValueChange = { paymentTargetInfo = it },
+                                    placeholder = { Text("Contoh: BCA 1234567890 (a.n Lukas)") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
                                 )
                             }
                         }
+                    }
 
-                        if (item.assignedPersonIds.size > 1) {
-                            val perPersonShare = item.total / item.assignedPersonIds.size
-                            Text(
-                                text = "Dibagi ${item.assignedPersonIds.size} orang: ${CurrencyFormatter.formatRupiah(perPersonShare)} / orang",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF10B981),
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
+                    // 5. WhatsApp Preview & Share Action Buttons
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF075E54).copy(alpha = 0.08f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.4f))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .background(Color(0xFF25D366), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = "Pratinjau Pesan WhatsApp Rapi",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // Box for text preview
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surface
+                                ) {
+                                    Text(
+                                        text = whatsappSummaryText,
+                                        fontSize = 11.sp,
+                                        lineHeight = 16.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                // Share & Copy Buttons
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Button(
+                                        onClick = { shareToWhatsApp(whatsappSummaryText) },
+                                        modifier = Modifier
+                                            .weight(1.3f)
+                                            .height(48.dp)
+                                            .testTag("btn_share_whatsapp_split_bill"),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                        shape = RoundedCornerShape(14.dp)
+                                    ) {
+                                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Bagikan ke WhatsApp", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { copyToClipboard(whatsappSummaryText) },
+                                        modifier = Modifier
+                                            .weight(0.9f)
+                                            .height(48.dp)
+                                            .testTag("btn_copy_split_bill_text"),
+                                        shape = RoundedCornerShape(14.dp)
+                                    ) {
+                                        Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Salin Teks", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // "Simpan ke Riwayat Patungan" Button
+                                Button(
+                                    onClick = {
+                                        onSaveSplitBillHistory(
+                                            currentReceiptState.merchantName.ifBlank { "Struk Belanja" },
+                                            currentReceiptState.date,
+                                            currentReceiptState.totalAmount,
+                                            whatsappSummaryText
+                                        )
+                                        Toast.makeText(context, "Kalkulasi patungan berhasil disimpan ke riwayat!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp)
+                                        .testTag("btn_save_to_history_split_bill"),
+                                    colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Default.Bookmark, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Simpan ke Riwayat Patungan", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                }
+                            }
                         }
                     }
                 }
-            }
-
-            // 3. Proportional Breakdown Per Person
-            item {
-                Text(
-                    text = "Rincian Tagihan Per Orang (Proporsional Pajak & Service):",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            items(splitResult.breakdowns, key = { it.person.id }) { breakdown ->
-                val personColor = try {
-                    Color(android.graphics.Color.parseColor(breakdown.person.colorHex))
-                } catch (e: Exception) {
-                    FinSmartPrimary
-                }
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, personColor.copy(alpha = 0.3f))
+            } else {
+                // Tab 2: Split Bill History List View
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    if (splitBillHistory.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .background(personColor.copy(alpha = 0.15f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = breakdown.person.name.take(1).uppercase(),
-                                        fontWeight = FontWeight.Bold,
-                                        color = personColor,
-                                        fontSize = 14.sp
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = breakdown.person.name,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp
-                                    )
-                                    Text(
-                                        text = "${breakdown.assignedItems.size} Item pesanan",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            Column(horizontalAlignment = Alignment.End) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
                                 Text(
-                                    text = "Total Bayar:",
-                                    fontSize = 10.sp,
+                                    text = "Belum ada riwayat patungan",
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = CurrencyFormatter.formatRupiah(breakdown.totalToPay),
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 16.sp,
-                                    color = personColor
+                                    text = "Gunakan kalkulator untuk membagi bill & simpan ke sini.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             }
                         }
-
-                        if (breakdown.assignedItems.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Divider()
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            breakdown.assignedItems.forEach { item ->
-                                val isShared = item.assignedPersonIds.size > 1
-                                val itemShare = if (isShared) item.total / item.assignedPersonIds.size else item.total
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 2.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "${item.qty}x ${item.name}" + if (isShared) " (dibagi ${item.assignedPersonIds.size})" else "",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = CurrencyFormatter.formatRupiah(itemShare),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-
-                            if (breakdown.taxShare > 0 || breakdown.serviceShare > 0) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Porsi PB1 & Service:",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = "+ " + CurrencyFormatter.formatRupiah(breakdown.taxShare + breakdown.serviceShare),
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 4. Payment Target Info Input with Quick Wallet Selector
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Payments, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Rekening / E-Wallet Penyelenggara (Tujuan Transfer):",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Quick Select from user's active Wallets
-                        if (wallets.isNotEmpty()) {
-                            Text(
-                                text = "Pilih Cepat dari Dompet Aktif:",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                wallets.forEach { w ->
-                                    val accStr = if (w.accountNumber.isNotBlank()) "${w.name}: ${w.accountNumber} ($currentUsername)" else "${w.name} ($currentUsername)"
-                                    FilterChip(
-                                        selected = paymentTargetInfo == accStr,
-                                        onClick = { paymentTargetInfo = accStr },
-                                        label = { Text(if (w.accountNumber.isNotBlank()) "${w.name} (${w.accountNumber})" else w.name, fontSize = 10.sp) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = FinSmartPrimary,
-                                            selectedLabelColor = Color.White
-                                        )
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        OutlinedTextField(
-                            value = paymentTargetInfo,
-                            onValueChange = { paymentTargetInfo = it },
-                            placeholder = { Text("Contoh: BCA 1234567890 (a.n Lukas)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-                }
-            }
-
-            // 5. WhatsApp Preview & Share Action Buttons
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF075E54).copy(alpha = 0.08f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.4f))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(Color(0xFF25D366), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Pratinjau Pesan WhatsApp Rapi",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Box for text preview
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surface
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
                         ) {
-                            Text(
-                                text = whatsappSummaryText,
-                                fontSize = 11.sp,
-                                lineHeight = 16.sp,
-                                fontFamily = FontFamily.Monospace,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
+                            items(splitBillHistory, key = { it.id }) { item ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    text = item.merchantName,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 15.sp
+                                                )
+                                                Text(
+                                                    text = item.date.ifBlank { "Tanpa Tanggal" },
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Text(
+                                                text = CurrencyFormatter.formatRupiah(item.totalAmount),
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 15.sp,
+                                                color = FinSmartPrimary
+                                            )
+                                        }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Divider()
+                                        Spacer(modifier = Modifier.height(10.dp))
 
-                        // Share & Copy Buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Button(
-                                onClick = { shareToWhatsApp(whatsappSummaryText) },
-                                modifier = Modifier
-                                    .weight(1.3f)
-                                    .height(48.dp)
-                                    .testTag("btn_share_whatsapp_split_bill"),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Bagikan ke WhatsApp", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
-                            }
+                                        // Collapsible / scrollable preview of the whatsapp summary
+                                        Surface(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(100.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        ) {
+                                            LazyColumn(modifier = Modifier.padding(8.dp)) {
+                                                item {
+                                                    Text(
+                                                        text = item.formattedText,
+                                                        fontSize = 10.sp,
+                                                        lineHeight = 14.sp,
+                                                        fontFamily = FontFamily.Monospace
+                                                    )
+                                                }
+                                            }
+                                        }
 
-                            OutlinedButton(
-                                onClick = { copyToClipboard(whatsappSummaryText) },
-                                modifier = Modifier
-                                    .weight(0.9f)
-                                    .height(48.dp)
-                                    .testTag("btn_copy_split_bill_text"),
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Salin Teks", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        // Row of actions: share, copy, delete
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Button(
+                                                onClick = { shareToWhatsApp(item.formattedText) },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(38.dp)
+                                            ) {
+                                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Bagikan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+
+                                            OutlinedButton(
+                                                onClick = { copyToClipboard(item.formattedText) },
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(38.dp)
+                                            ) {
+                                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Salin", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            }
+
+                                            IconButton(
+                                                onClick = { onDeleteSplitBillHistory(item) },
+                                                modifier = Modifier.size(38.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Hapus Riwayat",
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -925,5 +1138,346 @@ fun SplitBillScreen(
                 }
             }
         )
+    }
+
+    // Add New Wallet Dialog (Directly saves to DB & Selects for Transfer)
+    if (isAddWalletDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isAddWalletDialogOpen = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Payments, contentDescription = null, tint = FinSmartPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Tambah Dompet Baru", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = newWalletNameInput,
+                        onValueChange = { newWalletNameInput = it },
+                        label = { Text("Nama Dompet / Bank") },
+                        placeholder = { Text("Contoh: DANA, Mandiri, BCA, OVO") },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_split_bill_new_wallet_name")
+                    )
+
+                    OutlinedTextField(
+                        value = newWalletNumberInput,
+                        onValueChange = { newWalletNumberInput = it },
+                        label = { Text("Nomor Rekening / No. HP") },
+                        placeholder = { Text("Contoh: 08123456789 atau 1234567890") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_split_bill_new_wallet_number")
+                    )
+
+                    Text(
+                        text = "Tipe Dompet:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            WalletType.EWALLET to "E-Wallet",
+                            WalletType.BANK to "Bank",
+                            WalletType.CASH to "Tunai"
+                        ).forEach { (type, label) ->
+                            FilterChip(
+                                selected = newWalletTypeSelection == type,
+                                onClick = { newWalletTypeSelection = type },
+                                label = { Text(label, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = FinSmartPrimary,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val name = newWalletNameInput.trim()
+                        val num = newWalletNumberInput.trim()
+                        if (name.isNotBlank()) {
+                            val color = when (name.lowercase()) {
+                                "dana" -> "#118EEA"
+                                "gopay" -> "#00AED6"
+                                "ovo" -> "#4C2A86"
+                                "shopeepay" -> "#EE4D2D"
+                                "bca" -> "#005EAA"
+                                "mandiri" -> "#003366"
+                                "bri" -> "#00529C"
+                                "bni" -> "#F15A24"
+                                else -> "#2563EB"
+                            }
+                            val icon = when (newWalletTypeSelection) {
+                                WalletType.BANK -> "account_balance"
+                                WalletType.CASH -> "payments"
+                                else -> "account_balance_wallet"
+                            }
+
+                            // Save to DB
+                            onAddNewWallet?.invoke(name, newWalletTypeSelection, num, 0.0, color, icon)
+
+                            // Immediately select as target
+                            paymentTargetInfo = if (num.isNotBlank()) "$name: $num ($currentUsername)" else "$name ($currentUsername)"
+
+                            Toast.makeText(context, "Dompet $name berhasil ditambahkan & dipilih!", Toast.LENGTH_SHORT).show()
+                            isAddWalletDialogOpen = false
+                        } else {
+                            Toast.makeText(context, "Mohon isi nama dompet.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.testTag("btn_confirm_add_wallet_split_bill")
+                ) {
+                    Text("Simpan & Pilih")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isAddWalletDialogOpen = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // Reset Confirmation Dialog
+    if (isResetDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isResetDialogOpen = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Reset Sesi Patungan?", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text("Apakah Anda yakin ingin menghapus seluruh data kalkulasi patungan saat ini (item, teman, dan rincian transfer) dan memulainya dari awal?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        resetSplitBill()
+                        isResetDialogOpen = false
+                        Toast.makeText(context, "Sesi patungan berhasil direset!", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Ya, Reset", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isResetDialogOpen = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // All Items / Riwayat Split Bill Bottom Sheet
+    if (isAllItemsSheetOpen) {
+        ModalBottomSheet(
+            onDismissRequest = { isAllItemsSheetOpen = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = FinSmartPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Semua Item Split Bill (${items.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    IconButton(onClick = { isAllItemsSheetOpen = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                items.forEach { item ->
+                    SplitBillItemCard(
+                        item = item,
+                        people = people,
+                        onEdit = {
+                            editingItemId = item.id
+                            editingItemName = item.name
+                            editingItemQty = item.qty.toString()
+                            editingItemPrice = item.price.toLong().toString()
+                            isItemDialogOpen = true
+                        },
+                        onDelete = {
+                            val updatedItems = items.filter { it.id != item.id }
+                            items = updatedItems
+                            updateReceiptTotals(updatedItems)
+                        },
+                        onTogglePerson = { personId ->
+                            val isAssigned = item.assignedPersonIds.contains(personId)
+                            val updatedAssigned = if (isAssigned) {
+                                item.assignedPersonIds.filter { it != personId }
+                            } else {
+                                item.assignedPersonIds + personId
+                            }
+                            items = items.map { if (it.id == item.id) it.copy(assignedPersonIds = updatedAssigned) else it }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { isAllItemsSheetOpen = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
+                ) {
+                    Text("Selesai & Kembali ke Ringkasan", fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SplitBillItemCard(
+    item: ReceiptItem,
+    people: List<SplitBillPerson>,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onTogglePerson: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "${item.qty}x @ ${CurrencyFormatter.formatRupiah(item.price)}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = CurrencyFormatter.formatRupiah(item.total),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 14.sp,
+                        color = FinSmartPrimary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Edit Item Button
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Item", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    }
+
+                    // Delete Item Button
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Hapus Item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Pilih siapa yang pesan/ikut patungan item ini:",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Chips for assigning person
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                people.forEach { person ->
+                    val isAssigned = item.assignedPersonIds.contains(person.id)
+                    val personColor = try {
+                        Color(android.graphics.Color.parseColor(person.colorHex))
+                    } catch (e: Exception) {
+                        FinSmartPrimary
+                    }
+
+                    FilterChip(
+                        selected = isAssigned,
+                        onClick = { onTogglePerson(person.id) },
+                        label = {
+                            Text(
+                                text = person.name,
+                                fontSize = 11.sp,
+                                fontWeight = if (isAssigned) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        leadingIcon = if (isAssigned) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = personColor.copy(alpha = 0.2f),
+                            selectedLabelColor = personColor
+                        )
+                    )
+                }
+            }
+
+            if (item.assignedPersonIds.size > 1) {
+                val perPersonShare = item.total / item.assignedPersonIds.size
+                Text(
+                    text = "Dibagi ${item.assignedPersonIds.size} orang: ${CurrencyFormatter.formatRupiah(perPersonShare)} / orang",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF10B981),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
     }
 }

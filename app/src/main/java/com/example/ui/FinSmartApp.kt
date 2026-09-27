@@ -2,6 +2,9 @@ package com.example.ui
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -48,11 +51,17 @@ import com.example.data.model.ReceiptScanResult
 import com.example.data.model.TransactionType
 import com.example.data.model.UserRole
 import com.example.ui.components.AddTransactionSheet
+import com.example.ui.components.AssetTrackerModalDialog
 import com.example.ui.components.AuthModalDialog
+import com.example.ui.components.DebtPlannerModalDialog
 import com.example.ui.components.DeleteAccountDialog
 import com.example.ui.components.DeleteWalletConfirmDialog
+import com.example.ui.components.DuressPinModalDialog
+import com.example.ui.components.GamificationHubDialog
 import com.example.ui.components.MasterDevPanelSheet
+import com.example.ui.components.PersonalityQuizModalDialog
 import com.example.ui.components.ProminentDisclosureDialog
+import com.example.ui.components.ReceiptGeneratorModalDialog
 import com.example.ui.components.SmartMasterPaywallDialog
 import com.example.ui.components.WalletDialog
 import com.example.ui.screens.AiChatScreen
@@ -62,6 +71,8 @@ import com.example.ui.screens.ReceiptScanScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.SplitBillScreen
 import com.example.ui.screens.TransactionsScreen
+import androidx.compose.material.icons.filled.Description
+import com.example.ui.screens.ExportScreen
 import com.example.ui.screens.WalletsScreen
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.viewmodel.AuthViewModel
@@ -75,7 +86,9 @@ enum class NavigationScreen(val label: String, val icon: ImageVector, val isBott
     ANALYTICS("Analisis", Icons.Default.BarChart, true),
     SETTINGS("Pengaturan", Icons.Default.Settings, true),
     SCAN_RECEIPT("Scan Nota", Icons.Default.CameraAlt, false),
-    SPLIT_BILL("Split Bill", Icons.Default.Group, false)
+    SPLIT_BILL("Split Bill", Icons.Default.Group, false),
+    BUDGET("Anggaran", Icons.Default.AccountBalanceWallet, false),
+    EXPORT_REPORT("Export Laporan", Icons.Default.Description, false)
 }
 
 @Composable
@@ -95,13 +108,35 @@ fun FinSmartApp(
     val isAuthModalOpen by authViewModel.isAuthModalOpen.collectAsStateWithLifecycle()
     val isDeleteAccountOpen by authViewModel.isDeleteAccountOpen.collectAsStateWithLifecycle()
     val isProminentDisclosureOpen by authViewModel.isProminentDisclosureOpen.collectAsStateWithLifecycle()
+    val isGamificationHubOpen by authViewModel.isGamificationHubOpen.collectAsStateWithLifecycle()
+    val isPersonalityQuizOpen by authViewModel.isPersonalityQuizOpen.collectAsStateWithLifecycle()
+    val isDuressPinModalOpen by authViewModel.isDuressPinModalOpen.collectAsStateWithLifecycle()
+    val isDebtPlannerOpen by authViewModel.isDebtPlannerOpen.collectAsStateWithLifecycle()
+    val isAssetTrackerOpen by authViewModel.isAssetTrackerOpen.collectAsStateWithLifecycle()
+    val isReceiptGeneratorOpen by authViewModel.isReceiptGeneratorOpen.collectAsStateWithLifecycle()
+    val gamificationState by authViewModel.gamificationState.collectAsStateWithLifecycle()
     val pendingOtpCode by authViewModel.pendingOtpCode.collectAsStateWithLifecycle()
     val authError by authViewModel.authError.collectAsStateWithLifecycle()
     val toastMessage by authViewModel.isSuccessToast.collectAsStateWithLifecycle()
 
+    // Google Drive Sync States
+    val isDriveConnected by authViewModel.isDriveConnected.collectAsStateWithLifecycle()
+    val driveEmail by authViewModel.driveEmail.collectAsStateWithLifecycle()
+    val driveLastBackup by authViewModel.driveLastBackup.collectAsStateWithLifecycle()
+    val driveAutoSync by authViewModel.driveAutoSync.collectAsStateWithLifecycle()
+
     // Financial State
     val accountMode by financeViewModel.accountMode.collectAsStateWithLifecycle()
     val isPrivacyMode by financeViewModel.isPrivacyMode.collectAsStateWithLifecycle()
+    val profilePhotoUri by authViewModel.profilePhotoUri.collectAsStateWithLifecycle()
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            authViewModel.updateProfilePhotoUri(it.toString())
+            Toast.makeText(context, "Foto profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+        }
+    }
     val totalBalance by financeViewModel.totalBalance.collectAsStateWithLifecycle()
     val totalIncome by financeViewModel.totalIncome.collectAsStateWithLifecycle()
     val totalExpense by financeViewModel.totalExpense.collectAsStateWithLifecycle()
@@ -115,6 +150,8 @@ fun FinSmartApp(
     val searchQuery by financeViewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategoryFilter by financeViewModel.selectedCategoryFilter.collectAsStateWithLifecycle()
     val selectedWalletFilter by financeViewModel.selectedWalletFilter.collectAsStateWithLifecycle()
+    val splitBillHistory by financeViewModel.splitBillHistory.collectAsStateWithLifecycle()
+    val budgetLimits by financeViewModel.budgetLimits.collectAsStateWithLifecycle()
 
     val isAddTransactionOpen by financeViewModel.isAddTransactionOpen.collectAsStateWithLifecycle()
     val defaultTransactionType by financeViewModel.defaultTransactionType.collectAsStateWithLifecycle()
@@ -225,6 +262,9 @@ fun FinSmartApp(
                             activeReceiptForSplitBill = ReceiptAiOcrScanner.generateRealisticReceiptFallback()
                             currentScreen = NavigationScreen.SPLIT_BILL
                         },
+                        onNavigateToBudget = {
+                            currentScreen = NavigationScreen.BUDGET
+                        },
                         onBadgeClick = {
                             if (currentUser?.role == UserRole.MASTER_DEV) {
                                 authViewModel.openMasterDevPanel()
@@ -233,8 +273,9 @@ fun FinSmartApp(
                             }
                         },
                         onAvatarClick = {
-                            authViewModel.openAuthModal()
-                        }
+                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        profilePhotoUri = profilePhotoUri
                     )
                 }
 
@@ -274,7 +315,24 @@ fun FinSmartApp(
                         receipt = activeReceiptForSplitBill ?: ReceiptAiOcrScanner.generateRealisticReceiptFallback(),
                         wallets = wallets,
                         currentUsername = currentUser?.username ?: "Saya",
-                        onNavigateBack = { currentScreen = NavigationScreen.DASHBOARD }
+                        splitBillHistory = splitBillHistory,
+                        onSaveSplitBillHistory = { merchant, date, total, formattedText ->
+                            financeViewModel.saveSplitBillHistory(merchant, date, total, formattedText)
+                        },
+                        onDeleteSplitBillHistory = { item ->
+                            financeViewModel.deleteSplitBillHistory(item)
+                        },
+                        onNavigateBack = { currentScreen = NavigationScreen.DASHBOARD },
+                        onAddNewWallet = { name, type, accountNumber, initialBalance, colorHex, iconName ->
+                            financeViewModel.saveWallet(
+                                name = name,
+                                type = type,
+                                accountNumber = accountNumber,
+                                initialBalance = initialBalance,
+                                colorHex = colorHex,
+                                iconName = iconName
+                            )
+                        }
                     )
                 }
 
@@ -282,6 +340,8 @@ fun FinSmartApp(
                     AiChatScreen(
                         wallets = wallets,
                         categories = categories,
+                        allTransactions = allTransactions,
+                        budgetLimits = budgetLimits,
                         accountMode = accountMode,
                         isUnlocked = authViewModel.isFeatureUnlocked(),
                         onTriggerPaywall = { authViewModel.openPaywall() },
@@ -304,6 +364,30 @@ fun FinSmartApp(
                     )
                 }
 
+                NavigationScreen.BUDGET -> {
+                    com.example.ui.screens.BudgetScreen(
+                        budgetLimits = budgetLimits,
+                        currentMonthExpenses = financeViewModel.currentMonthExpensesList.collectAsStateWithLifecycle().value,
+                        categories = categories,
+                        onSaveBudgetLimit = { id, amount, isCategory ->
+                            financeViewModel.saveBudgetLimit(id, amount, isCategory)
+                        },
+                        onDeleteBudgetLimit = { item ->
+                            financeViewModel.deleteBudgetLimit(item)
+                        },
+                        onResetAllBudgetLimits = {
+                            financeViewModel.resetAllBudgetLimits()
+                        },
+                        onAddCustomCategory = { name, _ ->
+                            financeViewModel.insertCustomCategory(name, TransactionType.EXPENSE)
+                        },
+                        onDeleteCategory = { category ->
+                            financeViewModel.deleteCategory(category)
+                        },
+                        onNavigateBack = { currentScreen = NavigationScreen.DASHBOARD }
+                    )
+                }
+
                 NavigationScreen.TRANSACTIONS -> {
                     TransactionsScreen(
                         transactions = filteredTransactions,
@@ -319,7 +403,9 @@ fun FinSmartApp(
                         onCategoryFilterChange = { financeViewModel.setCategoryFilter(it) },
                         onWalletFilterChange = { financeViewModel.setWalletFilter(it) },
                         onTimeframeChange = { financeViewModel.setTimeframe(it) },
-                        onDeleteTransaction = { financeViewModel.deleteTransaction(it) }
+                        onDeleteTransaction = { financeViewModel.deleteTransaction(it) },
+                        onOpenExportReport = { currentScreen = NavigationScreen.EXPORT_REPORT },
+                        currentUser = currentUser
                     )
                 }
 
@@ -331,7 +417,9 @@ fun FinSmartApp(
                         onAddWalletClick = { financeViewModel.openWalletDialog() },
                         onEditWallet = { financeViewModel.openWalletDialog(it) },
                         onDeleteWallet = { financeViewModel.openDeleteWalletConfirm(it) },
-                        onTransferClick = { financeViewModel.openAddTransaction(TransactionType.TRANSFER) }
+                        onTransferClick = { financeViewModel.openAddTransaction(TransactionType.TRANSFER) },
+                        onOpenAssetTracker = { authViewModel.openAssetTracker() },
+                        onOpenDebtPlanner = { authViewModel.openDebtPlanner() }
                     )
                 }
 
@@ -342,7 +430,8 @@ fun FinSmartApp(
                         selectedTimeframe = selectedTimeframe,
                         onTimeframeSelected = { financeViewModel.setTimeframe(it) },
                         accountMode = accountMode,
-                        isPrivacyMode = isPrivacyMode
+                        isPrivacyMode = isPrivacyMode,
+                        currentUser = currentUser
                     )
                 }
 
@@ -359,7 +448,37 @@ fun FinSmartApp(
                         onOpenDeleteAccount = { authViewModel.openDeleteAccount() },
                         onOpenProminentDisclosure = { authViewModel.openProminentDisclosure() },
                         onTogglePlayStoreMode = { authViewModel.togglePlayStoreBuildMode() },
-                        onLogout = { authViewModel.logout() }
+                        onLogout = { authViewModel.logout() },
+                        onOpenExportReport = { currentScreen = NavigationScreen.EXPORT_REPORT },
+                        isDriveConnected = isDriveConnected,
+                        driveEmail = driveEmail ?: "",
+                        driveLastBackup = driveLastBackup,
+                        driveAutoSync = driveAutoSync,
+                        onConnectDrive = { email -> authViewModel.connectGoogleDrive(email) },
+                        onDisconnectDrive = { authViewModel.disconnectGoogleDrive() },
+                        onToggleAutoSync = { enabled -> authViewModel.toggleAutoSync(enabled) },
+                        onTriggerBackup = { authViewModel.triggerManualBackup() },
+                        onTriggerRestore = { authViewModel.triggerManualRestore() },
+                        onOpenGamificationHub = { authViewModel.openGamificationHub() },
+                        onOpenPersonalityQuiz = { authViewModel.openPersonalityQuiz() },
+                        onOpenDuressPinModal = { authViewModel.openDuressPinModal() },
+                        onOpenDebtPlanner = { authViewModel.openDebtPlanner() },
+                        onOpenAssetTracker = { authViewModel.openAssetTracker() },
+                        onOpenReceiptGenerator = { authViewModel.openReceiptGenerator() },
+                        profilePhotoUri = profilePhotoUri,
+                        onAvatarClick = {
+                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        dailyStreak = gamificationState.dailyStreak
+                    )
+                }
+
+                NavigationScreen.EXPORT_REPORT -> {
+                    ExportScreen(
+                        allTransactions = allTransactions,
+                        currentAccountMode = accountMode,
+                        username = currentUser?.username ?: "Lukas",
+                        onNavigateBack = { currentScreen = NavigationScreen.DASHBOARD }
                     )
                 }
             }
@@ -432,6 +551,9 @@ fun FinSmartApp(
                     onDismiss = { authViewModel.closePaywall() },
                     onRequestUpgrade = { plan ->
                         Toast.makeText(context, "Permintaan upgrade terkirim. Menunggu konfirmasi approval.", Toast.LENGTH_LONG).show()
+                    },
+                    onWatchRewardedAd = {
+                        authViewModel.grantTemporaryRewardAccess(24)
                     }
                 )
             }
@@ -469,6 +591,71 @@ fun FinSmartApp(
             if (isProminentDisclosureOpen) {
                 ProminentDisclosureDialog(
                     onDismiss = { authViewModel.closeProminentDisclosure() }
+                )
+            }
+
+            // Gamification & Rewards Hub Modal (Bab 6)
+            if (isGamificationHubOpen) {
+                GamificationHubDialog(
+                    state = gamificationState,
+                    onDismiss = { authViewModel.closeGamificationHub() },
+                    onSelectAppIcon = { icon -> authViewModel.selectAppIconEdition(icon) },
+                    onToggleNoSpendChallenge = { enabled -> authViewModel.toggleNoSpendChallenge(enabled) },
+                    onUpdateCustomBackground = { uri, opacity -> authViewModel.updateCustomBackground(uri, opacity) },
+                    onTriggerPersonalityTest = {
+                        authViewModel.closeGamificationHub()
+                        authViewModel.openPersonalityQuiz()
+                    },
+                    onClaimStreakReward = {
+                        authViewModel.grantStreakMilestoneReward(24, 3)
+                    }
+                )
+            }
+
+            // Onboarding Financial Personality Test Modal (Bab 6)
+            if (isPersonalityQuizOpen) {
+                PersonalityQuizModalDialog(
+                    onDismiss = { authViewModel.closePersonalityQuiz() },
+                    onQuizCompleted = { personality ->
+                        authViewModel.updatePersonality(personality)
+                    }
+                )
+            }
+
+            // Duress PIN & Security Suite Modal (Bab 10)
+            if (isDuressPinModalOpen) {
+                DuressPinModalDialog(
+                    state = gamificationState,
+                    onDismiss = { authViewModel.closeDuressPinModal() },
+                    onSavePins = { mainPin, duressPin, bio ->
+                        authViewModel.saveSecurityPins(mainPin, duressPin, bio)
+                    },
+                    onVerifyPinAndUnlock = { inputPin ->
+                        authViewModel.verifyPinAndUnlock(inputPin)
+                    }
+                )
+            }
+
+            // AI Debt Payoff Strategy Planner Modal (Bab 12)
+            if (isDebtPlannerOpen) {
+                DebtPlannerModalDialog(
+                    onDismiss = { authViewModel.closeDebtPlanner() }
+                )
+            }
+
+            // Asset & Depreciating Asset Tracker Modal (Bab 12)
+            if (isAssetTrackerOpen) {
+                AssetTrackerModalDialog(
+                    totalWalletBalance = totalBalance,
+                    onDismiss = { authViewModel.closeAssetTracker() }
+                )
+            }
+
+            // Business Merchant Receipt Generator & Thermal Printing Modal (Bab 12)
+            if (isReceiptGeneratorOpen) {
+                ReceiptGeneratorModalDialog(
+                    transaction = allTransactions.firstOrNull(),
+                    onDismiss = { authViewModel.closeReceiptGenerator() }
                 )
             }
         }

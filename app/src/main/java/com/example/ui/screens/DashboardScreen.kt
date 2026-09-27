@@ -26,6 +26,9 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import com.example.ui.theme.ExpenseRed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -42,6 +45,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,6 +64,10 @@ import com.example.ui.components.WalletsSection
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.viewmodel.CashflowDataPoint
 import com.example.ui.viewmodel.TimeframeFilter
+
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.util.ThemeEngine
 
 @Composable
 fun DashboardScreen(
@@ -87,18 +96,50 @@ fun DashboardScreen(
     onOpenAiChat: () -> Unit,
     onOpenScanReceipt: () -> Unit,
     onOpenSplitBill: () -> Unit,
+    onNavigateToBudget: () -> Unit = {},
     onBadgeClick: () -> Unit,
     onAvatarClick: () -> Unit,
+    onOpenNotifications: () -> Unit = {},
+    profilePhotoUri: String? = null,
+    budgetLimits: List<com.example.data.model.BudgetLimitItem> = emptyList(),
+    currentMonthExpenses: List<com.example.data.model.TransactionItem> = emptyList(),
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
+    val wallpaperUri by ThemeEngine.customWallpaperUri.collectAsState()
+    val wallpaperOpacity by ThemeEngine.customWallpaperOpacity.collectAsState()
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .testTag("dashboard_screen"),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
     ) {
+        // Custom Wallpaper Layer if active
+        if (!wallpaperUri.isNullOrEmpty()) {
+            AsyncImage(
+                model = wallpaperUri,
+                contentDescription = "Custom Wallpaper",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            // Adaptive Contrast & Darkness Scrim
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        MaterialTheme.colorScheme.background.copy(
+                            alpha = (1f - (wallpaperOpacity.coerceIn(0.05f, 0.95f) * 0.7f)).coerceIn(0.2f, 0.95f)
+                        )
+                    )
+            )
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("dashboard_screen"),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+        ) {
         // Top App Bar / Header with FinSmart Logo & Greeting
         item {
             Row(
@@ -125,12 +166,21 @@ fun DashboardScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = (currentUser?.username?.take(1) ?: "F").uppercase(),
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 16.sp
-                        )
+                        if (!profilePhotoUri.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = profilePhotoUri,
+                                contentDescription = "Foto Profil",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(
+                                text = (currentUser?.username?.take(1) ?: "F").uppercase(),
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
@@ -187,10 +237,11 @@ fun DashboardScreen(
                 }
 
                 IconButton(
-                    onClick = { /* In-app bell notifications */ },
+                    onClick = onOpenNotifications,
                     modifier = Modifier
                         .size(40.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        .testTag("btn_bell_notifications")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Notifications,
@@ -198,6 +249,79 @@ fun DashboardScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+        }
+
+        // 0. Overbudget Alert Banner System
+        val totalLimitItem = budgetLimits.firstOrNull { it.id == "total_monthly" }
+        val totalLimitAmount = totalLimitItem?.limitAmount ?: 0.0
+        val totalExpenseAmount = currentMonthExpenses.sumOf { it.amount }
+
+        val categoryExpensesMap = currentMonthExpenses
+            .groupBy { it.category }
+            .mapValues { entry -> entry.value.sumOf { it.amount } }
+
+        val categoryLimitsMap = budgetLimits
+            .filter { it.isCategory }
+            .associate { it.id to it.limitAmount }
+
+        val overbudgetAlerts = mutableListOf<String>()
+
+        if (totalLimitAmount > 0.0 && totalExpenseAmount > totalLimitAmount) {
+            overbudgetAlerts.add("Total pengeluaran bulanan melampaui limit anggaran!")
+        }
+
+        categoryLimitsMap.forEach { (catName, limit) ->
+            val spent = categoryExpensesMap[catName] ?: 0.0
+            if (limit > 0.0 && spent > limit) {
+                overbudgetAlerts.add("Kategori [$catName] telah overbudget!")
+            }
+        }
+
+        if (overbudgetAlerts.isNotEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clickable { onNavigateToBudget() }
+                        .testTag("dashboard_overbudget_alert"),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = ExpenseRed.copy(alpha = 0.08f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Peringatan",
+                            tint = ExpenseRed,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Peringatan Overbudget Cerdas!",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = ExpenseRed
+                            )
+                            Text(
+                                text = overbudgetAlerts.first() + if (overbudgetAlerts.size > 1) " (+${overbudgetAlerts.size - 1} lainnya)" else "",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Text(
+                            text = "Detail ->",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ExpenseRed
+                        )
+                    }
                 }
             }
         }
@@ -288,7 +412,7 @@ fun DashboardScreen(
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Scan Nota AI",
+                                text = "Scan Nota",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -345,13 +469,70 @@ fun DashboardScreen(
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Split Bill AI",
+                                text = "Split Bill",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Bagi tagihan & share ke WhatsApp",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // 3. Smart Budgeting Card
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable { onNavigateToBudget() }
+                            .testTag("banner_smart_budget"),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF59E0B).copy(alpha = 0.12f))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Color(0xFFF59E0B), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Surface(
+                                    color = Color(0xFFF59E0B),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "BUDGET",
+                                        color = Color.White,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Anggaran",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Atur limit bulanan & kategori",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -437,17 +618,6 @@ fun DashboardScreen(
             }
         }
 
-        // Cashflow Chart Section
-        item {
-            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                CashflowChartCard(
-                    dataPoints = chartData,
-                    selectedTimeframe = selectedTimeframe,
-                    onTimeframeSelected = onTimeframeSelected
-                )
-            }
-        }
-
         // Wallets & Bank Management Section
         item {
             WalletsSection(
@@ -458,80 +628,6 @@ fun DashboardScreen(
                 onDeleteWallet = onDeleteWallet
             )
         }
-
-        // Recent Transactions Header
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Transaksi Terakhir",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                TextButton(
-                    onClick = onViewAllTransactionsClick,
-                    modifier = Modifier.testTag("btn_view_all_transactions")
-                ) {
-                    Text("Lihat Semua", fontSize = 12.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(14.dp))
-                }
-            }
-        }
-
-        // Recent Transactions List
-        if (recentTransactions.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ReceiptLong,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            modifier = Modifier.size(36.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Belum Ada Transaksi",
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Semua saldo awal bernilai 0. Catat pemasukan atau pengeluaran pertama Anda sekarang.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
-            }
-        } else {
-            items(recentTransactions.take(5), key = { it.id }) { tx ->
-                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    TransactionItemRow(
-                        transaction = tx,
-                        isPrivacyMode = isPrivacyMode,
-                        onDelete = onDeleteTransaction
-                    )
-                }
-            }
-        }
     }
+}
 }

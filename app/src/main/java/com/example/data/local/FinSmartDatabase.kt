@@ -6,7 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.AccountMode
+import com.example.data.model.BudgetLimitItem
 import com.example.data.model.CategoryItem
+import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.data.model.User
@@ -18,8 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Wallet::class, TransactionItem::class, CategoryItem::class, User::class],
-    version = 2,
+    entities = [Wallet::class, TransactionItem::class, CategoryItem::class, User::class, SplitBillHistoryItem::class, BudgetLimitItem::class],
+    version = 4,
     exportSchema = false
 )
 abstract class FinSmartDatabase : RoomDatabase() {
@@ -27,6 +29,8 @@ abstract class FinSmartDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
     abstract fun userDao(): UserDao
+    abstract fun splitBillHistoryDao(): SplitBillHistoryDao
+    abstract fun budgetLimitDao(): BudgetLimitDao
 
     companion object {
         @Volatile

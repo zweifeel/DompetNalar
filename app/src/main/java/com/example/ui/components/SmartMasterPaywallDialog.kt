@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.theme.GoldAccent
+import com.example.util.AdManager
+import androidx.compose.material.icons.filled.PlayCircle
 
 enum class PlanChoice {
     MONTHLY,
@@ -77,7 +79,8 @@ enum class PlanChoice {
 @Composable
 fun SmartMasterPaywallDialog(
     onDismiss: () -> Unit,
-    onRequestUpgrade: (PlanChoice) -> Unit
+    onRequestUpgrade: (PlanChoice) -> Unit,
+    onWatchRewardedAd: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -462,6 +465,45 @@ fun SmartMasterPaywallDialog(
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         color = Color.White
+                    )
+                }
+            }
+
+            // Rewarded Ad Option for Free Users (Bab 9)
+            if (!com.example.config.AppConfig.IS_PLAY_STORE_BUILD) {
+                Spacer(modifier = Modifier.height(14.dp))
+                OutlinedButton(
+                    onClick = {
+                        val activity = context as? android.app.Activity
+                        if (activity != null) {
+                            AdManager.showRewardedAd(
+                                activity = activity,
+                                onEarnedReward = {
+                                    Toast.makeText(context, "Akses Fitur Premium 1 Jam Terbuka! 🎉", Toast.LENGTH_LONG).show()
+                                    onWatchRewardedAd()
+                                },
+                                onAdClosedOrFailed = {
+                                    Toast.makeText(context, "Iklan belum siap atau ditutup.", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        } else {
+                            onWatchRewardedAd()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("btn_watch_rewarded_ad"),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.5.dp, Color(0xFF10B981))
+                ) {
+                    Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "🎬 Tonton Iklan untuk Akses Premium 1 Jam",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = Color(0xFF10B981)
                     )
                 }
             }

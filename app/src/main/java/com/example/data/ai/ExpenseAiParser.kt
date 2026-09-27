@@ -3,6 +3,8 @@ package com.example.data.ai
 import com.example.data.model.CategoryItem
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
+import com.example.util.CurrencyFormatter
+import com.example.util.TransactionDateParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -16,11 +18,20 @@ object ExpenseAiParser {
         availableWallets: List<Wallet>,
         availableCategories: List<CategoryItem>
     ): ParsedTransactionResult = withContext(Dispatchers.IO) {
+        val dateResult = TransactionDateParser.parseDateFromMessage(userMessage)
         val apiKey = GeminiClient.getApiKey()
 
         if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
             try {
-                val geminiResult = callGeminiApi(userMessage, availableWallets, availableCategories, apiKey)
+                val geminiResult = callGeminiApi(
+                    userMessage = userMessage,
+                    cleanedMessage = dateResult.cleanedText,
+                    parsedTimestamp = dateResult.timestamp,
+                    detectedDateText = dateResult.detectedDateText,
+                    wallets = availableWallets,
+                    categories = availableCategories,
+                    apiKey = apiKey
+                )
                 if (geminiResult != null) {
                     return@withContext geminiResult
                 }
@@ -30,11 +41,21 @@ object ExpenseAiParser {
         }
 
         // Offline / Fast NLP Local Parser Fallback
-        parseLocally(userMessage, availableWallets, availableCategories)
+        parseLocally(
+            rawInput = userMessage,
+            cleanedInput = dateResult.cleanedText,
+            timestamp = dateResult.timestamp,
+            detectedDateText = dateResult.detectedDateText,
+            wallets = availableWallets,
+            categories = availableCategories
+        )
     }
 
     private suspend fun callGeminiApi(
         userMessage: String,
+        cleanedMessage: String,
+        parsedTimestamp: Long,
+        detectedDateText: String?,
         wallets: List<Wallet>,
         categories: List<CategoryItem>,
         apiKey: String
@@ -49,6 +70,7 @@ object ExpenseAiParser {
             
             Daftar dompet tersedia: [$walletNames]
             Daftar kategori tersedia: [$categoryNames]
+            ${if (detectedDateText != null) "Konteks waktu/tanggal yang terdeteksi: $detectedDateText" else ""}
             
             Kembalikan HANYA JSON murni (tanpa markdown backtick ```json) dengan format:
             {
@@ -86,25 +108,30 @@ object ExpenseAiParser {
 
         val json = JSONObject(cleanJson)
         return ParsedTransactionResult(
-            title = json.optString("title", userMessage),
+            title = json.optString("title", cleanedMessage),
             amount = json.optDouble("amount", 0.0),
             type = json.optString("type", "EXPENSE"),
             category = json.optString("category", "Lain-lain"),
             categoryIcon = json.optString("categoryIcon", "category"),
             suggestedWalletName = json.optString("suggestedWalletName", wallets.firstOrNull()?.name ?: "Dompet Utama"),
             suggestedTargetWalletName = if (json.isNull("suggestedTargetWalletName")) null else json.optString("suggestedTargetWalletName"),
-            note = json.optString("note", ""),
+            note = json.optString("note", if (detectedDateText != null) "Tanggal: $detectedDateText" else ""),
             tags = json.optString("tags", ""),
-            aiExplanation = json.optString("aiExplanation", "Transaksi berhasil diekstrak oleh Gemini AI.")
+            aiExplanation = json.optString("aiExplanation", "Transaksi berhasil diekstrak oleh Gemini AI."),
+            timestamp = parsedTimestamp,
+            detectedDateText = detectedDateText
         )
     }
 
     private fun parseLocally(
-        input: String,
+        rawInput: String,
+        cleanedInput: String,
+        timestamp: Long,
+        detectedDateText: String?,
         wallets: List<Wallet>,
         categories: List<CategoryItem>
     ): ParsedTransactionResult {
-        val lower = input.lowercase(Locale("id", "ID"))
+        val lower = rawInput.lowercase(Locale("id", "ID"))
 
         // 1. Determine Type
         val isTransfer = lower.contains("transfer") || lower.contains("kirim uang") || lower.contains("topup") || lower.contains("top up")
@@ -198,12 +225,16 @@ object ExpenseAiParser {
         }
 
         // 6. Generate Title
-        val title = input.replace(Regex("(?i)(pake|pakai|via|dari|ke|dengan)\\s+\\w+"), "").trim().capitalize(Locale.ROOT)
+        val title = cleanedInput.replace(Regex("(?i)(pake|pakai|via|dari|ke|dengan)\\s+\\w+"), "").trim().capitalize(Locale.ROOT)
+
+        val dateSuffix = if (detectedDateText != null) {
+            " pada ${CurrencyFormatter.formatDate(timestamp)} ($detectedDateText)"
+        } else ""
 
         val explanation = when (type) {
-            "INCOME" -> "AI mencatat pemasukan '$title' senilai ${amount.toLong()} ke ${matchedSourceWallet?.name}."
-            "TRANSFER" -> "AI menyiapkan transfer ${amount.toLong()} dari ${matchedSourceWallet?.name} ke ${matchedTargetWallet?.name}."
-            else -> "AI mendeteksi pengeluaran '$title' sebesar ${amount.toLong()} via ${matchedSourceWallet?.name}."
+            "INCOME" -> "AI mencatat pemasukan '$title'$dateSuffix senilai ${amount.toLong()} ke ${matchedSourceWallet?.name}."
+            "TRANSFER" -> "AI menyiapkan transfer ${amount.toLong()} dari ${matchedSourceWallet?.name} ke ${matchedTargetWallet?.name}$dateSuffix."
+            else -> "AI mendeteksi pengeluaran '$title'$dateSuffix sebesar ${amount.toLong()} via ${matchedSourceWallet?.name}."
         }
 
         return ParsedTransactionResult(
@@ -214,9 +245,11 @@ object ExpenseAiParser {
             categoryIcon = catIcon,
             suggestedWalletName = matchedSourceWallet?.name ?: "Dompet Utama",
             suggestedTargetWalletName = matchedTargetWallet?.name,
-            note = "Dicatat otomatis via AI Gemini Input",
+            note = if (detectedDateText != null) "Dicatat via AI • Tanggal: $detectedDateText" else "Dicatat otomatis via AI Gemini Input",
             tags = "#" + matchedCategory.split(" ").first().lowercase(),
-            aiExplanation = explanation
+            aiExplanation = explanation,
+            timestamp = timestamp,
+            detectedDateText = detectedDateText
         )
     }
 }

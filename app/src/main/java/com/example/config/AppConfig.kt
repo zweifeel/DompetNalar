@@ -19,8 +19,8 @@ object AppConfig {
     var IS_PLAY_STORE_BUILD: Boolean by mutableStateOf(false)
 
     const val APP_NAME = "FinSmart"
-    const val APP_VERSION_NAME = "1.0.0"
-    const val APP_VERSION_CODE = 1
+    const val APP_VERSION_NAME = "1.0.3"
+    const val APP_VERSION_CODE = 3
     const val APP_AUTHOR = "Lukas"
     const val COPYRIGHT_YEAR = "2026"
 
@@ -31,4 +31,10 @@ object AppConfig {
     const val YEARLY_PRICE_IDR = 149_000.0
 
     const val SUPPORT_EMAIL = "lunachroc07@gmail.com"
+
+    // AdMob Configurations (Bab 9 & 13)
+    const val ADMOB_APP_ID = "ca-app-pub-3940256099942544~3347511713"
+    const val ADMOB_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+    const val ADMOB_REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
+    const val ADMOB_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
 }

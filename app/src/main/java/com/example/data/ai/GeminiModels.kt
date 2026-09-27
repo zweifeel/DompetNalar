@@ -64,5 +64,7 @@ data class ParsedTransactionResult(
     val suggestedTargetWalletName: String?,
     val note: String,
     val tags: String,
-    val aiExplanation: String
+    val aiExplanation: String,
+    val timestamp: Long = System.currentTimeMillis(),
+    val detectedDateText: String? = null
 )

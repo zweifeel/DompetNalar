@@ -6,9 +6,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.config.AppConfig
 import com.example.data.local.FinSmartDatabase
+import com.example.data.model.AppIconEdition
+import com.example.data.model.FinancialPersonality
 import com.example.data.model.User
+import com.example.data.model.UserGamificationState
 import com.example.data.model.UserRole
 import com.example.data.repository.UserRepository
+import com.example.util.GamificationManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -51,9 +55,83 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _isSuccessToast = MutableStateFlow<String?>(null)
     val isSuccessToast: StateFlow<String?> = _isSuccessToast.asStateFlow()
 
+    private val _isDriveConnected = MutableStateFlow(false)
+    val isDriveConnected: StateFlow<Boolean> = _isDriveConnected.asStateFlow()
+
+    private val _driveEmail = MutableStateFlow("")
+    val driveEmail: StateFlow<String?> = _driveEmail.asStateFlow()
+
+    private val _driveLastBackup = MutableStateFlow("")
+    val driveLastBackup: StateFlow<String> = _driveLastBackup.asStateFlow()
+
+    private val _driveAutoSync = MutableStateFlow(false)
+    val driveAutoSync: StateFlow<Boolean> = _driveAutoSync.asStateFlow()
+
+    private val _singleFeaturePassCredits = MutableStateFlow(prefs.getInt("single_feature_credits", 0))
+    val singleFeaturePassCredits: StateFlow<Int> = _singleFeaturePassCredits.asStateFlow()
+
+    private val _isGamificationHubOpen = MutableStateFlow(false)
+    val isGamificationHubOpen: StateFlow<Boolean> = _isGamificationHubOpen.asStateFlow()
+
+    private val _isPersonalityQuizOpen = MutableStateFlow(false)
+    val isPersonalityQuizOpen: StateFlow<Boolean> = _isPersonalityQuizOpen.asStateFlow()
+
+    private val _isDuressPinModalOpen = MutableStateFlow(false)
+    val isDuressPinModalOpen: StateFlow<Boolean> = _isDuressPinModalOpen.asStateFlow()
+
+    private val _isDebtPlannerOpen = MutableStateFlow(false)
+    val isDebtPlannerOpen: StateFlow<Boolean> = _isDebtPlannerOpen.asStateFlow()
+
+    private val _isAssetTrackerOpen = MutableStateFlow(false)
+    val isAssetTrackerOpen: StateFlow<Boolean> = _isAssetTrackerOpen.asStateFlow()
+
+    private val _isReceiptGeneratorOpen = MutableStateFlow(false)
+    val isReceiptGeneratorOpen: StateFlow<Boolean> = _isReceiptGeneratorOpen.asStateFlow()
+
+    private val _isNotificationCenterOpen = MutableStateFlow(false)
+    val isNotificationCenterOpen: StateFlow<Boolean> = _isNotificationCenterOpen.asStateFlow()
+
+    private val _profilePhotoUri = MutableStateFlow(prefs.getString("user_profile_photo_uri", null))
+    val profilePhotoUri: StateFlow<String?> = _profilePhotoUri.asStateFlow()
+
+    fun updateProfilePhotoUri(uri: String?) {
+        _profilePhotoUri.value = uri
+        prefs.edit().putString("user_profile_photo_uri", uri).apply()
+    }
+
+    private val _gamificationState = MutableStateFlow(
+        UserGamificationState(
+            level = prefs.getInt("gamify_level", 1),
+            currentXp = prefs.getInt("gamify_xp", 20),
+            xpForNextLevel = GamificationManager.calculateLevel(prefs.getInt("gamify_xp", 20)).second,
+            dailyStreak = prefs.getInt("gamify_streak", 7),
+            bestStreak = prefs.getInt("gamify_best_streak", 7),
+            personality = try {
+                FinancialPersonality.valueOf(prefs.getString("gamify_personality", "BALANCED") ?: "BALANCED")
+            } catch (e: Exception) { FinancialPersonality.BALANCED },
+            activeIconEdition = try {
+                AppIconEdition.valueOf(prefs.getString("gamify_icon", "DEFAULT_CLASSIC") ?: "DEFAULT_CLASSIC")
+            } catch (e: Exception) { AppIconEdition.DEFAULT_CLASSIC },
+            customBackgroundUri = prefs.getString("gamify_bg_uri", null),
+            customBackgroundOpacity = prefs.getFloat("gamify_bg_opacity", 0.3f),
+            isNoSpendChallengeActive = prefs.getBoolean("gamify_nospend", false),
+            mainPin = prefs.getString("security_main_pin", "123456") ?: "123456",
+            duressPin = prefs.getString("security_duress_pin", "999999") ?: "999999",
+            isBiometricEnabled = prefs.getBoolean("security_biometric", false),
+            unlockedBadgeIds = prefs.getStringSet("gamify_badges", setOf("rookie_planner")) ?: setOf("rookie_planner")
+        )
+    )
+    val gamificationState: StateFlow<UserGamificationState> = _gamificationState.asStateFlow()
+
     init {
         database = FinSmartDatabase.getDatabase(application, viewModelScope)
         userRepository = UserRepository(database.userDao())
+
+        // Initialize Google Drive connection preferences
+        _isDriveConnected.value = com.example.util.GoogleDriveService.isConnected(application)
+        _driveEmail.value = com.example.util.GoogleDriveService.getConnectedEmail(application)
+        _driveLastBackup.value = com.example.util.GoogleDriveService.getLastBackupTime(application)
+        _driveAutoSync.value = com.example.util.GoogleDriveService.isAutoSyncEnabled(application)
 
         // Load saved session or default to Guest Mode (Bab 1 & 2)
         viewModelScope.launch {
@@ -203,6 +281,63 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         _isAuthModalOpen.value = true
     }
 
+    fun grantTemporaryRewardAccess(durationHours: Int = 1) {
+        val user = _currentUser.value ?: return
+        val rewardExpiry = System.currentTimeMillis() + (durationHours * 3600000L) // Presisi 1 jam / 3,600,000 ms
+        val updatedUser = user.copy(
+            role = UserRole.SMART_MASTER,
+            subscriptionExpiresAt = rewardExpiry
+        )
+        _currentUser.value = updatedUser
+
+        // Juga menambahkan 1x Per-Action Pass Credit sebagai bonus cadangan
+        addSingleFeaturePassCredit(1)
+
+        viewModelScope.launch {
+            if (!user.isGuest && user.id > 0) {
+                userRepository.updateUserRole(user.id, UserRole.SMART_MASTER, rewardExpiry)
+            }
+        }
+        _isPaywallOpen.value = false
+        _isSuccessToast.value = "Selamat! Temporary Smart Master Pass (1 Jam) & 1x Action Pass Aktif 🎉"
+    }
+
+    fun grantStreakMilestoneReward(durationHours: Int = 24, actionPassCredits: Int = 3) {
+        val user = _currentUser.value ?: return
+        val rewardExpiry = System.currentTimeMillis() + (durationHours * 3600000L) // 24 jam = 86,400,000 ms
+        val updatedUser = user.copy(
+            role = UserRole.SMART_MASTER,
+            subscriptionExpiresAt = rewardExpiry
+        )
+        _currentUser.value = updatedUser
+
+        addSingleFeaturePassCredit(actionPassCredits)
+
+        viewModelScope.launch {
+            if (!user.isGuest && user.id > 0) {
+                userRepository.updateUserRole(user.id, UserRole.SMART_MASTER, rewardExpiry)
+            }
+        }
+        _isSuccessToast.value = "🎉 Reward Streak 7 Hari Active: 24 Jam Smart Master Pass + 3x Action Pass Credits!"
+    }
+
+    fun addSingleFeaturePassCredit(count: Int = 1) {
+        val newCredits = _singleFeaturePassCredits.value + count
+        _singleFeaturePassCredits.value = newCredits
+        prefs.edit().putInt("single_feature_credits", newCredits).apply()
+    }
+
+    fun consumeSingleFeaturePassCredit(): Boolean {
+        if (_singleFeaturePassCredits.value > 0) {
+            val newCredits = _singleFeaturePassCredits.value - 1
+            _singleFeaturePassCredits.value = newCredits
+            prefs.edit().putInt("single_feature_credits", newCredits).apply()
+            _isSuccessToast.value = "1x Per-Action Pass digunakan (Sisa pass: $newCredits)"
+            return true
+        }
+        return false
+    }
+
     // Master Dev Approval Actions (Bab 2 & 3)
     fun upgradeUserToSmartMaster(userId: Long) {
         viewModelScope.launch {
@@ -270,9 +405,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun isFeatureUnlocked(): Boolean {
         val user = _currentUser.value ?: return false
-        if (user.role == UserRole.MASTER_DEV || user.role == UserRole.SMART_MASTER) {
+        if (user.role == UserRole.MASTER_DEV) return true
+
+        if (user.role == UserRole.SMART_MASTER) {
+            val expiresAt = user.subscriptionExpiresAt
+            if (expiresAt == null || expiresAt > System.currentTimeMillis()) {
+                return true
+            }
+        }
+
+        if (_singleFeaturePassCredits.value > 0) {
             return true
         }
+
         // 3-day trial logic
         val threeDaysMillis = 3L * 24 * 3600 * 1000L
         val elapsed = System.currentTimeMillis() - user.trialStartDate
@@ -336,5 +481,142 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearToast() {
         _isSuccessToast.value = null
+    }
+
+    fun connectGoogleDrive(email: String) {
+        com.example.util.GoogleDriveService.connect(getApplication(), email)
+        _isDriveConnected.value = true
+        _driveEmail.value = email
+        _isSuccessToast.value = "Google Drive terhubung ke $email"
+    }
+
+    fun disconnectGoogleDrive() {
+        com.example.util.GoogleDriveService.disconnect(getApplication())
+        _isDriveConnected.value = false
+        _driveEmail.value = ""
+        _isSuccessToast.value = "Koneksi Google Drive diputus"
+    }
+
+    fun toggleAutoSync(enabled: Boolean) {
+        com.example.util.GoogleDriveService.setAutoSyncEnabled(getApplication(), enabled)
+        com.example.util.GoogleDriveService.scheduleWeeklySync(getApplication(), enabled)
+        _driveAutoSync.value = enabled
+        _isSuccessToast.value = if (enabled) "Backup otomatis mingguan aktif via Wi-Fi" else "Backup otomatis mingguan dimatikan"
+    }
+
+    fun triggerManualBackup() {
+        viewModelScope.launch {
+            _isSuccessToast.value = "Memulai pencadangan data ke Google Drive..."
+            val result = com.example.util.GoogleDriveService.backupNow(getApplication(), database)
+            _driveLastBackup.value = com.example.util.GoogleDriveService.getLastBackupTime(getApplication())
+            _isSuccessToast.value = result.second
+        }
+    }
+
+    fun triggerManualRestore() {
+        viewModelScope.launch {
+            _isSuccessToast.value = "Memulai pemulihan data..."
+            val result = com.example.util.GoogleDriveService.restoreNow(getApplication(), database)
+            _isSuccessToast.value = result.second
+        }
+    }
+
+    // Gamification & Security Controls (Bab 6 & 10)
+    fun openGamificationHub() { _isGamificationHubOpen.value = true }
+    fun closeGamificationHub() { _isGamificationHubOpen.value = false }
+
+    fun openPersonalityQuiz() { _isPersonalityQuizOpen.value = true }
+    fun closePersonalityQuiz() { _isPersonalityQuizOpen.value = false }
+
+    fun openDuressPinModal() { _isDuressPinModalOpen.value = true }
+    fun closeDuressPinModal() { _isDuressPinModalOpen.value = false }
+
+    fun openDebtPlanner() { _isDebtPlannerOpen.value = true }
+    fun closeDebtPlanner() { _isDebtPlannerOpen.value = false }
+
+    fun openAssetTracker() { _isAssetTrackerOpen.value = true }
+    fun closeAssetTracker() { _isAssetTrackerOpen.value = false }
+
+    fun openReceiptGenerator() { _isReceiptGeneratorOpen.value = true }
+    fun closeReceiptGenerator() { _isReceiptGeneratorOpen.value = false }
+
+    fun openNotificationCenter() { _isNotificationCenterOpen.value = true }
+    fun closeNotificationCenter() { _isNotificationCenterOpen.value = false }
+
+    fun updatePersonality(personality: FinancialPersonality) {
+        _gamificationState.value = _gamificationState.value.copy(personality = personality)
+        prefs.edit().putString("gamify_personality", personality.name).apply()
+        _isSuccessToast.value = "Profil Finansial diubah ke: ${personality.title}"
+    }
+
+    fun selectAppIconEdition(icon: AppIconEdition) {
+        _gamificationState.value = _gamificationState.value.copy(activeIconEdition = icon)
+        prefs.edit().putString("gamify_icon", icon.name).apply()
+        com.example.util.AppIconManager.setAppIcon(
+            context = getApplication(),
+            edition = icon,
+            currentStreak = _gamificationState.value.dailyStreak,
+            isMasterDev = _currentUser.value?.role == UserRole.MASTER_DEV
+        )
+        _isSuccessToast.value = "Dynamic App Icon diubah ke: ${icon.displayName}"
+    }
+
+    fun updateCustomBackground(uri: String?, opacity: Float) {
+        _gamificationState.value = _gamificationState.value.copy(
+            customBackgroundUri = uri,
+            customBackgroundOpacity = opacity
+        )
+        prefs.edit()
+            .putString("gamify_bg_uri", uri)
+            .putFloat("gamify_bg_opacity", opacity)
+            .apply()
+        com.example.util.ThemeEngine.setCustomWallpaper(getApplication(), uri, opacity)
+    }
+
+    fun toggleNoSpendChallenge(enabled: Boolean) {
+        _gamificationState.value = _gamificationState.value.copy(isNoSpendChallengeActive = enabled)
+        prefs.edit().putBoolean("gamify_nospend", enabled).apply()
+        _isSuccessToast.value = if (enabled) "No-Spend Challenge Aktif! Pertahankan 24 jam untuk Multiplier 2x!" else "No-Spend Challenge Dinonaktifkan"
+    }
+
+    fun saveSecurityPins(mainPin: String, duressPin: String, biometricEnabled: Boolean) {
+        _gamificationState.value = _gamificationState.value.copy(
+            mainPin = mainPin,
+            duressPin = duressPin,
+            isBiometricEnabled = biometricEnabled
+        )
+        prefs.edit()
+            .putString("security_main_pin", mainPin)
+            .putString("security_duress_pin", duressPin)
+            .putBoolean("security_biometric", biometricEnabled)
+            .apply()
+    }
+
+    fun verifyPinAndUnlock(inputPin: String) {
+        val state = _gamificationState.value
+        if (inputPin == state.duressPin) {
+            _gamificationState.value = state.copy(isStealthMode = true)
+            _isSuccessToast.value = "⚠️ FinSmart Masuk Mode Stealth (Duress PIN Mode)"
+        } else if (inputPin == state.mainPin) {
+            _gamificationState.value = state.copy(isStealthMode = false)
+            _isSuccessToast.value = "✓ Keamanan Diverifikasi! Mode Asli Aktif"
+        } else {
+            _isSuccessToast.value = "❌ PIN Salah!"
+        }
+    }
+
+    fun awardXp(amount: Int) {
+        val current = _gamificationState.value
+        val newXp = current.currentXp + (amount * current.streakMultiplier)
+        val (newLevel, nextReq) = GamificationManager.calculateLevel(newXp)
+        _gamificationState.value = current.copy(
+            level = newLevel,
+            currentXp = newXp,
+            xpForNextLevel = nextReq
+        )
+        prefs.edit()
+            .putInt("gamify_level", newLevel)
+            .putInt("gamify_xp", newXp)
+            .apply()
     }
 }

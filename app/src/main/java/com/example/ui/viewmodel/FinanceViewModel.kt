@@ -4,11 +4,16 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.FinSmartDatabase
+import com.example.data.local.BudgetLimitDao
+import com.example.data.local.SplitBillHistoryDao
 import com.example.data.model.AccountMode
+import com.example.data.model.BudgetLimitItem
 import com.example.data.model.CategoryItem
+import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
+import com.example.data.model.BackupDataPayload
 import com.example.data.repository.FinanceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,11 +21,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
 enum class TimeframeFilter(val label: String) {
+    DAILY("Harian"),
     WEEKLY("Mingguan"),
     MONTHLY("Bulanan"),
     YEARLY("Tahunan"),
@@ -37,6 +44,8 @@ data class CashflowDataPoint(
 class FinanceViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: FinanceRepository
+    private val splitBillHistoryDao: SplitBillHistoryDao
+    private val budgetLimitDao: BudgetLimitDao
 
     private val _accountMode = MutableStateFlow(AccountMode.PERSONAL)
     val accountMode: StateFlow<AccountMode> = _accountMode.asStateFlow()
@@ -79,6 +88,59 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             database.transactionDao(),
             database.categoryDao()
         )
+        splitBillHistoryDao = database.splitBillHistoryDao()
+        budgetLimitDao = database.budgetLimitDao()
+    }
+
+    val budgetLimits: StateFlow<List<BudgetLimitItem>> = budgetLimitDao.getAllBudgetLimits()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveBudgetLimit(id: String, amount: Double, isCategory: Boolean) {
+        viewModelScope.launch {
+            budgetLimitDao.insertBudgetLimit(BudgetLimitItem(id, amount, isCategory))
+        }
+    }
+
+    fun deleteBudgetLimit(item: BudgetLimitItem) {
+        viewModelScope.launch {
+            budgetLimitDao.deleteBudgetLimit(item)
+        }
+    }
+
+    fun resetAllBudgetLimits() {
+        viewModelScope.launch {
+            budgetLimits.value.forEach { item ->
+                budgetLimitDao.deleteBudgetLimit(item)
+            }
+        }
+    }
+
+    val splitBillHistory: StateFlow<List<SplitBillHistoryItem>> = splitBillHistoryDao.getAllSplitBillHistory()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveSplitBillHistory(merchantName: String, date: String, totalAmount: Double, formattedText: String) {
+        viewModelScope.launch {
+            splitBillHistoryDao.insertSplitBillHistory(
+                SplitBillHistoryItem(
+                    merchantName = merchantName,
+                    date = date,
+                    totalAmount = totalAmount,
+                    formattedText = formattedText
+                )
+            )
+        }
+    }
+
+    fun deleteSplitBillHistory(item: SplitBillHistoryItem) {
+        viewModelScope.launch {
+            splitBillHistoryDao.deleteSplitBillHistory(item)
+        }
+    }
+
+    fun clearAllSplitBillHistory() {
+        viewModelScope.launch {
+            splitBillHistoryDao.clearAllHistory()
+        }
     }
 
     val wallets: StateFlow<List<Wallet>> = _accountMode.flatMapLatest { mode ->
@@ -90,6 +152,17 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     val allTransactions: StateFlow<List<TransactionItem>> = _accountMode.flatMapLatest { mode ->
         repository.getTransactions(mode)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val currentMonthExpensesList: StateFlow<List<TransactionItem>> = allTransactions.map { txList ->
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startMonth = cal.timeInMillis
+        txList.filter { it.timestamp >= startMonth && it.type == TransactionType.EXPENSE }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val categories: StateFlow<List<CategoryItem>> = repository.getAllCategories()
@@ -110,6 +183,15 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         val cal = Calendar.getInstance()
 
         val timeFiltered = when (timeframe) {
+            TimeframeFilter.DAILY -> {
+                cal.timeInMillis = now
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                val startDay = cal.timeInMillis
+                txList.filter { it.timestamp >= startDay }
+            }
             TimeframeFilter.WEEKLY -> {
                 cal.timeInMillis = now
                 cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
@@ -311,6 +393,24 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun insertCustomCategory(name: String, type: TransactionType, iconName: String = "category", colorHex: String = "#0B57D0") {
+        viewModelScope.launch {
+            val cat = CategoryItem(
+                name = name,
+                type = type,
+                iconName = iconName,
+                colorHex = colorHex
+            )
+            repository.insertCategory(cat)
+        }
+    }
+
+    fun deleteCategory(category: CategoryItem) {
+        viewModelScope.launch {
+            repository.deleteCategory(category)
+        }
+    }
+
     private fun generateChartDataPoints(
         transactions: List<TransactionItem>,
         timeframe: TimeframeFilter
@@ -319,6 +419,20 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         val result = mutableListOf<CashflowDataPoint>()
 
         when (timeframe) {
+            TimeframeFilter.DAILY -> {
+                val dayCal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val start = dayCal.timeInMillis
+                val end = start + 86400000L - 1
+                val dayTx = transactions.filter { it.timestamp in start..end }
+                val inc = dayTx.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+                val exp = dayTx.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+                result.add(CashflowDataPoint("Hari Ini", inc, exp, start))
+            }
             TimeframeFilter.WEEKLY -> {
                 // Last 7 days
                 val dayFormat = java.text.SimpleDateFormat("EEE", java.util.Locale("id", "ID"))
@@ -406,5 +520,19 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             }
         }
         return result
+    }
+
+    companion object {
+        fun restoreDatabaseInTransaction(database: FinSmartDatabase, payload: BackupDataPayload) {
+            database.clearAllTables()
+            kotlinx.coroutines.runBlocking {
+                database.walletDao().insertWallets(payload.wallets)
+                database.categoryDao().insertCategories(payload.categories)
+                database.userDao().insertUsers(payload.users)
+                payload.transactions.forEach { database.transactionDao().insertTransaction(it) }
+                payload.splitBillHistory.forEach { database.splitBillHistoryDao().insertSplitBillHistory(it) }
+                payload.budgetLimits.forEach { database.budgetLimitDao().insertBudgetLimit(it) }
+            }
+        }
     }
 }

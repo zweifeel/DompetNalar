@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Lock
@@ -58,6 +59,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -118,6 +121,8 @@ data class ChatMessage(
 fun AiChatScreen(
     wallets: List<Wallet>,
     categories: List<CategoryItem>,
+    allTransactions: List<com.example.data.model.TransactionItem>,
+    budgetLimits: List<com.example.data.model.BudgetLimitItem>,
     accountMode: AccountMode,
     isUnlocked: Boolean,
     onTriggerPaywall: () -> Unit,
@@ -143,6 +148,7 @@ fun AiChatScreen(
 
     var inputText by remember { mutableStateOf("") }
     var isProcessing by remember { mutableStateOf(false) }
+    var chatMode by remember { mutableStateOf(0) } // 0 = Catat Transaksi, 1 = Konsultan AI
 
     val messages = remember {
         mutableStateListOf(
@@ -193,9 +199,12 @@ fun AiChatScreen(
                     inputText = ""
                     sendMessage(
                         prompt = promptToSend,
+                        chatMode = chatMode,
                         messages = messages,
                         wallets = wallets,
                         categories = categories,
+                        allTransactions = allTransactions,
+                        budgetLimits = budgetLimits,
                         onProcessingChange = { isProcessing = it },
                         coroutineScope = coroutineScope,
                         onCompleteScroll = {
@@ -210,13 +219,22 @@ fun AiChatScreen(
         }
     }
 
-    val promptSuggestions = listOf(
-        "🍜 Makan siang 35rb GoPay",
-        "⛽ Beli bensin 50rb Tunai",
-        "🛒 Belanja Indomaret 85rb BCA",
-        "💼 Gaji Pokok 7.500.000 BCA",
-        "↔️ Transfer 150rb BCA ke DANA"
-    )
+    val promptSuggestions = if (chatMode == 0) {
+        listOf(
+            "🍜 Makan siang 35rb GoPay",
+            "⛽ Beli bensin 50rb Tunai",
+            "🛒 Belanja Indomaret 85rb BCA",
+            "💼 Gaji Pokok 7.500.000 BCA",
+            "↔️ Transfer 150rb BCA ke DANA"
+        )
+    } else {
+        listOf(
+            "📈 Bagaimana kondisi keuanganku bulan ini?",
+            "🍔 Berikan tips hemat makan luar",
+            "📊 Analisis kategori pengeluaran terbanyakku",
+            "🛡️ Apakah anggaran bulan ini aman?"
+        )
+    }
 
     Column(
         modifier = modifier
@@ -262,7 +280,7 @@ fun AiChatScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "FinSmart AI Chat",
+                                text = if (chatMode == 0) "FinSmart AI Chat" else "Konsultan AI FinSmart",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -282,7 +300,7 @@ fun AiChatScreen(
                             }
                         }
                         Text(
-                            text = "Mode ${accountMode.displayName} • Siap catat otomatis",
+                            text = if (chatMode == 0) "Mode ${accountMode.displayName} • Siap catat otomatis" else "FinSmart AI Health Advisor",
                             style = MaterialTheme.typography.bodySmall,
                             color = IncomeGreen
                         )
@@ -292,12 +310,21 @@ fun AiChatScreen(
                 IconButton(
                     onClick = {
                         messages.clear()
-                        messages.add(
-                            ChatMessage(
-                                sender = ChatSender.AI,
-                                text = "Riwayat chat telah dibersihkan. Silakan ketik transaksi baru Anda!"
+                        if (chatMode == 0) {
+                            messages.add(
+                                ChatMessage(
+                                    sender = ChatSender.AI,
+                                    text = "Riwayat chat telah dibersihkan. Silakan ketik transaksi baru Anda!"
+                                )
                             )
-                        )
+                        } else {
+                            messages.add(
+                                ChatMessage(
+                                    sender = ChatSender.AI,
+                                    text = "Riwayat konsultasi dibersihkan. Silakan ajukan pertanyaan keuangan Anda!"
+                                )
+                            )
+                        }
                     }
                 ) {
                     Icon(
@@ -307,6 +334,44 @@ fun AiChatScreen(
                     )
                 }
             }
+        }
+
+        // Two-Mode Selection Tabs
+        TabRow(
+            selectedTabIndex = chatMode,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
+        ) {
+            Tab(
+                selected = chatMode == 0,
+                onClick = {
+                    chatMode = 0
+                    messages.clear()
+                    messages.add(
+                        ChatMessage(
+                            sender = ChatSender.AI,
+                            text = "Halo! Saya FinSmart AI Assistant.\nKetik atau tekan mikrofon untuk mencatat transaksi secara otomatis.\n\nContoh:\n• 'Makan siang 35 ribu pakai GoPay'\n• 'Beli bensin 50rb tunai #transportasi'\n• 'Gaji bulanan 6.500.000 BCA'\n• 'Transfer 200rb dari BCA ke DANA'"
+                        )
+                    )
+                },
+                text = { Text("Catat Transaksi", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                modifier = Modifier.testTag("tab_chat_catat")
+            )
+            Tab(
+                selected = chatMode == 1,
+                onClick = {
+                    chatMode = 1
+                    messages.clear()
+                    messages.add(
+                        ChatMessage(
+                            sender = ChatSender.AI,
+                            text = "Halo! Saya Konsultan Finansial AI Personal Anda 🧠.\n\nSaya dapat menganalisis data pengeluaran bulanan Anda, melacak batas anggaran (budget limits), menghitung rasio tabungan, dan memberikan saran penghematan konkret yang dipersonalisasi.\n\nSilakan pilih salah satu pertanyaan cepat di bawah atau ajukan pertanyaan Anda sendiri!"
+                        )
+                    )
+                },
+                text = { Text("Konsultan AI", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                modifier = Modifier.testTag("tab_chat_advisor")
+            )
         }
 
         // Paywall Banner if Free User Trial Expired
@@ -392,7 +457,7 @@ fun AiChatScreen(
                                 matchedSource.name,
                                 matchedTarget?.id,
                                 matchedTarget?.name,
-                                System.currentTimeMillis(),
+                                parsed.timestamp,
                                 parsed.note,
                                 parsed.tags
                             )
@@ -420,7 +485,7 @@ fun AiChatScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "FinSmart AI sedang mengekstrak data transaksi...",
+                            text = if (chatMode == 0) "FinSmart AI sedang mengekstrak data transaksi..." else "FinSmart AI sedang menganalisis keuangan Anda...",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -518,9 +583,12 @@ fun AiChatScreen(
                         }
                         sendMessage(
                             prompt = prompt.substringAfter(" "),
+                            chatMode = chatMode,
                             messages = messages,
                             wallets = wallets,
                             categories = categories,
+                            allTransactions = allTransactions,
+                            budgetLimits = budgetLimits,
                             onProcessingChange = { isProcessing = it },
                             coroutineScope = coroutineScope,
                             onCompleteScroll = {
@@ -614,9 +682,12 @@ fun AiChatScreen(
                             inputText = ""
                             sendMessage(
                                 prompt = promptToSend,
+                                chatMode = chatMode,
                                 messages = messages,
                                 wallets = wallets,
                                 categories = categories,
+                                allTransactions = allTransactions,
+                                budgetLimits = budgetLimits,
                                 onProcessingChange = { isProcessing = it },
                                 coroutineScope = coroutineScope,
                                 onCompleteScroll = {
@@ -650,9 +721,12 @@ fun AiChatScreen(
 
 private fun sendMessage(
     prompt: String,
+    chatMode: Int,
     messages: MutableList<ChatMessage>,
     wallets: List<Wallet>,
     categories: List<CategoryItem>,
+    allTransactions: List<com.example.data.model.TransactionItem>,
+    budgetLimits: List<com.example.data.model.BudgetLimitItem>,
     onProcessingChange: (Boolean) -> Unit,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
     onCompleteScroll: () -> Unit
@@ -667,22 +741,37 @@ private fun sendMessage(
     onCompleteScroll()
     onProcessingChange(true)
 
-    // 2. Process with Gemini / NLP Parser in Coroutine
+    // 2. Process in Coroutine
     coroutineScope.launch {
         try {
-            val parsedResult = ExpenseAiParser.parseExpenseMessage(
-                userMessage = prompt,
-                availableWallets = wallets,
-                availableCategories = categories
-            )
-
-            messages.add(
-                ChatMessage(
-                    sender = ChatSender.AI,
-                    text = parsedResult.aiExplanation,
-                    parsedTransaction = parsedResult
+            if (chatMode == 0) {
+                val parsedResult = ExpenseAiParser.parseExpenseMessage(
+                    userMessage = prompt,
+                    availableWallets = wallets,
+                    availableCategories = categories
                 )
-            )
+
+                messages.add(
+                    ChatMessage(
+                        sender = ChatSender.AI,
+                        text = parsedResult.aiExplanation,
+                        parsedTransaction = parsedResult
+                    )
+                )
+            } else {
+                val responseText = com.example.data.ai.AdvisorAiService.getAdvisorResponse(
+                    userMessage = prompt,
+                    transactions = allTransactions,
+                    budgetLimits = budgetLimits
+                )
+
+                messages.add(
+                    ChatMessage(
+                        sender = ChatSender.AI,
+                        text = responseText
+                    )
+                )
+            }
         } catch (e: Exception) {
             messages.add(
                 ChatMessage(
@@ -847,7 +936,8 @@ fun ChatBubble(
                         // Wallet & Target Info
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "Dompet: ${parsed.suggestedWalletName}" +
@@ -862,6 +952,46 @@ fun ChatBubble(
                                     color = FinSmartPrimary,
                                     fontWeight = FontWeight.SemiBold
                                 )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Transaction Date & Backdate Indicator
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = null,
+                                    tint = if (parsed.detectedDateText != null) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = CurrencyFormatter.formatDate(parsed.timestamp),
+                                    fontSize = 11.sp,
+                                    fontWeight = if (parsed.detectedDateText != null) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (parsed.detectedDateText != null) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            if (parsed.detectedDateText != null) {
+                                Surface(
+                                    color = FinSmartPrimary.copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "📅 ${parsed.detectedDateText}",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = FinSmartPrimary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
                         }
 

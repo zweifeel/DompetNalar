@@ -20,25 +20,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
@@ -48,6 +56,8 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.AccountMode
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.data.model.User
+import com.example.ui.components.AdMobBanner
 import com.example.ui.components.CashflowChartCard
 import com.example.ui.components.FinSmartIcons
 import com.example.ui.theme.ExpenseRed
@@ -59,6 +69,12 @@ import com.example.ui.viewmodel.TimeframeFilter
 import com.example.util.CurrencyFormatter
 import kotlin.math.roundToInt
 
+enum class CategoryChartMode {
+    DONUT,
+    BAR,
+    LINE
+}
+
 @Composable
 fun AnalyticsScreen(
     transactions: List<TransactionItem>,
@@ -67,8 +83,10 @@ fun AnalyticsScreen(
     onTimeframeSelected: (TimeframeFilter) -> Unit,
     accountMode: AccountMode,
     isPrivacyMode: Boolean,
+    currentUser: User? = null,
     modifier: Modifier = Modifier
 ) {
+    var categoryChartMode by remember { mutableStateOf(CategoryChartMode.DONUT) }
     val totalIncome = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
     val totalExpense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
     val netSavings = totalIncome - totalExpense
@@ -227,12 +245,80 @@ fun AnalyticsScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Text(
-                        text = "Proporsi Pengeluaran per Kategori",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Proporsi Pengeluaran",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        // Mode Selector: Donut, Bar, Line
+                        Row(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(2.dp)
+                        ) {
+                            IconButton(
+                                onClick = { categoryChartMode = CategoryChartMode.DONUT },
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .background(
+                                        if (categoryChartMode == CategoryChartMode.DONUT) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .testTag("btn_category_chart_donut")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PieChart,
+                                    contentDescription = "Donut / Pie Chart",
+                                    tint = if (categoryChartMode == CategoryChartMode.DONUT) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = { categoryChartMode = CategoryChartMode.BAR },
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .background(
+                                        if (categoryChartMode == CategoryChartMode.BAR) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .testTag("btn_category_chart_bar")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.BarChart,
+                                    contentDescription = "Bar Chart",
+                                    tint = if (categoryChartMode == CategoryChartMode.BAR) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = { categoryChartMode = CategoryChartMode.LINE },
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .background(
+                                        if (categoryChartMode == CategoryChartMode.LINE) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .testTag("btn_category_chart_line")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ShowChart,
+                                    contentDescription = "Line Chart",
+                                    tint = if (categoryChartMode == CategoryChartMode.LINE) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(14.dp))
 
                     if (expenseCategories.isEmpty() || totalExpense == 0.0) {
@@ -243,36 +329,144 @@ fun AnalyticsScreen(
                             modifier = Modifier.padding(vertical = 12.dp)
                         )
                     } else {
-                        // Donut Graphic
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Canvas(modifier = Modifier.size(130.dp)) {
-                                var currentAngle = -90f
-                                expenseCategories.forEachIndexed { index, (_, amount) ->
-                                    val sweep = ((amount / totalExpense) * 360f * donutAnim.value).toFloat()
-                                    val color = categoryColors[index % categoryColors.size]
-                                    drawArc(
-                                        color = color,
-                                        startAngle = currentAngle,
-                                        sweepAngle = sweep,
-                                        useCenter = false,
-                                        style = Stroke(width = 22.dp.toPx())
-                                    )
-                                    currentAngle += sweep
+                        when (categoryChartMode) {
+                            CategoryChartMode.DONUT -> {
+                                // Donut Graphic
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(160.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Canvas(modifier = Modifier.size(130.dp)) {
+                                        var currentAngle = -90f
+                                        expenseCategories.forEachIndexed { index, (_, amount) ->
+                                            val sweep = ((amount / totalExpense) * 360f * donutAnim.value).toFloat()
+                                            val color = categoryColors[index % categoryColors.size]
+                                            drawArc(
+                                                color = color,
+                                                startAngle = currentAngle,
+                                                sweepAngle = sweep,
+                                                useCenter = false,
+                                                style = Stroke(width = 22.dp.toPx())
+                                            )
+                                            currentAngle += sweep
+                                        }
+                                    }
+
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Total", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatCompactRupiah(totalExpense),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                    }
                                 }
                             }
+                            CategoryChartMode.BAR -> {
+                                // Horizontal Category Bars
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    expenseCategories.take(5).forEachIndexed { index, (catName, amount) ->
+                                        val color = categoryColors[index % categoryColors.size]
+                                        val fraction = if (totalExpense > 0) ((amount / totalExpense).toFloat() * donutAnim.value).coerceIn(0f, 1f) else 0f
+                                        val percent = if (totalExpense > 0) ((amount / totalExpense) * 100).roundToInt() else 0
+                                        Column {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(catName, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                                Text("$percent% • ${CurrencyFormatter.formatRupiah(amount)}", fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold)
+                                            }
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(8.dp)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth(fraction)
+                                                        .height(8.dp)
+                                                        .clip(RoundedCornerShape(4.dp))
+                                                        .background(color)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            CategoryChartMode.LINE -> {
+                                // Line / Trend chart of Category Distribution
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(160.dp)
+                                        .padding(vertical = 8.dp)
+                                ) {
+                                    Canvas(modifier = Modifier.fillMaxSize()) {
+                                        val width = size.width
+                                        val height = size.height - 20.dp.toPx()
+                                        val count = expenseCategories.size
+                                        if (count > 0) {
+                                            val maxCat = expenseCategories.maxOf { it.second }.coerceAtLeast(1.0)
+                                            val stepX = if (count > 1) width / (count - 1).toFloat() else width / 2f
 
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Total", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatCompactRupiah(totalExpense),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
+                                            val linePath = Path()
+                                            val areaPath = Path()
+
+                                            expenseCategories.forEachIndexed { i, (_, amt) ->
+                                                val x = if (count > 1) i * stepX else width / 2f
+                                                val y = height - (amt / maxCat * height * donutAnim.value).toFloat()
+                                                if (i == 0) {
+                                                    linePath.moveTo(x, y)
+                                                    areaPath.moveTo(x, height)
+                                                    areaPath.lineTo(x, y)
+                                                } else {
+                                                    val prevX = (i - 1) * stepX
+                                                    val prevAmt = expenseCategories[i - 1].second
+                                                    val prevY = height - (prevAmt / maxCat * height * donutAnim.value).toFloat()
+                                                    val cx = (prevX + x) / 2f
+                                                    linePath.cubicTo(cx, prevY, cx, y, x, y)
+                                                    areaPath.cubicTo(cx, prevY, cx, y, x, y)
+                                                }
+                                                if (i == count - 1) {
+                                                    areaPath.lineTo(x, height)
+                                                    areaPath.close()
+                                                }
+                                            }
+
+                                            drawPath(
+                                                path = areaPath,
+                                                brush = Brush.verticalGradient(
+                                                    colors = listOf(FinSmartPrimary.copy(alpha = 0.3f), Color.Transparent)
+                                                )
+                                            )
+                                            drawPath(
+                                                path = linePath,
+                                                color = FinSmartPrimary,
+                                                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                                            )
+
+                                            // Draw nodes
+                                            expenseCategories.forEachIndexed { i, (_, amt) ->
+                                                val x = if (count > 1) i * stepX else width / 2f
+                                                val y = height - (amt / maxCat * height * donutAnim.value).toFloat()
+                                                val color = categoryColors[i % categoryColors.size]
+                                                drawCircle(color = color, radius = 5.dp.toPx(), center = Offset(x, y))
+                                                drawCircle(color = Color.White, radius = 2.5.dp.toPx(), center = Offset(x, y))
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -321,6 +515,16 @@ fun AnalyticsScreen(
                     }
                 }
             }
+        }
+
+        // AdMob Banner Ad at bottom for Free users
+        item {
+            AdMobBanner(
+                user = currentUser,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+            )
         }
     }
 }

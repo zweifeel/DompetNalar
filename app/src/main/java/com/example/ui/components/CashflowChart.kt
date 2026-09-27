@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,7 +65,8 @@ import kotlin.math.max
 
 enum class ChartType {
     BAR,
-    LINE
+    LINE,
+    PIE
 }
 
 @Composable
@@ -116,7 +118,7 @@ fun CashflowChartCard(
                     )
                 }
 
-                // Switch Bar vs Line chart
+                // Switch Bar vs Line vs Pie chart
                 Row(
                     modifier = Modifier
                         .background(
@@ -133,6 +135,7 @@ fun CashflowChartCard(
                                 if (chartType == ChartType.BAR) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 RoundedCornerShape(10.dp)
                             )
+                            .testTag("btn_chart_bar")
                     ) {
                         Icon(
                             imageVector = Icons.Default.BarChart,
@@ -149,11 +152,29 @@ fun CashflowChartCard(
                                 if (chartType == ChartType.LINE) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 RoundedCornerShape(10.dp)
                             )
+                            .testTag("btn_chart_line")
                     ) {
                         Icon(
                             imageVector = Icons.Default.ShowChart,
                             contentDescription = "Line Chart",
                             tint = if (chartType == ChartType.LINE) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { chartType = ChartType.PIE },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(
+                                if (chartType == ChartType.PIE) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                RoundedCornerShape(10.dp)
+                            )
+                            .testTag("btn_chart_pie")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PieChart,
+                            contentDescription = "Pie / Donut Chart",
+                            tint = if (chartType == ChartType.PIE) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -168,6 +189,7 @@ fun CashflowChartCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
+                    TimeframeFilter.DAILY,
                     TimeframeFilter.WEEKLY,
                     TimeframeFilter.MONTHLY,
                     TimeframeFilter.YEARLY
@@ -274,6 +296,102 @@ fun CashflowChartCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
+                }
+            } else if (chartType == ChartType.PIE) {
+                val totalIncome = dataPoints.sumOf { it.income }
+                val totalExpense = dataPoints.sumOf { it.expense }
+                val totalFlow = totalIncome + totalExpense
+
+                if (totalFlow == 0.0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Belum ada nilai arus kas pada periode ini.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    val incomePercent = ((totalIncome / totalFlow) * 100).toInt()
+                    val expensePercent = 100 - incomePercent
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Donut Canvas
+                        Box(
+                            modifier = Modifier.size(140.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(modifier = Modifier.size(130.dp)) {
+                                val incomeSweep = ((totalIncome / totalFlow) * 360f * animProgress.value).toFloat()
+                                val expenseSweep = ((totalExpense / totalFlow) * 360f * animProgress.value).toFloat()
+
+                                // Draw Income arc
+                                drawArc(
+                                    color = IncomeGreen,
+                                    startAngle = -90f,
+                                    sweepAngle = incomeSweep,
+                                    useCenter = false,
+                                    style = Stroke(width = 20.dp.toPx(), cap = StrokeCap.Round)
+                                )
+
+                                // Draw Expense arc
+                                drawArc(
+                                    color = ExpenseRed,
+                                    startAngle = -90f + incomeSweep,
+                                    sweepAngle = expenseSweep,
+                                    useCenter = false,
+                                    style = Stroke(width = 20.dp.toPx(), cap = StrokeCap.Round)
+                                )
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                val diff = totalIncome - totalExpense
+                                Text(
+                                    text = if (diff >= 0) "Surplus" else "Defisit",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (diff >= 0) IncomeGreen else ExpenseRed
+                                )
+                                Text(
+                                    text = CurrencyFormatter.formatCompactRupiah(diff),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Percentages and Totals Column
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(12.dp).background(IncomeGreen, CircleShape))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(text = "Pemasukan ($incomePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = IncomeGreen)
+                                    Text(text = CurrencyFormatter.formatRupiah(totalIncome), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(12.dp).background(ExpenseRed, CircleShape))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(text = "Pengeluaran ($expensePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ExpenseRed)
+                                    Text(text = CurrencyFormatter.formatRupiah(totalExpense), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 val maxVal = max(

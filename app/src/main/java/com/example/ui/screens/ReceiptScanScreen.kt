@@ -240,7 +240,7 @@ fun ReceiptScanScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Scan Nota AI",
+                            text = "Scan Nota",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
@@ -839,7 +839,7 @@ fun ReceiptScanScreen(
                                 ) {
                                     Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Split Bill AI", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("Split Bill", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             }
                         }

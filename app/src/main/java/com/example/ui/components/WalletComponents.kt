@@ -21,12 +21,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,6 +67,54 @@ import com.example.data.model.WalletType
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.FinSmartPrimary
 import com.example.util.CurrencyFormatter
+import com.example.util.WalletBrandHelper
+import com.example.util.WalletBrandInfo
+
+@Composable
+fun WalletBrandLogoIcon(
+    brandInfo: WalletBrandInfo,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Color.White.copy(alpha = 0.22f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.4f)),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .background(Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = when (brandInfo.badgeLabel) {
+                        "GOPAY", "DANA", "OVO", "LINKAJA" -> Icons.Default.AccountBalanceWallet
+                        "SHOPEE" -> Icons.Default.ShoppingBag
+                        "CASH" -> Icons.Default.Payments
+                        "INVEST" -> Icons.Default.TrendingUp
+                        else -> Icons.Default.AccountBalance
+                    },
+                    contentDescription = brandInfo.brandName,
+                    tint = brandInfo.brandColor,
+                    modifier = Modifier.size(10.dp)
+                )
+            }
+            Text(
+                text = brandInfo.badgeLabel,
+                color = Color.White,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 9.sp,
+                letterSpacing = 0.5.sp
+            )
+        }
+    }
+}
 
 @Composable
 fun WalletCard(
@@ -76,10 +128,15 @@ fun WalletCard(
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
+    val brandInfo = WalletBrandHelper.detectBrand(wallet.name)
     val baseColor = try {
-        Color(android.graphics.Color.parseColor(wallet.colorHex))
+        if (wallet.colorHex != "#0B57D0") {
+            Color(android.graphics.Color.parseColor(wallet.colorHex))
+        } else {
+            brandInfo.brandColor
+        }
     } catch (e: Exception) {
-        FinSmartIcons.getWalletPresetColor(wallet.iconName)
+        brandInfo.brandColor
     }
 
     Card(
@@ -103,7 +160,7 @@ fun WalletCard(
                     brush = Brush.linearGradient(
                         colors = listOf(
                             baseColor,
-                            baseColor.copy(alpha = 0.8f),
+                            baseColor.copy(alpha = 0.85f),
                             Color(0xFF0F172A)
                         )
                     )
@@ -114,27 +171,15 @@ fun WalletCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top Row: Type Tag, Wallet Name & More Menu
+                // Top Row: Brand Badge & Logo Icon, Wallet Name & More Menu
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = FinSmartIcons.getWalletIcon(wallet.iconName),
-                                contentDescription = wallet.name,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        WalletBrandLogoIcon(brandInfo = brandInfo)
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = wallet.name,
                             color = Color.White,
