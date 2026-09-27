@@ -23,31 +23,15 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle Cache
-        uses: gradle/actions/setup-gradle@v3
+        uses: actions/setup-gradle@v3
 
-      - name: Extract Version Info
-        id: version_step
-        run: |
-          VERSION_NAME="1.0.3"
-          VERSION_CODE="3"
-          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_OUTPUT
-          echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_OUTPUT
-          echo "Building FinSmart v${VERSION_NAME} (Build ${VERSION_CODE})"
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
 
       - name: Build Release APK
-        run: |
-          gradle assembleRelease || gradle assembleDebug
-
-      - name: Rename APK to Auto-Version Format
-        run: |
-          mkdir -p build-output
-          find app/build/outputs/apk/ -name "*.apk" -exec cp {} build-output/FinSmart_v${{ steps.version_step.outputs.VERSION_NAME }}.apk \;
-          echo "Generated APK: build-output/FinSmart_v${{ steps.version_step.outputs.VERSION_NAME }}.apk"
+        run: ./gradlew assembleRelease -x test --no-daemon
 
       - name: Upload APK to Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: FinSmart-APK
