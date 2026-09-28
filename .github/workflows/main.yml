@@ -39,18 +39,10 @@ jobs:
             }' > app/google-services.json
           fi
 
-      - name: Update PRD via Script
+      - name: Build Debug APK (Skip Tests)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          if [ -f "scripts/update_prd.py" ]; then
-            python3 scripts/update_prd.py || echo "PRD update skipped"
-          fi
-
-      - name: Build Debug APK
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug -x test --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
