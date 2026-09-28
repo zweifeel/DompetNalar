@@ -22,8 +22,8 @@ async function run() {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Gunakan nama model resmi standar tanpa '-latest'
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  // Gunakan model gemini-3.8-flash sesuai instruksi error log
+  const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
   const prompt = `
 Kamu adalah seorang Technical Product Manager untuk aplikasi Android FinSmart.
