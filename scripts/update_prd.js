@@ -21,13 +21,6 @@ async function run() {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  
-  // Berfokus pada model resmi terbaru yang disyaratkan Google API
-  const modelName = 'gemini-3.8-flash';
-  const model = genAI.getGenerativeModel({ 
-    model: modelName,
-    generationConfig: { maxOutputTokens: 8192 }
-  });
 
   const prompt = `
 Kamu adalah seorang Technical Product Manager senior untuk aplikasi Android FinSmart.
@@ -62,30 +55,42 @@ Dokumen harus mencakup seluruh bab berikut secara detail:
 3. Kembalikan HANYA dokumen Markdown PRD tanpa kalimat pembuka atau penutup tambahan.
 `;
 
+  // --- BAGIAN FALLBACK & RETRY (YANG DIGANTI) ---
+  const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
   let responseText = null;
-  const maxAttempts = 5;
-  let waitTime = 5000; // Mulai dari jeda 5 detik
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      console.log(`Mengirim permintaan ke Gemini API (${modelName}, percobaan ${attempt}/${maxAttempts})...`);
-      const result = await model.generateContent(prompt);
-      responseText = result.response.text();
-      if (responseText) break;
-    } catch (err) {
-      console.warn(`Peringatan (percobaan ${attempt}): ${err.message}`);
-      if (attempt < maxAttempts) {
-        console.log(`Menunggu ${waitTime / 1000} detik sebelum mencoba lagi...`);
-        await delay(waitTime);
-        waitTime *= 2; // Menggandakan waktu tunggu jika masih 503 (5s, 10s, 20s, 40s)
+  for (const modelName of modelsToTry) {
+    if (responseText) break;
+    console.log(`Mencoba model: ${modelName}...`);
+    
+    const model = genAI.getGenerativeModel({ 
+      model: modelName,
+      generationConfig: { maxOutputTokens: 8192 }
+    });
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Mengirim permintaan (${modelName}, percobaan ${attempt})...`);
+        const result = await model.generateContent(prompt);
+        responseText = result.response.text();
+        if (responseText) {
+          console.log(`Berhasil mendapatkan respon dari model ${modelName}!`);
+          break;
+        }
+      } catch (err) {
+        console.warn(`Peringatan (${modelName} percobaan ${attempt}): ${err.message}`);
+        if (attempt < 3) {
+          await delay(3000);
+        }
       }
     }
   }
 
   if (!responseText) {
-    console.error('Server Gemini API masih sibuk (503). Silakan coba jalankan ulang workflow dalam beberapa menit.');
+    console.error('Semua model Gemini sedang sibuk. Silakan coba lagi beberapa saat lagi.');
     process.exit(1);
   }
+  // --- AKHIR BAGIAN FALLBACK & RETRY ---
 
   // Bersihkan pembungkus format markdown jika ada
   responseText = responseText.replace(/^```markdown\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
