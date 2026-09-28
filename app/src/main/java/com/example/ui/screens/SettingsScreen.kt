@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Diamond
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
@@ -138,6 +139,8 @@ fun SettingsScreen(
     profilePhotoUri: String? = null,
     onAvatarClick: () -> Unit = {},
     dailyStreak: Int = 1,
+    onOpenFeedback: () -> Unit = {},
+    onOpenDevFeedbackViewer: () -> Unit = {},
     updateViewModel: UpdateViewModel = viewModel(),
     masterDevViewModel: MasterDevViewModel = viewModel(),
     modifier: Modifier = Modifier
@@ -617,6 +620,15 @@ fun SettingsScreen(
                     Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     SettingsRowItem(
+                        icon = Icons.Default.Feedback,
+                        title = "Kirim Masukan & Saran (Feedback)",
+                        subtitle = "Saran fitur, kritik, atau laporkan kendala ke developer",
+                        onClick = onOpenFeedback
+                    )
+
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    SettingsRowItem(
                         icon = Icons.Default.Print,
                         title = "Ekspor Laporan Keuangan",
                         subtitle = "PDF formal atau Excel Spreadsheet (.csv)",
@@ -721,6 +733,20 @@ fun SettingsScreen(
                             Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Buka Master Dev User Manager", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = onOpenDevFeedbackViewer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("btn_dev_feedback_viewer"),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Feedback, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Lihat Feedback Pengguna (Dev Viewer)", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                         }
                     }
                 }

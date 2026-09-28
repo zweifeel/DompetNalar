@@ -733,19 +733,36 @@ fun ReceiptScanScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Total Akhir:",
+                                        text = "Total Terhitung:",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
+                                        fontSize = 13.sp,
                                         color = FinSmartPrimary
                                     )
                                     Text(
                                         text = CurrencyFormatter.formatRupiah(editTotalAmount),
                                         fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 18.sp,
+                                        fontSize = 16.sp,
                                         color = FinSmartPrimary
                                     )
                                 }
                             }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            OutlinedTextField(
+                                value = if (editTotalAmount > 0) editTotalAmount.toLong().toString() else "",
+                                onValueChange = { input ->
+                                    val cleaned = input.filter { it.isDigit() }
+                                    editTotalAmount = cleaned.toDoubleOrNull() ?: 0.0
+                                },
+                                label = { Text("Total Akhir Transaksi (Bisa diedit/ketik ulang)") },
+                                placeholder = { Text("Rp 0") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("input_edit_receipt_total"),
+                                shape = RoundedCornerShape(12.dp)
+                            )
 
                             Spacer(modifier = Modifier.height(16.dp))
 

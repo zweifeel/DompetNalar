@@ -67,12 +67,15 @@ import com.example.ui.components.WalletDialog
 import com.example.ui.screens.AiChatScreen
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.DashboardScreen
+import com.example.ui.screens.DevFeedbackViewerScreen
+import com.example.ui.screens.ExportScreen
+import com.example.ui.screens.FeedbackScreen
 import com.example.ui.screens.ReceiptScanScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.SplitBillScreen
 import com.example.ui.screens.TransactionsScreen
 import androidx.compose.material.icons.filled.Description
-import com.example.ui.screens.ExportScreen
+import androidx.compose.material.icons.filled.Feedback
 import com.example.ui.screens.WalletsScreen
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.viewmodel.AuthViewModel
@@ -88,7 +91,9 @@ enum class NavigationScreen(val label: String, val icon: ImageVector, val isBott
     SCAN_RECEIPT("Scan Nota", Icons.Default.CameraAlt, false),
     SPLIT_BILL("Split Bill", Icons.Default.Group, false),
     BUDGET("Anggaran", Icons.Default.AccountBalanceWallet, false),
-    EXPORT_REPORT("Export Laporan", Icons.Default.Description, false)
+    EXPORT_REPORT("Export Laporan", Icons.Default.Description, false),
+    FEEDBACK("Feedback", Icons.Default.Feedback, false),
+    DEV_FEEDBACK_VIEWER("Feedback Viewer", Icons.Default.Feedback, false)
 }
 
 @Composable
@@ -469,7 +474,9 @@ fun FinSmartApp(
                         onAvatarClick = {
                             photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         },
-                        dailyStreak = gamificationState.dailyStreak
+                        dailyStreak = gamificationState.dailyStreak,
+                        onOpenFeedback = { currentScreen = NavigationScreen.FEEDBACK },
+                        onOpenDevFeedbackViewer = { currentScreen = NavigationScreen.DEV_FEEDBACK_VIEWER }
                     )
                 }
 
@@ -479,6 +486,19 @@ fun FinSmartApp(
                         currentAccountMode = accountMode,
                         username = currentUser?.username ?: "Lukas",
                         onNavigateBack = { currentScreen = NavigationScreen.DASHBOARD }
+                    )
+                }
+
+                NavigationScreen.FEEDBACK -> {
+                    FeedbackScreen(
+                        currentUser = currentUser,
+                        onNavigateBack = { currentScreen = NavigationScreen.SETTINGS }
+                    )
+                }
+
+                NavigationScreen.DEV_FEEDBACK_VIEWER -> {
+                    DevFeedbackViewerScreen(
+                        onNavigateBack = { currentScreen = NavigationScreen.SETTINGS }
                     )
                 }
             }

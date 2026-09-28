@@ -97,7 +97,7 @@ fun TransactionsScreen(
             start = 16.dp,
             end = 16.dp,
             top = 16.dp,
-            bottom = 120.dp
+            bottom = 140.dp
         )
     ) {
         // Header

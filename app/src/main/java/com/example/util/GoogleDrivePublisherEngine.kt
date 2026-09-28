@@ -35,12 +35,18 @@ object GoogleDrivePublisherEngine {
                 appUpdatesDir.mkdirs()
             }
 
+            val publicRootUpdatesDir = File(context.filesDir, "Google_Drive_Root/FinSmart/App Updates")
+            if (!publicRootUpdatesDir.exists()) {
+                publicRootUpdatesDir.mkdirs()
+            }
+
             // Step 2: Process and upload release APK file
             onProgress(0.35f)
             delay(200)
 
             val apkFileName = "FinSmart_v$targetVersionName.apk"
             val targetApkFile = File(appUpdatesDir, apkFileName)
+            val publicRootApkFile = File(publicRootUpdatesDir, apkFileName)
 
             if (apkUri != null) {
                 try {
@@ -49,12 +55,17 @@ object GoogleDrivePublisherEngine {
                             input.copyTo(output)
                         }
                     }
+                    if (targetApkFile.exists()) {
+                        targetApkFile.copyTo(publicRootApkFile, overwrite = true)
+                    }
                 } catch (e: Exception) {
                     Log.w(TAG, "Could not copy provided APK URI, generating package placeholder: ${e.message}")
                     targetApkFile.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
+                    publicRootApkFile.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
                 }
             } else {
                 targetApkFile.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
+                publicRootApkFile.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
             }
 
             // Step 3: Generate version.json payload
@@ -77,6 +88,9 @@ object GoogleDrivePublisherEngine {
             val versionJsonString = GoogleDriveUpdateManager.serializeVersionJson(metadata)
             val versionJsonFile = File(appUpdatesDir, "version.json")
             versionJsonFile.writeText(versionJsonString)
+
+            val publicVersionJsonFile = File(publicRootUpdatesDir, "version.json")
+            publicVersionJsonFile.writeText(versionJsonString)
 
             // Step 4: Configure Google Drive Permissions (Anyone with link / Reader)
             onProgress(0.90f)

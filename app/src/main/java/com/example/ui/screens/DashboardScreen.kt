@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -399,14 +400,16 @@ fun DashboardScreen(
                                 }
                                 Surface(
                                     color = FinSmartPrimary,
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.wrapContentWidth()
                                 ) {
                                     Text(
                                         text = "OCR AI",
                                         color = Color.White,
-                                        fontSize = 8.sp,
+                                        fontSize = 9.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                     )
                                 }
                             }
@@ -456,14 +459,16 @@ fun DashboardScreen(
                                 }
                                 Surface(
                                     color = Color(0xFF10B981),
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.wrapContentWidth()
                                 ) {
                                     Text(
                                         text = "WA READY",
                                         color = Color.White,
-                                        fontSize = 8.sp,
+                                        fontSize = 9.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                     )
                                 }
                             }
@@ -513,14 +518,16 @@ fun DashboardScreen(
                                 }
                                 Surface(
                                     color = Color(0xFFF59E0B),
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.wrapContentWidth()
                                 ) {
                                     Text(
                                         text = "BUDGET",
                                         color = Color.White,
-                                        fontSize = 8.sp,
+                                        fontSize = 9.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                     )
                                 }
                             }
