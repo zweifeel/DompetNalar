@@ -6,14 +6,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.config.AppConfig
 import com.example.util.AppVersionMetadata
-import com.example.util.GoogleDriveUpdateManager
-import com.example.util.UpdateCheckResult
+import com.example.util.DriveUpdateRepository
+import com.example.util.UpdateStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class UpdateViewModel : ViewModel() {
+
+    private val _updateStatus = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
+    val updateStatus: StateFlow<UpdateStatus> = _updateStatus.asStateFlow()
 
     private val _isChecking = MutableStateFlow(false)
     val isChecking: StateFlow<Boolean> = _isChecking.asStateFlow()
@@ -33,30 +36,36 @@ class UpdateViewModel : ViewModel() {
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
-    fun checkForUpdates(context: Context, showFeedbackIfLatest: Boolean = true) {
+    fun checkForUpdates(context: Context, metadataUrl: String? = null, showFeedbackIfLatest: Boolean = true) {
         viewModelScope.launch {
             _isChecking.value = true
-            val result = GoogleDriveUpdateManager.checkVersionFromDrive(context)
+            _updateStatus.value = UpdateStatus.Checking
+
+            val status = DriveUpdateRepository.checkForUpdates(context, metadataUrl)
+            _updateStatus.value = status
             _isChecking.value = false
 
-            when (result) {
-                is UpdateCheckResult.UpdateAvailable -> {
-                    _updateMetadata.value = result.metadata
+            when (status) {
+                is UpdateStatus.UpdateAvailable -> {
+                    _updateMetadata.value = status.metadata
                     _isUpdateModalVisible.value = true
                 }
-                is UpdateCheckResult.UpToDate -> {
-                    _updateMetadata.value = result.metadata
+                is UpdateStatus.UpToDate -> {
+                    _updateMetadata.value = status.metadata
                     if (showFeedbackIfLatest) {
                         Toast.makeText(
                             context,
-                            "FinSmart Anda sudah menggunakan versi terbaru (v${AppConfig.APP_VERSION_NAME})",
+                            "FinSmart sudah versi terbaru (v${status.metadata.version_name})",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
-                is UpdateCheckResult.Error -> {
-                    Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                is UpdateStatus.Error -> {
+                    if (showFeedbackIfLatest) {
+                        Toast.makeText(context, status.message, Toast.LENGTH_LONG).show()
+                    }
                 }
+                else -> {}
             }
         }
     }
@@ -66,12 +75,15 @@ class UpdateViewModel : ViewModel() {
         viewModelScope.launch {
             _isDownloading.value = true
             _downloadProgress.value = 0f
+            _updateStatus.value = UpdateStatus.Downloading(0f)
 
-            val (success, message) = GoogleDriveUpdateManager.downloadAndInstallApk(
+            val (success, message) = DriveUpdateRepository.downloadAndInstallApk(
                 context = context,
-                metadata = metadata,
+                apkUrl = metadata.download_url,
+                versionName = metadata.version_name,
                 onProgress = { progress ->
                     _downloadProgress.value = progress
+                    _updateStatus.value = UpdateStatus.Downloading(progress)
                 }
             )
 
@@ -81,6 +93,8 @@ class UpdateViewModel : ViewModel() {
 
             if (success) {
                 _isUpdateModalVisible.value = false
+            } else {
+                _updateStatus.value = UpdateStatus.Error(message)
             }
         }
     }

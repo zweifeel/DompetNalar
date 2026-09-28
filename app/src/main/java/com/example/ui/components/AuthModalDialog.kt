@@ -185,7 +185,7 @@ fun AuthModalDialog(
                     value = identifier,
                     onValueChange = { identifier = it },
                     label = { Text("Email atau Username") },
-                    placeholder = { Text("misal: Lukas atau nama@email.com") },
+                    placeholder = { Text("misal: user123 atau nama@email.com") },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),

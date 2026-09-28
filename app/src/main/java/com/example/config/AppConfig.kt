@@ -32,6 +32,8 @@ object AppConfig {
 
     const val SUPPORT_EMAIL = "lunachroc07@gmail.com"
 
+    const val DEFAULT_METADATA_URL = "https://drive.google.com/uc?export=download&id=YOUR_METADATA_FILE_ID"
+
     // AdMob Configurations (Bab 9 & 13)
     const val ADMOB_APP_ID = "ca-app-pub-3940256099942544~3347511713"
     const val ADMOB_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"

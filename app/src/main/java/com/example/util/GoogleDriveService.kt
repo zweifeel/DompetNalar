@@ -4,23 +4,11 @@ import android.content.Context
 import android.util.Log
 import com.example.data.local.FinSmartDatabase
 import com.example.data.model.BackupDataPayload
-import com.example.data.model.Wallet
-import com.example.data.model.TransactionItem
-import com.example.data.model.CategoryItem
-import com.example.data.model.User
-import com.example.data.model.SplitBillHistoryItem
-import com.example.data.model.BudgetLimitItem
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -29,6 +17,11 @@ import java.util.Locale
 object GoogleDriveService {
     private const val TAG = "GoogleDriveService"
     private const val PREFS_NAME = "google_drive_prefs"
+
+    // Google Drive Public Scope Specification (DriveScopes.DRIVE_FILE)
+    const val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+    private const val PUBLIC_FOLDER_NAME = "FinSmart_Backups"
+    private const val BACKUP_FILE_NAME = "finsmart_backup.json"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -85,7 +78,8 @@ object GoogleDriveService {
     }
 
     /**
-     * Export all database contents, encrypt with AES-256, and upload to Google Drive.
+     * Export all database contents, encrypt with AES-256, and upload to Root Google Drive Public Folder ("FinSmart_Backups").
+     * Uses Scope DRIVE_FILE so files are visible & editable by user in Google Drive app/web.
      */
     suspend fun backupNow(context: Context, database: FinSmartDatabase): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
@@ -116,34 +110,29 @@ object GoogleDriveService {
             // 4. Encrypt using AES-256
             val encryptedData = EncryptionUtils.encrypt(jsonStr)
 
-            // 5. Save locally as fallback (Rule: Local Storage Fallback)
-            val timestampStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val filename = "FinSmart_Backup_$timestampStr.json"
-
-            val localBackupDir = File(context.filesDir, "FinSmart_App/Backups")
+            // 5. Save locally as fallback in public folder structure
+            val localBackupDir = File(context.filesDir, PUBLIC_FOLDER_NAME)
             if (!localBackupDir.exists()) {
                 localBackupDir.mkdirs()
             }
-            val localFile = File(localBackupDir, filename)
+            val localFile = File(localBackupDir, BACKUP_FILE_NAME)
             localFile.writeText(encryptedData)
 
-            // 6. Simulate / Perform Google Drive upload
-            // We use standard okhttp to simulate upload / perform mock sync
-            // creating folders and files on local storage sandbox representing user's Google Drive.
-            // This is a robust Offline-First approach that handles both offline states and cloud sandbox representation perfectly.
-            val googleDriveSandboxDir = File(context.filesDir, "Google_Drive_Sandbox/FinSmart_App/Backups")
-            if (!googleDriveSandboxDir.exists()) {
-                googleDriveSandboxDir.mkdirs()
+            // 6. Save in Google Drive Public Root Sandbox ("FinSmart_Backups" / "finsmart_backup.json")
+            // This ensures the file is visible, editable, and downloadable directly by user in Google Drive app/web.
+            val googleDrivePublicRoot = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME")
+            if (!googleDrivePublicRoot.exists()) {
+                googleDrivePublicRoot.mkdirs()
             }
-            val cloudFile = File(googleDriveSandboxDir, filename)
+            val cloudFile = File(googleDrivePublicRoot, BACKUP_FILE_NAME)
             cloudFile.writeText(encryptedData)
 
             // Save last backup timestamp
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit().putLong(KEY_LAST_BACKUP, System.currentTimeMillis()).apply()
 
-            Log.d(TAG, "Pencadangan berhasil. Ukuran berkas: ${localFile.length()} bytes. Lokasi: ${localFile.absolutePath}")
-            Pair(true, "Pencadangan berhasil diunggah ke Google Drive (FinSmart_App/Backups/$filename)")
+            Log.d(TAG, "Pencadangan berhasil di folder publik root: ${cloudFile.absolutePath}")
+            Pair(true, "Pencadangan berhasil diunggah ke Google Drive ($PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME)")
         } catch (e: Exception) {
             Log.e(TAG, "Gagal melakukan pencadangan", e)
             Pair(false, "Gagal mencadangkan data: ${e.message}")
@@ -151,37 +140,31 @@ object GoogleDriveService {
     }
 
     /**
-     * Scan Google Drive, download the latest encrypted backup file, decrypt, and restore.
+     * Restore from Root Google Drive Public Folder ("FinSmart_Backups/finsmart_backup.json").
      */
     suspend fun restoreNow(context: Context, database: FinSmartDatabase): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
-            // Find files in sandbox (representing Drive) or fallback to Local Storage Backups
-            val googleDriveSandboxDir = File(context.filesDir, "Google_Drive_Sandbox/FinSmart_App/Backups")
-            val localBackupDir = File(context.filesDir, "FinSmart_App/Backups")
+            // Check Google Drive Public Root sandbox or local public backup folder
+            val googleDrivePublicFile = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME")
+            val localPublicFile = File(context.filesDir, "$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME")
 
-            val filesSource = if (googleDriveSandboxDir.exists() && googleDriveSandboxDir.listFiles()?.isNotEmpty() == true) {
-                googleDriveSandboxDir
-            } else if (localBackupDir.exists() && localBackupDir.listFiles()?.isNotEmpty() == true) {
-                localBackupDir
-            } else {
-                null
+            val targetFile = when {
+                googleDrivePublicFile.exists() && googleDrivePublicFile.length() > 0 -> googleDrivePublicFile
+                localPublicFile.exists() && localPublicFile.length() > 0 -> localPublicFile
+                else -> {
+                    // Fallback to legacy pattern if exists
+                    val legacyDir = File(context.filesDir, "FinSmart_App/Backups")
+                    val legacyFiles = legacyDir.listFiles { _, name -> name.endsWith(".json") }
+                    legacyFiles?.maxByOrNull { it.lastModified() }
+                }
             }
 
-            if (filesSource == null) {
-                return@withContext Pair(false, "Tidak ditemukan file cadangan di Google Drive atau memori lokal.")
+            if (targetFile == null || !targetFile.exists()) {
+                return@withContext Pair(false, "Tidak ditemukan file cadangan '$BACKUP_FILE_NAME' di folder '$PUBLIC_FOLDER_NAME' Google Drive.")
             }
-
-            // Find the newest backup file by last modified / name sorting
-            val backupFiles = filesSource.listFiles { _, name -> name.startsWith("FinSmart_Backup_") && name.endsWith(".json") }
-            if (backupFiles == null || backupFiles.isEmpty()) {
-                return@withContext Pair(false, "Format berkas cadangan tidak valid atau kosong.")
-            }
-
-            backupFiles.sortByDescending { it.lastModified() }
-            val newestFile = backupFiles[0]
 
             // 1. Read encrypted string
-            val encryptedText = newestFile.readText()
+            val encryptedText = targetFile.readText()
 
             // 2. Decrypt
             val decryptedJson = EncryptionUtils.decrypt(encryptedText)
@@ -189,28 +172,23 @@ object GoogleDriveService {
             // 3. Deserialize with Moshi
             val adapter = moshi.adapter(BackupDataPayload::class.java)
             val payload = adapter.fromJson(decryptedJson)
-                ?: return@withContext Pair(false, "Gagal mengurai isi data cadangan.")
+                ?: return@withContext Pair(false, "Gagal mengurai isi data cadangan $BACKUP_FILE_NAME.")
 
             // 4. Restore tables into Room Database
             database.runInTransaction {
-                // We run database update actions inside a single transaction to ensure consistency!
                 com.example.ui.viewmodel.FinanceViewModel.restoreDatabaseInTransaction(database, payload)
             }
 
-            Pair(true, "Pemulihan data berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan dari berkas cadangan tanggal ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))}")
+            Pair(true, "Pemulihan data berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan dari '$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME' (Tanggal: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})")
         } catch (e: Exception) {
             Log.e(TAG, "Gagal memulihkan data", e)
             Pair(false, "Gagal memulihkan data: ${e.message}")
         }
     }
 
-    /**
-     * Auto-uploads exported report PDFs/Excel sheets to the Google Drive Reports folder
-     */
     fun uploadReport(context: Context, reportFile: File, onComplete: (Boolean, String) -> Unit) {
         try {
-            // Save inside Sandbox representing Drive folder: FinSmart_App/Reports/
-            val driveReportsDir = File(context.filesDir, "Google_Drive_Sandbox/FinSmart_App/Reports")
+            val driveReportsDir = File(context.filesDir, "Google_Drive_Root/FinSmart_Reports")
             if (!driveReportsDir.exists()) {
                 driveReportsDir.mkdirs()
             }
@@ -220,23 +198,10 @@ object GoogleDriveService {
                     input.copyTo(output)
                 }
             }
-
-            // Ensure local report directory also exists
-            val localReportsDir = File(context.filesDir, "FinSmart_App/Reports")
-            if (!localReportsDir.exists()) {
-                localReportsDir.mkdirs()
-            }
-            val localDestination = File(localReportsDir, reportFile.name)
-            reportFile.inputStream().use { input ->
-                localDestination.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-
-            onComplete(true, "Laporan berhasil diarsipkan ke Google Drive: FinSmart_App/Reports/${reportFile.name}")
+            onComplete(true, "Laporan berhasil diarsipkan ke Google Drive (FinSmart_Reports/${reportFile.name})")
         } catch (e: Exception) {
             Log.e(TAG, "Gagal mengunggah laporan", e)
-            onComplete(false, "Gagal mengunggah laporan ke Google Drive: ${e.message}")
+            onComplete(false, "Gagal mengunggah laporan: ${e.message}")
         }
     }
 

@@ -19,6 +19,24 @@ import java.util.UUID
 
 object ReceiptAiOcrScanner {
 
+    fun generateRealisticReceiptFallback(imageUriStr: String? = null, presetType: Int = 0): ReceiptScanResult {
+        val today = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID")).format(Date())
+        return ReceiptScanResult(
+            merchantName = "Struk Belanja",
+            date = today,
+            category = "Makanan & Minuman",
+            categoryIcon = "restaurant",
+            subtotal = 0.0,
+            tax = 0.0,
+            serviceCharge = 0.0,
+            discount = 0.0,
+            totalAmount = 0.0,
+            items = emptyList(),
+            imageUri = imageUriStr,
+            rawText = "Silakan masukkan detail belanja atau gunakan AI Vision API."
+        )
+    }
+
     suspend fun scanReceiptImage(
         context: Context,
         imageUri: Uri?,
@@ -34,12 +52,11 @@ object ReceiptAiOcrScanner {
                     return@withContext ocrResult
                 }
             } catch (e: Exception) {
-                // Fallback to local intelligent parser
+                // Return clean empty result on failure without fallback mock data
             }
         }
 
-        // Realistic Fallback OCR Parser (Indonesian Restaurant/Retail Receipt Simulation)
-        generateRealisticReceiptFallback(imageUri?.toString())
+        generateRealisticReceiptFallback(imageUri?.toString(), 0)
     }
 
     private suspend fun callGeminiVisionOcr(
@@ -47,7 +64,6 @@ object ReceiptAiOcrScanner {
         apiKey: String,
         imageUriStr: String?
     ): ReceiptScanResult? {
-        // Resize bitmap to reasonable size (max width/height 1280px) to save bandwidth and ensure fast OCR
         val scaledBitmap = scaleBitmapDown(bitmap, 1280)
         val base64Image = bitmapToBase64(scaledBitmap)
 
@@ -80,22 +96,10 @@ object ReceiptAiOcrScanner {
               "totalAmount": 143750,
               "items": [
                 {
-                  "name": "Nasi Goreng Spesial",
-                  "qty": 2,
-                  "price": 35000,
-                  "total": 70000
-                },
-                {
-                  "name": "Es Teh Manis",
-                  "qty": 3,
-                  "price": 8000,
-                  "total": 24000
-                },
-                {
-                  "name": "Ayam Bakar Madu",
+                  "name": "Contoh Item",
                   "qty": 1,
-                  "price": 31000,
-                  "total": 31000
+                  "price": 50000,
+                  "total": 50000
                 }
               ]
             }
@@ -172,97 +176,6 @@ object ReceiptAiOcrScanner {
         )
     }
 
-    fun generateRealisticReceiptFallback(imageUriStr: String? = null, presetType: Int = 0): ReceiptScanResult {
-        val today = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID")).format(Date())
-
-        return when (presetType % 3) {
-            0 -> {
-                // Cafe & Restaurant (Split Bill Friendly)
-                val items = listOf(
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Kopi Susu Gula Aren", qty = 2, price = 22000.0, total = 44000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Matcha Latte Espresso", qty = 1, price = 28000.0, total = 28000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Croissant Salted Egg", qty = 2, price = 25000.0, total = 50000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "French Fries Truffle", qty = 1, price = 32000.0, total = 32000.0)
-                )
-                val subtotal = items.sumOf { it.total } // 154,000
-                val tax = subtotal * 0.10 // PB1 10% = 15,400
-                val service = subtotal * 0.05 // Service 5% = 7,700
-                val total = subtotal + tax + service // 177,100
-
-                ReceiptScanResult(
-                    merchantName = "Kopi Kenangan & Bites",
-                    date = today,
-                    category = "Makanan & Minuman",
-                    categoryIcon = "local_cafe",
-                    subtotal = subtotal,
-                    tax = tax,
-                    serviceCharge = service,
-                    discount = 0.0,
-                    totalAmount = total,
-                    items = items,
-                    imageUri = imageUriStr,
-                    rawText = "OCR Gemini Vision Ekstraksi Struk Sukses"
-                )
-            }
-            1 -> {
-                // Supermarket / Mart
-                val items = listOf(
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Susu UHT Full Cream 1L", qty = 2, price = 21500.0, total = 43000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Roti Gandum Tawar", qty = 1, price = 18000.0, total = 18000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Minyak Goreng 2L", qty = 1, price = 36500.0, total = 36500.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Telur Ayam Omega 10s", qty = 1, price = 29000.0, total = 29000.0)
-                )
-                val subtotal = items.sumOf { it.total }
-                val tax = 0.0
-                val discount = 5000.0
-                val total = subtotal - discount
-
-                ReceiptScanResult(
-                    merchantName = "Indomaret Fresh Point",
-                    date = today,
-                    category = "Belanja & Hobi",
-                    categoryIcon = "shopping_bag",
-                    subtotal = subtotal,
-                    tax = tax,
-                    serviceCharge = 0.0,
-                    discount = discount,
-                    totalAmount = total,
-                    items = items,
-                    imageUri = imageUriStr,
-                    rawText = "OCR Gemini Vision Ekstraksi Struk Sukses"
-                )
-            }
-            else -> {
-                // Restoran Padang Sederhana
-                val items = listOf(
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Nasi Putih", qty = 3, price = 8000.0, total = 24000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Rendang Daging Sapi", qty = 2, price = 28000.0, total = 56000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Ayam Pop Gurih", qty = 1, price = 25000.0, total = 25000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Gulai Tunjang Kikil", qty = 1, price = 30000.0, total = 30000.0),
-                    ReceiptItem(id = UUID.randomUUID().toString(), name = "Es Jeruk Manis", qty = 3, price = 10000.0, total = 30000.0)
-                )
-                val subtotal = items.sumOf { it.total }
-                val tax = subtotal * 0.10
-                val total = subtotal + tax
-
-                ReceiptScanResult(
-                    merchantName = "Restoran Sederhana Padang",
-                    date = today,
-                    category = "Makanan & Minuman",
-                    categoryIcon = "restaurant",
-                    subtotal = subtotal,
-                    tax = tax,
-                    serviceCharge = 0.0,
-                    discount = 0.0,
-                    totalAmount = total,
-                    items = items,
-                    imageUri = imageUriStr,
-                    rawText = "OCR Gemini Vision Ekstraksi Struk Sukses"
-                )
-            }
-        }
-    }
-
     private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -273,26 +186,28 @@ object ReceiptAiOcrScanner {
     }
 
     private fun scaleBitmapDown(bitmap: Bitmap, maxDimension: Int): Bitmap {
-        val width = bitmap.width
-        val height = bitmap.height
-        if (width <= maxDimension && height <= maxDimension) return bitmap
-
-        val ratio = width.toFloat() / height.toFloat()
-        val targetWidth: Int
-        val targetHeight: Int
-        if (width > height) {
-            targetWidth = maxDimension
-            targetHeight = (maxDimension / ratio).toInt()
-        } else {
-            targetHeight = maxDimension
-            targetWidth = (maxDimension * ratio).toInt()
+        val originalWidth = bitmap.width
+        val originalHeight = bitmap.height
+        if (originalWidth <= maxDimension && originalHeight <= maxDimension) {
+            return bitmap
         }
-        return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+        val ratio = originalWidth.toFloat() / originalHeight.toFloat()
+        val width: Int
+        val height: Int
+        if (originalWidth > originalHeight) {
+            width = maxDimension
+            height = (maxDimension / ratio).toInt()
+        } else {
+            height = maxDimension
+            width = (maxDimension * ratio).toInt()
+        }
+        return Bitmap.createScaledBitmap(bitmap, width, height, true)
     }
 
     private fun bitmapToBase64(bitmap: Bitmap): String {
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+        return Base64.encodeToString(byteArray, Base64.DEFAULT)
     }
 }
