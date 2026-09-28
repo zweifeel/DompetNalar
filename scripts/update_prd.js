@@ -55,42 +55,41 @@ Dokumen harus mencakup seluruh bab berikut secara detail:
 3. Kembalikan HANYA dokumen Markdown PRD tanpa kalimat pembuka atau penutup tambahan.
 `;
 
-  // --- BAGIAN FALLBACK & RETRY (YANG DIGANTI) ---
-  const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+  // Model resmi yang aktif
+  const modelName = 'gemini-3.8-flash';
   let responseText = null;
 
-  for (const modelName of modelsToTry) {
-    if (responseText) break;
-    console.log(`Mencoba model: ${modelName}...`);
-    
-    const model = genAI.getGenerativeModel({ 
-      model: modelName,
-      generationConfig: { maxOutputTokens: 8192 }
-    });
+  const model = genAI.getGenerativeModel({ 
+    model: modelName,
+    generationConfig: { maxOutputTokens: 8192 }
+  });
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        console.log(`Mengirim permintaan (${modelName}, percobaan ${attempt})...`);
-        const result = await model.generateContent(prompt);
-        responseText = result.response.text();
-        if (responseText) {
-          console.log(`Berhasil mendapatkan respon dari model ${modelName}!`);
-          break;
-        }
-      } catch (err) {
-        console.warn(`Peringatan (${modelName} percobaan ${attempt}): ${err.message}`);
-        if (attempt < 3) {
-          await delay(3000);
-        }
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`Mengirim permintaan ke Gemini API (${modelName}, percobaan ${attempt})...`);
+      const result = await model.generateContent(prompt);
+      responseText = result.response.text();
+      if (responseText) {
+        console.log(`Berhasil mendapatkan respon dari model ${modelName}!`);
+        break;
+      }
+    } catch (err) {
+      console.warn(`Peringatan (percobaan ${attempt}): ${err.message}`);
+      
+      // Jika terkena kuota/rate limit (429), beri jeda waktu otomatis sesuai rekomendasi API (10-15 detik)
+      if (err.message.includes('429') || err.message.includes('Quota exceeded')) {
+        console.log('Terkena batas kuota API (429). Menunggu 12 detik sebelum mencoba lagi...');
+        await delay(12000);
+      } else if (attempt < 3) {
+        await delay(5000);
       }
     }
   }
 
   if (!responseText) {
-    console.error('Semua model Gemini sedang sibuk. Silakan coba lagi beberapa saat lagi.');
+    console.error('Gagal mendapatkan respon. Batas kuota gratis harian API mungkin telah tercapai.');
     process.exit(1);
   }
-  // --- AKHIR BAGIAN FALLBACK & RETRY ---
 
   // Bersihkan pembungkus format markdown jika ada
   responseText = responseText.replace(/^```markdown\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
