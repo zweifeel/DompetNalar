@@ -21,8 +21,8 @@ async function run() {
     currentPrd = '# PRD FinSmart\n\nVersi Awal PRD.';
   }
 
-const genAI = new GoogleGenerativeAI(apiKey);
-  // Gunakan 'gemini-1.5-flash-latest' atau 'gemini-2.0-flash'
+  const genAI = new GoogleGenerativeAI(apiKey);
+  // Menggunakan alias model resmi terbaru
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
   const prompt = `
