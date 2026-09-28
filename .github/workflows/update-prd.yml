@@ -28,8 +28,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install @google/generative-ai
+- name: Install Dependencies
+        run: npm install @google/generative-ai@latest
 
       - name: Run PRD Generator Script
         env:
