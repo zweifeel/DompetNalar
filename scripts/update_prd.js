@@ -21,9 +21,9 @@ async function run() {
     currentPrd = '# PRD FinSmart\n\nVersi Awal PRD.';
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // GUNAKAN 'gemini-1.5-flash' (Stabil dan selalu tersedia)
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const genAI = new GoogleGenerativeAI(apiKey);
+  // Gunakan 'gemini-1.5-flash-latest' atau 'gemini-2.0-flash'
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
   const prompt = `
 Kamu adalah seorang Technical Product Manager untuk aplikasi Android FinSmart.
