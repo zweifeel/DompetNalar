@@ -18,15 +18,22 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 interface GeminiApiService {
-    @POST("v1beta/models/{model}:generateContent")
-    suspend fun generateContentForModel(
-        @Path("model") model: String,
+    /**
+     * Endpoint teruji untuk Gemini 2.0 Flash pada v1beta API.
+     * Path static tanpa variabel mencegah encoding titik dua (:) dari Retrofit.
+     */
+    @POST("v1beta/models/gemini-2.0-flash:generateContent")
+    suspend fun generateContent(
         @Query("key") apiKey: String,
         @Body request: GeminiGenerateRequest
     ): GeminiGenerateResponse
 
-    @POST("v1beta/models/gemini-1.5-flash:generateContent")
-    suspend fun generateContent(
+    /**
+     * Endpoint dinamis dengan encoded = true jika ingin memanggil model tertentu.
+     */
+    @POST("v1beta/models/{model}:generateContent")
+    suspend fun generateContentForModel(
+        @Path(value = "model", encoded = true) model: String,
         @Query("key") apiKey: String,
         @Body request: GeminiGenerateRequest
     ): GeminiGenerateResponse
@@ -40,7 +47,7 @@ object GeminiClient {
         .add(KotlinJsonAdapterFactory())
         .build()
 
-    // OkHttpClient with 30s timeouts and automatic connection retry
+    // OkHttpClient dengan 30s timeout dan retry on connection failure
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
@@ -48,7 +55,7 @@ object GeminiClient {
         .retryOnConnectionFailure(true)
         .addInterceptor(
             HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
+                level = HttpLoggingInterceptor.Level.BODY
             }
         )
         .build()
@@ -62,53 +69,102 @@ object GeminiClient {
             .create(GeminiApiService::class.java)
     }
 
+    /**
+     * Membaca API Key secara aman dari BuildConfig (bebas hardcoded string)
+     * dan membersihkan karakter petik ganda atau spasi berlebih.
+     */
     fun getApiKey(): String {
         return try {
-            BuildConfig.GEMINI_API_KEY
+            val key = BuildConfig.GEMINI_API_KEY
+                .trim()
+                .replace("\"", "")
+                .replace("'", "")
+                .trim()
+
+            if (key.isBlank() || key == "MY_GEMINI_API_KEY") {
+                Log.e(
+                    TAG,
+                    "API Key tidak ditemukan di BuildConfig/local.properties atau masih bernilai default 'MY_GEMINI_API_KEY'. " +
+                    "Pastikan GEMINI_API_KEY telah diatur di Secrets Panel Google AI Studio."
+                )
+                ""
+            } else {
+                key
+            }
         } catch (e: Exception) {
+            Log.e(TAG, "Gagal membaca BuildConfig.GEMINI_API_KEY: ${e.message}", e)
             ""
         }
     }
 
     /**
-     * Executes generation request focusing strictly on the stable gemini-1.5-flash model.
-     * Retries up to 3 times using Exponential Backoff (1s, 2s, 4s) exclusively for transient errors:
-     * HTTP 503 (Server Busy), 429 (Rate Limit), 500, 502, 504, or network IOException.
+     * Eksekusi request dengan mekanisme Exponential Backoff (1s, 2s, 4s) maksimal 3x retry.
+     * Menggunakan model resmi gemini-2.0-flash via Query Parameter 'key'.
      */
     suspend fun executeGenerateWithRetry(
-        apiKey: String,
+        apiKey: String = getApiKey(),
         request: GeminiGenerateRequest,
-        modelName: String = "gemini-1.5-flash",
+        modelName: String = "gemini-2.0-flash",
         maxRetries: Int = 3
     ): GeminiGenerateResponse {
+        val cleanKey = if (apiKey.isBlank()) getApiKey() else apiKey.trim().replace("\"", "").replace("'", "").trim()
+
+        if (cleanKey.isBlank() || cleanKey == "MY_GEMINI_API_KEY") {
+            throw IllegalStateException(
+                "API Key tidak ditemukan di BuildConfig/local.properties. " +
+                "Silakan masukkan GEMINI_API_KEY yang valid di Secrets Panel AI Studio."
+            )
+        }
+
         var currentDelayMs = 1000L
 
         for (attempt in 1..maxRetries) {
             try {
-                Log.d(TAG, "Memanggil Gemini API (Model: $modelName, Percobaan $attempt/$maxRetries)...")
-                return apiService.generateContentForModel(modelName, apiKey, request)
-            } catch (e: Exception) {
-                val isTransientError = when (e) {
-                    is HttpException -> e.code() in listOf(503, 429, 500, 502, 504)
-                    is IOException -> true
-                    else -> {
-                        val msg = e.message ?: ""
-                        msg.contains("503") || msg.contains("429") || msg.contains("500") || msg.contains("502") || msg.contains("504")
-                    }
+                Log.d(TAG, "Memanggil Gemini API ($modelName, Percobaan $attempt/$maxRetries)...")
+                return if (modelName == "gemini-2.0-flash") {
+                    apiService.generateContent(cleanKey, request)
+                } else {
+                    apiService.generateContentForModel(modelName, cleanKey, request)
+                }
+            } catch (e: HttpException) {
+                val statusCode = e.code()
+                val requestUrl = e.response()?.raw()?.request?.url?.toString() ?: "N/A"
+                val errorBody = try { e.response()?.errorBody()?.string() } catch (_: Exception) { "N/A" }
+                Log.e(TAG, "HttpException [HTTP $statusCode] URL: $requestUrl | Body: $errorBody", e)
+
+                if (statusCode == 404) {
+                    throw IllegalStateException(
+                        "Endpoint/Model tidak ditemukan (HTTP 404). " +
+                        "API Key di BuildConfig/local.properties belum valid, expired, atau di-revoke oleh Google karena terdeteksi di-hardcode. " +
+                        "Periksa kembali GEMINI_API_KEY di Google AI Studio."
+                    )
                 }
 
-                if (attempt == maxRetries || !isTransientError) {
-                    Log.e(TAG, "Gagal memproses pada percobaan $attempt: ${e.message}", e)
-                    throw e
+                if (statusCode == 401 || statusCode == 403) {
+                    throw IllegalStateException(
+                        "Autentikasi ditolak (HTTP $statusCode). " +
+                        "API Key Google AI Studio tidak valid atau izin ditolak. Pastikan key aktif."
+                    )
                 }
 
-                Log.w(TAG, "Percobaan $attempt menemui transient error [${e.message}]. Menunggu ${currentDelayMs}ms sebelum retry...")
+                val isTransientError = statusCode in listOf(503, 429, 500, 502, 504)
+                if (attempt == maxRetries || !isTransientError) throw e
+
+                Log.w(TAG, "Percobaan $attempt gagal [HTTP $statusCode]. Menunggu ${currentDelayMs}ms sebelum retry...")
                 delay(currentDelayMs)
-                currentDelayMs *= 2 // Exponential Backoff: 1000ms -> 2000ms -> 4000ms
+                currentDelayMs *= 2
+            } catch (e: IOException) {
+                Log.e(TAG, "Network IOException pada percobaan $attempt: ${e.message}", e)
+                if (attempt == maxRetries) throw e
+                delay(currentDelayMs)
+                currentDelayMs *= 2
+            } catch (e: Exception) {
+                Log.e(TAG, "Error tidak terduga pada percobaan $attempt: ${e.message}", e)
+                throw e
             }
         }
 
-        return apiService.generateContentForModel(modelName, apiKey, request)
+        return apiService.generateContent(cleanKey, request)
     }
 
     suspend fun executeGenerate(apiKey: String, request: GeminiGenerateRequest): GeminiGenerateResponse {

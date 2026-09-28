@@ -100,13 +100,14 @@ object ReceiptAiOcrScanner {
             val ocrResult = callGeminiVisionOcr(loadedBitmap, apiKey, imageUri?.toString())
             ocrResult ?: throw IllegalStateException("Gemini AI tidak mengembalikan data nota yang valid.")
         } catch (e: HttpException) {
-            Log.e(TAG, "HTTP Exception ${e.code()} saat memanggil Gemini Vision OCR", e)
-            if (e.code() == 503) {
-                throw IllegalStateException("Server AI sedang sibuk (HTTP 503). Silakan coba beberapa saat lagi atau gunakan fitur contoh.")
-            } else if (e.code() == 429) {
-                throw IllegalStateException("Batas kuota API tercapai (HTTP 429). Mohon tunggu beberapa saat.")
-            } else {
-                throw IllegalStateException("Kendala server AI (HTTP ${e.code()}). Silakan coba lagi.")
+            val requestUrl = e.response()?.raw()?.request?.url?.toString() ?: "N/A"
+            val errorBody = try { e.response()?.errorBody()?.string() } catch (_: Exception) { "N/A" }
+            Log.e(TAG, "HTTP Exception ${e.code()} saat memanggil Gemini Vision OCR. URL: $requestUrl, Body: $errorBody", e)
+            when (e.code()) {
+                404 -> throw IllegalStateException("Endpoint API tidak ditemukan (HTTP 404). Periksa konfigurasi endpoint GeminiApiService.")
+                503 -> throw IllegalStateException("Server AI sedang sibuk (HTTP 503). Silakan coba beberapa saat lagi atau gunakan fitur contoh.")
+                429 -> throw IllegalStateException("Batas kuota API tercapai (HTTP 429). Mohon tunggu beberapa saat.")
+                else -> throw IllegalStateException("Kendala server AI (HTTP ${e.code()}). Silakan coba lagi.")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error saat memanggil Gemini Vision OCR", e)
@@ -181,8 +182,8 @@ object ReceiptAiOcrScanner {
             generationConfig = GeminiGenerationConfig(temperature = 0.1f)
         )
 
-        // Step 3: API call focusing on stable gemini-1.5-flash with Exponential Backoff retry
-        val response = GeminiClient.executeGenerateWithRetry(apiKey, request, modelName = "gemini-1.5-flash", maxRetries = 3)
+        // Step 3: API call focusing on stable gemini-2.0-flash with Exponential Backoff retry
+        val response = GeminiClient.executeGenerateWithRetry(apiKey, request, modelName = "gemini-2.0-flash", maxRetries = 3)
         val responseText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
             ?: throw IllegalStateException("Gemini AI tidak memberikan respon teks.")
 
