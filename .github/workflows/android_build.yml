@@ -31,12 +31,16 @@ jobs:
       - name: 5. Run Unit Tests (FinSmartUnitTest)
         run: gradle testDebugUnitTest
 
-      - name: 6. Build Release APK (FinSmart_v1.0.2)
-        run: gradle assembleRelease || gradle assembleDebug
+      - name: 6. Build APK
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          ./gradlew assembleDebug --no-daemon || gradle assembleDebug
 
       - name: 7. Upload Build Artifacts (APK)
         uses: actions/upload-artifact@v4
         with:
-          name: FinSmart-Release-APK
-          path: app/build/outputs/apk/release/*.apk
+          name: FinSmart-APK
+          path: app/build/outputs/apk/**/*.apk
           retention-days: 30
