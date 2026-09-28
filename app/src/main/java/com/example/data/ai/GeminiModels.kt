@@ -29,6 +29,7 @@ data class GeminiInlineData(
 
 @JsonClass(generateAdapter = true)
 data class GeminiGenerationConfig(
+    @Json(name = "responseMimeType") val responseMimeType: String? = null,
     @Json(name = "temperature") val temperature: Float = 0.2f,
     @Json(name = "topP") val topP: Float? = 0.95f,
     @Json(name = "topK") val topK: Int? = 40

@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -60,6 +61,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -189,12 +191,9 @@ fun ReceiptScanScreen(
             try {
                 val result = ReceiptAiOcrScanner.scanReceiptImage(context, uri, bitmap)
                 syncScanResultToForm(result)
-                Toast.makeText(context, "Nota berhasil di-scan oleh Gemini AI!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Nota '${result.merchantName}' berhasil dianalisis AI!", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                scanErrorMessage = "Gagal memproses nota: ${e.message}"
-                // Fallback realistic
-                val fallback = ReceiptAiOcrScanner.generateRealisticReceiptFallback()
-                syncScanResultToForm(fallback)
+                scanErrorMessage = e.message ?: "Gagal memproses nota. Silakan periksa koneksi atau API Key."
             } finally {
                 isScanning = false
             }
@@ -416,7 +415,7 @@ fun ReceiptScanScreen(
                             ) {
                                 Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Minimarket", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Indomaret", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
 
@@ -438,7 +437,7 @@ fun ReceiptScanScreen(
                             ) {
                                 Icon(Icons.Default.Restaurant, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Resto Padang", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Momoyo", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -451,28 +450,108 @@ fun ReceiptScanScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = 12.dp)
+                            .testTag("card_scan_loading"),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp),
+                                .padding(20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            CircularProgressIndicator(color = FinSmartPrimary, modifier = Modifier.size(40.dp))
+                            CircularProgressIndicator(color = FinSmartPrimary, modifier = Modifier.size(36.dp), strokeWidth = 3.dp)
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
                                 text = "Menganalisis Struk dengan Gemini Vision AI...",
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 14.sp
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Mengekstrak nama toko, tanggal, daftar item, pajak & total.",
+                                text = "Mengonversi gambar & mengekstrak item, tanggal, pajak & total.",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp),
+                                color = FinSmartPrimary,
+                                trackColor = FinSmartPrimary.copy(alpha = 0.2f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Error Banner Card
+            if (scanErrorMessage != null) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .testTag("card_scan_error"),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Kendala Pemindaian Nota",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = scanErrorMessage ?: "",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        scanErrorMessage = null
+                                        if (capturedBitmap != null || selectedImageUri != null) {
+                                            processReceipt(capturedBitmap, selectedImageUri)
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("Coba Ulang", fontSize = 12.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        scanErrorMessage = null
+                                        // Load example preset
+                                        val fallback = ReceiptAiOcrScanner.generateRealisticReceiptFallback(presetType = 1)
+                                        syncScanResultToForm(fallback)
+                                    },
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("Gunakan Contoh", fontSize = 12.sp)
+                                }
+                                TextButton(
+                                    onClick = { scanErrorMessage = null }
+                                ) {
+                                    Text("Tutup", fontSize = 12.sp)
+                                }
+                            }
                         }
                     }
                 }
