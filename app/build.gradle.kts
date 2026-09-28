@@ -63,8 +63,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Menggunakan config debug agar tidak error saat storeFile tidak ditemukan di CI/GitHub Actions
-            signingConfig = signingConfigs.getByName("debug")
+            // Jika file release keystore ada, gunakan release signing.
+            // Jika tidak ada (seperti di GitHub Actions), set null agar menghasilkan Unsigned APK tanpa error.
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release-key.jks"
+            if (file(keystorePath).exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = null
+            }
         }
         debug {
             applicationIdSuffix = ".debug"
