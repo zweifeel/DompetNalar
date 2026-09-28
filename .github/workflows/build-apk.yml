@@ -25,6 +25,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      # Mencegah error 'chmod: cannot access gradlew' jika wrapper belum ter-commit
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper
+
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
 
