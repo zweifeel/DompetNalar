@@ -64,8 +64,11 @@ android {
         }
         getByName("debug") {
             val debugKeystore = file("${rootDir}/debug.keystore")
+            val userDebugKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
             if (debugKeystore.exists()) {
                 storeFile = debugKeystore
+            } else if (userDebugKeystore.exists()) {
+                storeFile = userDebugKeystore
             }
             storePassword = "android"
             keyAlias = "androiddebugkey"
@@ -92,7 +95,13 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
-            signingConfig = signingConfigs.getByName("debug")
+            val debugKeystore = file("${rootDir}/debug.keystore")
+            val userDebugKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
+            if (debugKeystore.exists() || userDebugKeystore.exists()) {
+                signingConfig = signingConfigs.getByName("debug")
+            } else {
+                signingConfig = null
+            }
         }
     }
     compileOptions {

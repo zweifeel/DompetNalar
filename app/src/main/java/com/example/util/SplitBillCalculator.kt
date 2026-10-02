@@ -7,13 +7,44 @@ import com.example.data.model.SplitBillPerson
 import com.example.data.model.SplitBillResult
 import java.util.Locale
 
+data class SimpleSplitResult(
+    val grandTotal: Double,
+    val perPersonAmount: List<Double>,
+)
+
 object SplitBillCalculator {
+
+    fun calculateSplit(
+        totalAmount: Double = 0.0,
+        taxAmount: Double = 0.0,
+        serviceFee: Double = 0.0,
+        discountAmount: Double = 0.0,
+        itemPrices: List<Double> = emptyList(),
+    ): SimpleSplitResult {
+        val subtotal = if (totalAmount > 0) totalAmount else itemPrices.sum()
+        val netSurcharge = (taxAmount + serviceFee) - discountAmount
+        val calculatedGrandTotal = (subtotal + netSurcharge).coerceAtLeast(0.0)
+
+        val count = itemPrices.size.coerceAtLeast(1)
+        val ratio = 1.0 / count
+        val perPerson = itemPrices.map { price ->
+            val taxShare = taxAmount * ratio
+            val serviceShare = serviceFee * ratio
+            val discountShare = discountAmount * ratio
+            ((price + taxShare + serviceShare) - discountShare).coerceAtLeast(0.0)
+        }
+
+        return SimpleSplitResult(
+            grandTotal = calculatedGrandTotal,
+            perPersonAmount = perPerson,
+        )
+    }
 
     fun calculateSplitBill(
         receipt: ReceiptScanResult,
         people: List<SplitBillPerson>,
         items: List<ReceiptItem>,
-        paymentTargetInfo: String = ""
+        paymentTargetInfo: String = "",
     ): SplitBillResult {
         val peopleMap = people.associateBy { it.id }
 
@@ -50,7 +81,7 @@ object SplitBillCalculator {
             val taxShare = receipt.tax * ratio
             val serviceShare = receipt.serviceCharge * ratio
             val discountShare = receipt.discount * ratio
-            val totalToPay = (pSubtotal + taxShare + serviceShare - discountShare).coerceAtLeast(0.0)
+            val totalToPay = ((pSubtotal + taxShare + serviceShare) - discountShare).coerceAtLeast(0.0)
 
             PersonBillBreakdown(
                 person = person,
@@ -59,14 +90,14 @@ object SplitBillCalculator {
                 taxShare = taxShare,
                 serviceShare = serviceShare,
                 discountShare = discountShare,
-                totalToPay = totalToPay
+                totalToPay = totalToPay,
             )
         }
 
         val calculatedGrandTotal = if (receipt.totalAmount > 0) {
             receipt.totalAmount
         } else {
-            (baseSubtotal + receipt.tax + receipt.serviceCharge - receipt.discount).coerceAtLeast(0.0)
+            ((baseSubtotal + receipt.tax + receipt.serviceCharge) - receipt.discount).coerceAtLeast(0.0)
         }
 
         return SplitBillResult(
@@ -75,13 +106,13 @@ object SplitBillCalculator {
             grandTotal = calculatedGrandTotal,
             breakdowns = breakdowns,
             unassignedItems = unassignedItems,
-            paymentTargetInfo = paymentTargetInfo.ifBlank { "Rekening / Dompet Penyelenggara" }
+            paymentTargetInfo = paymentTargetInfo.ifBlank { "Rekening / Dompet Penyelenggara" },
         )
     }
 
     fun generateWhatsAppSummary(splitResult: SplitBillResult): String {
         val sb = StringBuilder()
-        fun formatRp(amount: Double): String = "Rp" + String.format(Locale("id", "ID"), "%,d", amount.toLong()).replace(",", ".")
+        fun formatRp(amount: Double): String = "Rp" + String.format(Locale.forLanguageTag("id-ID"), "%,d", amount.toLong()).replace(",", ".")
 
         sb.append("🧾 *RINCIAN SPLIT BILL - ${splitResult.merchantName.uppercase()}*\n")
         if (splitResult.date.isNotBlank()) {

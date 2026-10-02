@@ -1,6 +1,5 @@
 package com.example
 
-import com.example.data.model.AppIconEdition
 import com.example.data.model.FinancialPersonality
 import com.example.data.model.UserGamificationState
 import com.example.util.GamificationManager
@@ -30,7 +29,7 @@ class FinSmartUnitTest {
         val state = UserGamificationState(
             mainPin = "123456",
             duressPin = "999999",
-            isStealthMode = false
+            isStealthMode = false,
         )
 
         // Verifikasi PIN Utama
@@ -52,7 +51,7 @@ class FinSmartUnitTest {
             FinancialPersonality.SAVER,
             FinancialPersonality.INVESTOR,
             FinancialPersonality.SAVER,
-            FinancialPersonality.BALANCED
+            FinancialPersonality.BALANCED,
         )
 
         val result = GamificationManager.determinePersonality(answers)
@@ -66,7 +65,7 @@ class FinSmartUnitTest {
             taxAmount = 10000.0,
             serviceFee = 5000.0,
             discountAmount = 15000.0,
-            itemPrices = listOf(40000.0, 60000.0)
+            itemPrices = listOf(40000.0, 60000.0),
         )
 
         assertEquals(2, result.perPersonAmount.size)
