@@ -179,4 +179,78 @@ class PasswordHasherTest {
     fun testHashEmptyPasswordThrowsException() {
         PasswordHasher.hashPassword("")
     }
+
+    @Test
+    fun testInitialMasterPasswordSetupValidationRules() {
+        fun validateInitialMasterSetup(user: User?, newPass: String, confirmPass: String): String? {
+            val trimmedNew = newPass.trim()
+            val trimmedConfirm = confirmPass.trim()
+            if (trimmedNew.isEmpty()) return "Kata sandi tidak boleh kosong."
+            if (trimmedNew.length < 6) return "Kata sandi minimal 6 karakter."
+            if (trimmedNew != trimmedConfirm) return "Konfirmasi kata sandi tidak cocok."
+            if (user == null || user.role != UserRole.MASTER_DEV || user.passwordHash.isNotEmpty()) {
+                return "Pengaturan awal kata sandi tidak diizinkan."
+            }
+            return null
+        }
+
+        val freshLukas = User(username = "Lukas", email = "lunachroc07@gmail.com", passwordHash = "", role = UserRole.MASTER_DEV)
+        val regularUser = User(username = "Member", email = "member@example.com", passwordHash = "", role = UserRole.FREE_MEMBER)
+        val establishedLukas = User(username = "Lukas", email = "lunachroc07@gmail.com", passwordHash = "pbkdf2_sha256$12000$...", role = UserRole.MASTER_DEV)
+
+        // 1. Password kosong ditolak
+        assertEquals("Kata sandi tidak boleh kosong.", validateInitialMasterSetup(freshLukas, "", ""))
+        assertEquals("Kata sandi tidak boleh kosong.", validateInitialMasterSetup(freshLukas, "   ", "   "))
+
+        // 2. Password < 6 karakter ditolak
+        assertEquals("Kata sandi minimal 6 karakter.", validateInitialMasterSetup(freshLukas, "12345", "12345"))
+
+        // 3. Confirmation mismatch ditolak
+        assertEquals("Konfirmasi kata sandi tidak cocok.", validateInitialMasterSetup(freshLukas, "Password123", "Password456"))
+
+        // 4. Akun bukan MASTER_DEV ditolak
+        assertEquals("Pengaturan awal kata sandi tidak diizinkan.", validateInitialMasterSetup(regularUser, "Password123", "Password123"))
+
+        // 5. Akun MASTER_DEV dengan password yang sudah ada tidak dapat diinisialisasi ulang
+        assertEquals("Pengaturan awal kata sandi tidak diizinkan.", validateInitialMasterSetup(establishedLukas, "Password123", "Password123"))
+
+        // 6. Akun null ditolak
+        assertEquals("Pengaturan awal kata sandi tidak diizinkan.", validateInitialMasterSetup(null, "Password123", "Password123"))
+
+        // 7. Input valid diterima (null error)
+        assertEquals(null, validateInitialMasterSetup(freshLukas, "ValidMasterPass#2026", "ValidMasterPass#2026"))
+    }
+
+    @Test
+    fun testInitialMasterPasswordSetupSuccessfulHashingAndLogin() {
+        val freshLukas = User(
+            id = 1L,
+            username = "Lukas",
+            email = "lunachroc07@gmail.com",
+            passwordHash = "",
+            role = UserRole.MASTER_DEV,
+            isApproved = true
+        )
+
+        // Initial state: passwordHash is empty, cannot authenticate
+        assertTrue(freshLukas.passwordHash.isEmpty())
+        assertFalse(PasswordHasher.verifyPassword("MasterPass#2026", freshLukas.passwordHash))
+
+        // Perform setup: hash new password
+        val newPassword = "MasterPass#2026"
+        val secureHash = PasswordHasher.hashPassword(newPassword)
+        val updatedLukas = freshLukas.copy(passwordHash = secureHash)
+
+        // Post-setup state verification
+        assertTrue(PasswordHasher.isHashed(updatedLukas.passwordHash))
+        assertTrue(PasswordHasher.verifyPassword(newPassword, updatedLukas.passwordHash))
+        assertEquals(UserRole.MASTER_DEV, updatedLukas.role)
+
+        // Re-login with wrong password fails
+        assertFalse(PasswordHasher.verifyPassword("WrongPassword#999", updatedLukas.passwordHash))
+
+        // Empty password fails
+        assertFalse(PasswordHasher.verifyPassword("", updatedLukas.passwordHash))
+        assertFalse(PasswordHasher.verifyPassword("   ", updatedLukas.passwordHash))
+    }
 }

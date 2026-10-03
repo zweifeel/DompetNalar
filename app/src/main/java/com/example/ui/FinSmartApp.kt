@@ -58,6 +58,7 @@ import com.example.ui.components.DeleteAccountDialog
 import com.example.ui.components.DeleteWalletConfirmDialog
 import com.example.ui.components.DuressPinModalDialog
 import com.example.ui.components.GamificationHubDialog
+import com.example.ui.components.InitialMasterSetupDialog
 import com.example.ui.components.MasterDevPanelSheet
 import com.example.ui.components.PersonalityQuizModalDialog
 import com.example.ui.components.ProminentDisclosureDialog
@@ -111,6 +112,7 @@ fun FinSmartApp(
     val isMasterDevPanelOpen by authViewModel.isMasterDevPanelOpen.collectAsStateWithLifecycle()
     val isPaywallOpen by authViewModel.isPaywallOpen.collectAsStateWithLifecycle()
     val isAuthModalOpen by authViewModel.isAuthModalOpen.collectAsStateWithLifecycle()
+    val isInitialMasterSetupOpen by authViewModel.isInitialMasterSetupOpen.collectAsStateWithLifecycle()
     val isDeleteAccountOpen by authViewModel.isDeleteAccountOpen.collectAsStateWithLifecycle()
     val isProminentDisclosureOpen by authViewModel.isProminentDisclosureOpen.collectAsStateWithLifecycle()
     val isGamificationHubOpen by authViewModel.isGamificationHubOpen.collectAsStateWithLifecycle()
@@ -591,6 +593,17 @@ fun FinSmartApp(
                     },
                     onGoogleLogin = { authViewModel.loginWithGoogleMock() },
                     onGuestLogin = { authViewModel.loginAsGuest() }
+                )
+            }
+
+            // Initial Master Developer Password Setup Dialog (TASK 01B)
+            if (isInitialMasterSetupOpen) {
+                InitialMasterSetupDialog(
+                    authError = authError,
+                    onDismiss = { authViewModel.closeInitialMasterSetup() },
+                    onSave = { newPass, confirmPass ->
+                        authViewModel.setInitialMasterPassword(newPass, confirmPass)
+                    }
                 )
             }
 

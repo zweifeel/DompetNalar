@@ -241,7 +241,7 @@ fun AuthModalDialog(
                         value = regUsername,
                         onValueChange = { regUsername = it },
                         label = { Text("Nama Lengkap / Panggilan") },
-                        placeholder = { Text("misal: Budi Santoso") },
+                        placeholder = { Text("misal: Nama Lengkap") },
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
