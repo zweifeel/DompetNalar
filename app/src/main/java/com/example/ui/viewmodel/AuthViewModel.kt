@@ -13,6 +13,7 @@ import com.example.data.model.UserGamificationState
 import com.example.data.model.UserRole
 import com.example.data.repository.UserRepository
 import com.example.util.GamificationManager
+import com.example.util.PasswordHasher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -48,6 +49,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     // OTP State for Email Registration
     private val _pendingOtpCode = MutableStateFlow<String?>(null)
     val pendingOtpCode: StateFlow<String?> = _pendingOtpCode.asStateFlow()
+
+    private val _isInitialMasterSetupOpen = MutableStateFlow(false)
+    val isInitialMasterSetupOpen: StateFlow<Boolean> = _isInitialMasterSetupOpen.asStateFlow()
+
+    fun closeInitialMasterSetup() {
+        _isInitialMasterSetupOpen.value = false
+    }
 
     private val _authError = MutableStateFlow<String?>(null)
     val authError: StateFlow<String?> = _authError.asStateFlow()
@@ -154,10 +162,52 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             )
             _currentUser.value = guestUser
         }
+
+        // Silent startup migration of legacy plaintext passwords to PBKDF2
+        viewModelScope.launch {
+            PasswordHasher.migrateLegacyPasswords(userRepository)
+        }
     }
 
     val allRegisteredUsers: StateFlow<List<User>> = userRepository.getAllUsers()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setInitialMasterPassword(newPassword: String, confirmPassword: String) {
+        viewModelScope.launch {
+            _authError.value = null
+            val trimmedNew = newPassword.trim()
+            val trimmedConfirm = confirmPassword.trim()
+
+            if (trimmedNew.isEmpty()) {
+                _authError.value = "Kata sandi tidak boleh kosong."
+                return@launch
+            }
+            if (trimmedNew.length < 6) {
+                _authError.value = "Kata sandi minimal 6 karakter."
+                return@launch
+            }
+            if (trimmedNew != trimmedConfirm) {
+                _authError.value = "Konfirmasi kata sandi tidak cocok."
+                return@launch
+            }
+
+            val lukas = userRepository.getUserByIdentifier("Lukas")
+            if (lukas == null || lukas.role != UserRole.MASTER_DEV || lukas.passwordHash.isNotEmpty()) {
+                _authError.value = "Pengaturan awal kata sandi tidak diizinkan."
+                return@launch
+            }
+
+            val secureHash = PasswordHasher.hashPassword(trimmedNew)
+            val updated = lukas.copy(passwordHash = secureHash)
+            userRepository.updateUser(updated)
+
+            _currentUser.value = updated
+            prefs.edit().putLong("saved_user_id", updated.id).apply()
+            _isInitialMasterSetupOpen.value = false
+            _isAuthModalOpen.value = false
+            _isSuccessToast.value = "Kata sandi Master Developer berhasil dibuat! 👑"
+        }
+    }
 
     fun login(identifier: String, password: String) {
         viewModelScope.launch {
@@ -165,34 +215,36 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val trimmedId = identifier.trim()
             val trimmedPass = password.trim()
 
-            // 1. Check Master Dev hidden credentials (Bab 2: User ID: Lukas | Pass: kodegawa01)
-            if (trimmedId.equals("Lukas", ignoreCase = true) && trimmedPass == "kodegawa01") {
-                val lukasInDb = userRepository.getUserByIdentifier("Lukas")
-                val masterUser = lukasInDb ?: User(
-                    username = "Lukas",
-                    email = "lunachroc07@gmail.com",
-                    passwordHash = "kodegawa01",
-                    role = UserRole.MASTER_DEV
-                )
-                if (lukasInDb == null) {
-                    userRepository.insertUser(masterUser)
-                }
-                val fresh = userRepository.getUserByIdentifier("Lukas") ?: masterUser
-                _currentUser.value = fresh
-                prefs.edit().putLong("saved_user_id", fresh.id).apply()
-                _isAuthModalOpen.value = false
-                _isSuccessToast.value = "Selamat Datang Master Developer Lukas! 👑"
+            if (trimmedId.isEmpty()) {
+                _authError.value = "Nama pengguna atau email tidak boleh kosong."
                 return@launch
             }
 
-            // 2. Regular User Login
+            // Normal Database Authentication Flow
             val user = userRepository.getUserByIdentifier(trimmedId)
             if (user != null) {
-                if (user.passwordHash == trimmedPass || trimmedPass.isEmpty() || user.isGuest) {
+                // Fresh install Master Dev initial password setup check
+                if (user.role == UserRole.MASTER_DEV && user.passwordHash.isEmpty()) {
+                    _authError.value = "Akun Master Developer belum memiliki kata sandi. Silakan buat kata sandi utama."
+                    _isInitialMasterSetupOpen.value = true
+                    return@launch
+                }
+
+                // Strict check: reject blank passwords
+                if (trimmedPass.isEmpty()) {
+                    _authError.value = "Kata sandi tidak boleh kosong."
+                    return@launch
+                }
+
+                if (PasswordHasher.verifyPassword(trimmedPass, user.passwordHash) || user.isGuest) {
                     _currentUser.value = user
                     prefs.edit().putLong("saved_user_id", user.id).apply()
                     _isAuthModalOpen.value = false
-                    _isSuccessToast.value = "Berhasil masuk sebagai ${user.username}"
+                    if (user.role == UserRole.MASTER_DEV) {
+                        _isSuccessToast.value = "Selamat Datang Master Developer Lukas! 👑"
+                    } else {
+                        _isSuccessToast.value = "Berhasil masuk sebagai ${user.username}"
+                    }
                 } else {
                     _authError.value = "Kata sandi salah. Silakan coba lagi."
                 }
@@ -224,7 +276,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val newUser = User(
                 username = username.trim().ifBlank { "User ${email.substringBefore("@")}" },
                 email = email.trim(),
-                passwordHash = password.trim(),
+                passwordHash = PasswordHasher.hashPassword(password.trim()),
                 role = UserRole.FREE_MEMBER,
                 trialStartDate = System.currentTimeMillis()
             )
@@ -365,12 +417,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val user = _currentUser.value ?: return false
         val trimmedPass = passwordConfirmation.trim()
 
-        // Check password matching (or permit if guest / master)
+        // Check password matching (or permit if guest)
+        if (!user.isGuest && trimmedPass.isEmpty()) {
+            return false
+        }
+
         val isPasswordValid = when {
             user.isGuest -> true
-            user.role == UserRole.MASTER_DEV -> trimmedPass == "kodegawa01"
-            user.passwordHash.isEmpty() -> true
-            else -> user.passwordHash == trimmedPass
+            else -> PasswordHasher.verifyPassword(trimmedPass, user.passwordHash)
         }
 
         if (!isPasswordValid) {

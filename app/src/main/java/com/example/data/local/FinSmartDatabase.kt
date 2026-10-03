@@ -143,27 +143,9 @@ abstract class FinSmartDatabase : RoomDatabase() {
                     User(
                         username = "Lukas",
                         email = "lunachroc07@gmail.com",
-                        passwordHash = "kodegawa01",
+                        passwordHash = "",
                         role = UserRole.MASTER_DEV,
                         isApproved = true
-                    ),
-                    // Sample Member 1
-                    User(
-                        username = "Budi Santoso",
-                        email = "budi.santoso@example.com",
-                        passwordHash = "123456",
-                        role = UserRole.FREE_MEMBER,
-                        isApproved = true,
-                        trialStartDate = System.currentTimeMillis() - (4L * 86400000L) // 4 days ago (trial expired)
-                    ),
-                    // Sample Member 2
-                    User(
-                        username = "Sarah Wijaya",
-                        email = "sarah.w@example.com",
-                        passwordHash = "123456",
-                        role = UserRole.SMART_MASTER,
-                        isApproved = true,
-                        subscriptionExpiresAt = System.currentTimeMillis() + (30L * 86400000L)
                     )
                 )
                 userDao.insertUsers(initialUsers)

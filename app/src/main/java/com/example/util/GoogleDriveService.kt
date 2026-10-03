@@ -179,6 +179,9 @@ object GoogleDriveService {
                 com.example.ui.viewmodel.FinanceViewModel.restoreDatabaseInTransaction(database, payload)
             }
 
+            // 5. Post-restore migration hook: sanitize and migrate legacy plaintext passwords in restored database
+            PasswordHasher.migrateLegacyPasswords(database.userDao())
+
             Pair(true, "Pemulihan data berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan dari '$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME' (Tanggal: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})")
         } catch (e: Exception) {
             Log.e(TAG, "Gagal memulihkan data", e)
