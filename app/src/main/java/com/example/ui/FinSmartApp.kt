@@ -53,6 +53,7 @@ import com.example.data.model.UserRole
 import com.example.ui.components.AddTransactionSheet
 import com.example.ui.components.AssetTrackerModalDialog
 import com.example.ui.components.AuthModalDialog
+import com.example.ui.components.ChangePasswordDialog
 import com.example.ui.components.DebtPlannerModalDialog
 import com.example.ui.components.DeleteAccountDialog
 import com.example.ui.components.DeleteWalletConfirmDialog
@@ -113,6 +114,7 @@ fun FinSmartApp(
     val isPaywallOpen by authViewModel.isPaywallOpen.collectAsStateWithLifecycle()
     val isAuthModalOpen by authViewModel.isAuthModalOpen.collectAsStateWithLifecycle()
     val isInitialMasterSetupOpen by authViewModel.isInitialMasterSetupOpen.collectAsStateWithLifecycle()
+    val isChangePasswordOpen by authViewModel.isChangePasswordOpen.collectAsStateWithLifecycle()
     val isDeleteAccountOpen by authViewModel.isDeleteAccountOpen.collectAsStateWithLifecycle()
     val isProminentDisclosureOpen by authViewModel.isProminentDisclosureOpen.collectAsStateWithLifecycle()
     val isGamificationHubOpen by authViewModel.isGamificationHubOpen.collectAsStateWithLifecycle()
@@ -124,6 +126,7 @@ fun FinSmartApp(
     val gamificationState by authViewModel.gamificationState.collectAsStateWithLifecycle()
     val pendingOtpCode by authViewModel.pendingOtpCode.collectAsStateWithLifecycle()
     val authError by authViewModel.authError.collectAsStateWithLifecycle()
+    val changePasswordError by authViewModel.changePasswordError.collectAsStateWithLifecycle()
     val toastMessage by authViewModel.isSuccessToast.collectAsStateWithLifecycle()
 
     // Google Drive Sync States
@@ -478,7 +481,8 @@ fun FinSmartApp(
                         },
                         dailyStreak = gamificationState.dailyStreak,
                         onOpenFeedback = { currentScreen = NavigationScreen.FEEDBACK },
-                        onOpenDevFeedbackViewer = { currentScreen = NavigationScreen.DEV_FEEDBACK_VIEWER }
+                        onOpenDevFeedbackViewer = { currentScreen = NavigationScreen.DEV_FEEDBACK_VIEWER },
+                        onOpenChangePassword = { authViewModel.openChangePassword() }
                     )
                 }
 
@@ -603,6 +607,17 @@ fun FinSmartApp(
                     onDismiss = { authViewModel.closeInitialMasterSetup() },
                     onSave = { newPass, confirmPass ->
                         authViewModel.setInitialMasterPassword(newPass, confirmPass)
+                    }
+                )
+            }
+
+            // Change Password Dialog (TASK 01C)
+            if (isChangePasswordOpen) {
+                ChangePasswordDialog(
+                    changePasswordError = changePasswordError,
+                    onDismiss = { authViewModel.closeChangePassword() },
+                    onSave = { currentPass, newPass, confirmPass ->
+                        authViewModel.changePassword(currentPass, newPass, confirmPass)
                     }
                 )
             }

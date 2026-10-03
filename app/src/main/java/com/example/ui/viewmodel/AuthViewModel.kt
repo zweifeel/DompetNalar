@@ -57,6 +57,22 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         _isInitialMasterSetupOpen.value = false
     }
 
+    private val _isChangePasswordOpen = MutableStateFlow(false)
+    val isChangePasswordOpen: StateFlow<Boolean> = _isChangePasswordOpen.asStateFlow()
+
+    private val _changePasswordError = MutableStateFlow<String?>(null)
+    val changePasswordError: StateFlow<String?> = _changePasswordError.asStateFlow()
+
+    fun openChangePassword() {
+        _changePasswordError.value = null
+        _isChangePasswordOpen.value = true
+    }
+
+    fun closeChangePassword() {
+        _changePasswordError.value = null
+        _isChangePasswordOpen.value = false
+    }
+
     private val _authError = MutableStateFlow<String?>(null)
     val authError: StateFlow<String?> = _authError.asStateFlow()
 
@@ -206,6 +222,45 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _isInitialMasterSetupOpen.value = false
             _isAuthModalOpen.value = false
             _isSuccessToast.value = "Kata sandi Master Developer berhasil dibuat! 👑"
+        }
+    }
+
+    fun changePassword(currentPass: String, newPass: String, confirmPass: String) {
+        viewModelScope.launch {
+            _changePasswordError.value = null
+            val user = _currentUser.value
+            if (user == null || user.isGuest) {
+                _changePasswordError.value = "Pengguna tamu tidak dapat mengubah kata sandi."
+                return@launch
+            }
+            if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
+                _changePasswordError.value = "Semua bidang kata sandi wajib diisi."
+                return@launch
+            }
+            if (!PasswordHasher.verifyPassword(currentPass, user.passwordHash)) {
+                _changePasswordError.value = "Kata sandi saat ini salah."
+                return@launch
+            }
+            if (newPass.length < 6) {
+                _changePasswordError.value = "Kata sandi baru minimal 6 karakter."
+                return@launch
+            }
+            if (newPass != confirmPass) {
+                _changePasswordError.value = "Konfirmasi kata sandi baru tidak cocok."
+                return@launch
+            }
+            if (newPass == currentPass) {
+                _changePasswordError.value = "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+                return@launch
+            }
+
+            val newHash = PasswordHasher.hashPassword(newPass)
+            val updatedUser = user.copy(passwordHash = newHash)
+            userRepository.updateUser(updatedUser)
+
+            _currentUser.value = updatedUser
+            _isChangePasswordOpen.value = false
+            _isSuccessToast.value = "Kata sandi berhasil diperbarui! 🔒"
         }
     }
 

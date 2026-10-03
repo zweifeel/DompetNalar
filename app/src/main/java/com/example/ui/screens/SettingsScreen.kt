@@ -141,6 +141,7 @@ fun SettingsScreen(
     dailyStreak: Int = 1,
     onOpenFeedback: () -> Unit = {},
     onOpenDevFeedbackViewer: () -> Unit = {},
+    onOpenChangePassword: () -> Unit = {},
     updateViewModel: UpdateViewModel = viewModel(),
     masterDevViewModel: MasterDevViewModel = viewModel(),
     modifier: Modifier = Modifier
@@ -645,6 +646,17 @@ fun SettingsScreen(
                     )
 
                     Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    if (currentUser != null && !currentUser.isGuest) {
+                        SettingsRowItem(
+                            icon = Icons.Default.Key,
+                            title = "Ubah Kata Sandi",
+                            subtitle = "Ganti kata sandi akun ${currentUser.username}",
+                            onClick = onOpenChangePassword
+                        )
+
+                        Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                    }
 
                     SettingsRowItem(
                         icon = Icons.AutoMirrored.Filled.Logout,

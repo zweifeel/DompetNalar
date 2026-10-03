@@ -253,4 +253,151 @@ class PasswordHasherTest {
         assertFalse(PasswordHasher.verifyPassword("", updatedLukas.passwordHash))
         assertFalse(PasswordHasher.verifyPassword("   ", updatedLukas.passwordHash))
     }
+
+    @Test
+    fun testChangePasswordValidationRulesOrderAndExactLogic() {
+        fun validateChangePassword(
+            user: User?,
+            currentPass: String,
+            newPass: String,
+            confirmPass: String
+        ): String? {
+            if (user == null || user.isGuest) {
+                return "Pengguna tamu tidak dapat mengubah kata sandi."
+            }
+            if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
+                return "Semua bidang kata sandi wajib diisi."
+            }
+            if (!PasswordHasher.verifyPassword(currentPass, user.passwordHash)) {
+                return "Kata sandi saat ini salah."
+            }
+            if (newPass.length < 6) {
+                return "Kata sandi baru minimal 6 karakter."
+            }
+            if (newPass != confirmPass) {
+                return "Konfirmasi kata sandi baru tidak cocok."
+            }
+            if (newPass == currentPass) {
+                return "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+            }
+            return null
+        }
+
+        val currentPass = "OldSecurePass#2026"
+        val currentHash = PasswordHasher.hashPassword(currentPass)
+        val validUser = User(
+            id = 10L,
+            username = "TestUser",
+            email = "test@example.com",
+            passwordHash = currentHash,
+            role = UserRole.FREE_MEMBER,
+            isGuest = false
+        )
+        val guestUser = User(
+            id = 9999L,
+            username = "Guest",
+            email = "guest@example.com",
+            passwordHash = "",
+            role = UserRole.FREE_MEMBER,
+            isGuest = true
+        )
+
+        // 1. Session check: user == null or guest
+        assertEquals("Pengguna tamu tidak dapat mengubah kata sandi.", validateChangePassword(null, currentPass, "NewPass#1", "NewPass#1"))
+        assertEquals("Pengguna tamu tidak dapat mengubah kata sandi.", validateChangePassword(guestUser, currentPass, "NewPass#1", "NewPass#1"))
+
+        // 2. Empty field check: any empty field
+        assertEquals("Semua bidang kata sandi wajib diisi.", validateChangePassword(validUser, "", "NewPass#1", "NewPass#1"))
+        assertEquals("Semua bidang kata sandi wajib diisi.", validateChangePassword(validUser, currentPass, "", "NewPass#1"))
+        assertEquals("Semua bidang kata sandi wajib diisi.", validateChangePassword(validUser, currentPass, "NewPass#1", ""))
+
+        // 3. Verify current password: wrong password
+        assertEquals("Kata sandi saat ini salah.", validateChangePassword(validUser, "WrongOldPass#2026", "NewPass#1", "NewPass#1"))
+
+        // 4. Minimum new-password length: newPass.length < 6
+        assertEquals("Kata sandi baru minimal 6 karakter.", validateChangePassword(validUser, currentPass, "12345", "12345"))
+
+        // 5. Confirmation mismatch: newPass != confirmPass
+        assertEquals("Konfirmasi kata sandi baru tidak cocok.", validateChangePassword(validUser, currentPass, "NewPass#1", "NewPass#2"))
+
+        // 6. Reject unchanged password: newPass == currentPass
+        assertEquals("Kata sandi baru tidak boleh sama dengan kata sandi saat ini.", validateChangePassword(validUser, currentPass, currentPass, currentPass))
+
+        // 7. Success case
+        val newValidPass = "BrandNewSecurePass#99"
+        assertEquals(null, validateChangePassword(validUser, currentPass, newValidPass, newValidPass))
+    }
+
+    @Test
+    fun testChangePasswordExactWhitespacePreservation() {
+        val oldPassWithSpaces = "  old pass with spaces 123  "
+        val oldHash = PasswordHasher.hashPassword(oldPassWithSpaces)
+        val user = User(
+            id = 20L,
+            username = "SpaceUser",
+            email = "space@example.com",
+            passwordHash = oldHash
+        )
+
+        // Exact old pass verifies
+        assertTrue(PasswordHasher.verifyPassword(oldPassWithSpaces, user.passwordHash))
+        // Trimmed old pass fails verification
+        assertFalse(PasswordHasher.verifyPassword(oldPassWithSpaces.trim(), user.passwordHash))
+
+        // Change password to new pass that also contains spaces
+        val newPassWithSpaces = "  new secret pass #2026  "
+        val confirmPassWithSpaces = "  new secret pass #2026  "
+        assertEquals(newPassWithSpaces, confirmPassWithSpaces)
+
+        // Verify that exact new pass does not equal trimmed new pass
+        assertNotEquals(newPassWithSpaces, newPassWithSpaces.trim())
+
+        val newHash = PasswordHasher.hashPassword(newPassWithSpaces)
+        val updatedUser = user.copy(passwordHash = newHash)
+
+        // Updated user verifies with exact new pass
+        assertTrue(PasswordHasher.verifyPassword(newPassWithSpaces, updatedUser.passwordHash))
+        // Verification fails if trimmed
+        assertFalse(PasswordHasher.verifyPassword(newPassWithSpaces.trim(), updatedUser.passwordHash))
+        // Old pass no longer verifies
+        assertFalse(PasswordHasher.verifyPassword(oldPassWithSpaces, updatedUser.passwordHash))
+    }
+
+    @Test
+    fun testChangePasswordLifecycleFlowAndFieldIntegrity() {
+        val initialPass = "MasterInitialPass#1"
+        val initialHash = PasswordHasher.hashPassword(initialPass)
+        val masterUser = User(
+            id = 100L,
+            username = "Lukas",
+            email = "lunachroc07@gmail.com",
+            passwordHash = initialHash,
+            role = UserRole.MASTER_DEV,
+            createdAt = 1700000000000L,
+            trialStartDate = 1700000000000L,
+            subscriptionExpiresAt = 1800000000000L,
+            isApproved = true,
+            isGuest = false
+        )
+
+        val newPass = "LukasNewMasterKey#2026"
+        val newHash = PasswordHasher.hashPassword(newPass)
+        val updatedMaster = masterUser.copy(passwordHash = newHash)
+
+        // Field integrity checks
+        assertEquals(100L, updatedMaster.id)
+        assertEquals("Lukas", updatedMaster.username)
+        assertEquals("lunachroc07@gmail.com", updatedMaster.email)
+        assertEquals(UserRole.MASTER_DEV, updatedMaster.role)
+        assertEquals(1700000000000L, updatedMaster.createdAt)
+        assertEquals(1700000000000L, updatedMaster.trialStartDate)
+        assertEquals(1800000000000L, updatedMaster.subscriptionExpiresAt)
+        assertTrue(updatedMaster.isApproved)
+        assertFalse(updatedMaster.isGuest)
+
+        // Password authentication checks
+        assertFalse(PasswordHasher.verifyPassword(initialPass, updatedMaster.passwordHash))
+        assertTrue(PasswordHasher.verifyPassword(newPass, updatedMaster.passwordHash))
+        assertTrue(PasswordHasher.isHashed(updatedMaster.passwordHash))
+    }
 }
