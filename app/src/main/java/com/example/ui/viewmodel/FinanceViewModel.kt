@@ -88,6 +88,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     private val _deletingWallet = MutableStateFlow<Wallet?>(null)
     val deletingWallet: StateFlow<Wallet?> = _deletingWallet.asStateFlow()
 
+    // FEAT-34 Personal Finance Receipt Generator
+    private val _selectedReceiptTransaction = MutableStateFlow<TransactionItem?>(null)
+    val selectedReceiptTransaction: StateFlow<TransactionItem?> = _selectedReceiptTransaction.asStateFlow()
+
     init {
         val database = FinSmartDatabase.getDatabase(application, viewModelScope)
         repository = FinanceRepository(
@@ -369,6 +373,14 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     fun closeAddTransaction() {
         _isAddTransactionOpen.value = false
+    }
+
+    fun openReceipt(transaction: TransactionItem) {
+        _selectedReceiptTransaction.value = transaction
+    }
+
+    fun closeReceipt() {
+        _selectedReceiptTransaction.value = null
     }
 
     fun openWalletDialog(wallet: Wallet? = null) {

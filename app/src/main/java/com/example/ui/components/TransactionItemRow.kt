@@ -48,12 +48,14 @@ fun TransactionItemRow(
     transaction: TransactionItem,
     isPrivacyMode: Boolean,
     onDelete: (TransactionItem) -> Unit,
+    onClick: (TransactionItem) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick(transaction) }
             .testTag("tx_item_${transaction.id}"),
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp)

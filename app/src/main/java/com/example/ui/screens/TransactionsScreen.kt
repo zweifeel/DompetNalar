@@ -78,6 +78,7 @@ fun TransactionsScreen(
     onTimeframeChange: (TimeframeFilter) -> Unit,
     onDeleteTransaction: (TransactionItem) -> Unit,
     onOpenExportReport: () -> Unit,
+    onOpenReceipt: (TransactionItem) -> Unit = {},
     currentUser: User? = null,
     modifier: Modifier = Modifier
 ) {
@@ -379,7 +380,8 @@ fun TransactionsScreen(
                     TransactionItemRow(
                         transaction = tx,
                         isPrivacyMode = isPrivacyMode,
-                        onDelete = onDeleteTransaction
+                        onDelete = onDeleteTransaction,
+                        onClick = onOpenReceipt
                     )
                 }
             }

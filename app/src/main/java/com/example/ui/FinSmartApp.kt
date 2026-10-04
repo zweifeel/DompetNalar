@@ -132,6 +132,7 @@ fun FinSmartApp(
     val isAssetTrackerOpen by authViewModel.isAssetTrackerOpen.collectAsStateWithLifecycle()
     val isNotificationCenterOpen by authViewModel.isNotificationCenterOpen.collectAsStateWithLifecycle()
     val isReceiptGeneratorOpen by authViewModel.isReceiptGeneratorOpen.collectAsStateWithLifecycle()
+    val selectedReceiptTransaction by financeViewModel.selectedReceiptTransaction.collectAsStateWithLifecycle()
     val gamificationState by authViewModel.gamificationState.collectAsStateWithLifecycle()
     val pendingOtpCode by authViewModel.pendingOtpCode.collectAsStateWithLifecycle()
     val authError by authViewModel.authError.collectAsStateWithLifecycle()
@@ -209,8 +210,8 @@ fun FinSmartApp(
 
     // FEAT-36 Shake Gesture Detector Guard & Trigger
     val isAnyBlockingModalActive = isAuthModalOpen || isDeleteAccountOpen ||
-        isDuressPinModalOpen || isReceiptGeneratorOpen || isAddTransactionOpen ||
-        isPaywallOpen || isMasterDevPanelOpen || isNotificationCenterOpen ||
+        isDuressPinModalOpen || isReceiptGeneratorOpen || selectedReceiptTransaction != null ||
+        isAddTransactionOpen || isPaywallOpen || isMasterDevPanelOpen || isNotificationCenterOpen ||
         isInitialMasterSetupOpen || isChangePasswordOpen || isProminentDisclosureOpen
 
     rememberShakeDetector(
@@ -482,6 +483,7 @@ fun FinSmartApp(
                         onTimeframeChange = { financeViewModel.setTimeframe(it) },
                         onDeleteTransaction = { financeViewModel.deleteTransaction(it) },
                         onOpenExportReport = { currentScreen = NavigationScreen.EXPORT_REPORT },
+                        onOpenReceipt = { financeViewModel.openReceipt(it) },
                         currentUser = currentUser
                     )
                 }
@@ -796,11 +798,11 @@ fun FinSmartApp(
                 )
             }
 
-            // Business Merchant Receipt Generator & Thermal Printing Modal (Bab 12)
-            if (isReceiptGeneratorOpen) {
+            // FEAT-34 Personal Finance Digital Receipt Modal
+            selectedReceiptTransaction?.let { tx ->
                 ReceiptGeneratorModalDialog(
-                    transaction = allTransactions.firstOrNull(),
-                    onDismiss = { authViewModel.closeReceiptGenerator() }
+                    transaction = tx,
+                    onDismiss = { financeViewModel.closeReceipt() }
                 )
             }
         }
