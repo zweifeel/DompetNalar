@@ -61,11 +61,18 @@ import com.example.ui.components.DuressPinModalDialog
 import com.example.ui.components.GamificationHubDialog
 import com.example.ui.components.InitialMasterSetupDialog
 import com.example.ui.components.MasterDevPanelSheet
+import com.example.ui.components.NotificationCenterBottomSheet
 import com.example.ui.components.PersonalityQuizModalDialog
 import com.example.ui.components.ProminentDisclosureDialog
 import com.example.ui.components.ReceiptGeneratorModalDialog
 import com.example.ui.components.SmartMasterPaywallDialog
 import com.example.ui.components.WalletDialog
+import com.example.util.NotificationDataHelper
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import com.example.ui.screens.AiChatScreen
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.DashboardScreen
@@ -122,6 +129,7 @@ fun FinSmartApp(
     val isDuressPinModalOpen by authViewModel.isDuressPinModalOpen.collectAsStateWithLifecycle()
     val isDebtPlannerOpen by authViewModel.isDebtPlannerOpen.collectAsStateWithLifecycle()
     val isAssetTrackerOpen by authViewModel.isAssetTrackerOpen.collectAsStateWithLifecycle()
+    val isNotificationCenterOpen by authViewModel.isNotificationCenterOpen.collectAsStateWithLifecycle()
     val isReceiptGeneratorOpen by authViewModel.isReceiptGeneratorOpen.collectAsStateWithLifecycle()
     val gamificationState by authViewModel.gamificationState.collectAsStateWithLifecycle()
     val pendingOtpCode by authViewModel.pendingOtpCode.collectAsStateWithLifecycle()
@@ -147,6 +155,9 @@ fun FinSmartApp(
             Toast.makeText(context, "Foto profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
         }
     }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { /* Non-blocking: In-app Notification Center remains functional */ }
     val totalBalance by financeViewModel.totalBalance.collectAsStateWithLifecycle()
     val totalIncome by financeViewModel.totalIncome.collectAsStateWithLifecycle()
     val totalExpense by financeViewModel.totalExpense.collectAsStateWithLifecycle()
@@ -162,11 +173,23 @@ fun FinSmartApp(
     val selectedWalletFilter by financeViewModel.selectedWalletFilter.collectAsStateWithLifecycle()
     val splitBillHistory by financeViewModel.splitBillHistory.collectAsStateWithLifecycle()
     val budgetLimits by financeViewModel.budgetLimits.collectAsStateWithLifecycle()
+    val currentMonthExpenses by financeViewModel.currentMonthExpensesList.collectAsStateWithLifecycle()
     val debts by financeViewModel.debts.collectAsStateWithLifecycle()
     val assets by financeViewModel.assets.collectAsStateWithLifecycle()
     val netWorth by financeViewModel.netWorth.collectAsStateWithLifecycle()
     val totalAssetsValue by financeViewModel.totalAssetsValue.collectAsStateWithLifecycle()
     val totalDebtsAmount by financeViewModel.totalDebtsAmount.collectAsStateWithLifecycle()
+
+    val notifications = remember(wallets, debts, budgetLimits, currentMonthExpenses, allTransactions, gamificationState.dailyStreak) {
+        NotificationDataHelper.generateNotifications(
+            wallets = wallets,
+            debts = debts,
+            budgetLimits = budgetLimits,
+            currentMonthExpenses = currentMonthExpenses,
+            recentTransactions = allTransactions,
+            dailyStreak = gamificationState.dailyStreak
+        )
+    }
 
     val isAddTransactionOpen by financeViewModel.isAddTransactionOpen.collectAsStateWithLifecycle()
     val defaultTransactionType by financeViewModel.defaultTransactionType.collectAsStateWithLifecycle()
@@ -279,6 +302,24 @@ fun FinSmartApp(
                         },
                         onNavigateToBudget = {
                             currentScreen = NavigationScreen.BUDGET
+                        },
+                        onOpenNotifications = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                val hasPermission = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (!hasPermission) {
+                                    val prefs = context.getSharedPreferences("finsmart_prefs", Context.MODE_PRIVATE)
+                                    val promptCount = prefs.getInt("post_notifications_prompt_count", 0)
+                                    if (promptCount < 2) {
+                                        prefs.edit().putInt("post_notifications_prompt_count", promptCount + 1).apply()
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                }
+                            }
+                            authViewModel.openNotificationCenter()
                         },
                         onBadgeClick = {
                             if (currentUser?.role == UserRole.MASTER_DEV) {
@@ -643,6 +684,14 @@ fun FinSmartApp(
                             currentScreen = NavigationScreen.DASHBOARD
                         }
                     }
+                )
+            }
+
+            // Notification Center Modal Sheet (FEAT-35)
+            if (isNotificationCenterOpen) {
+                NotificationCenterBottomSheet(
+                    notifications = notifications,
+                    onDismiss = { authViewModel.closeNotificationCenter() }
                 )
             }
 

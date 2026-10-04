@@ -1,10 +1,13 @@
 package com.example.util
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -84,12 +87,16 @@ class RecurringTransactionWorker(
                 walletDao.updateWallet(currentWallet.copy(balance = newBal.coerceAtLeast(0.0)))
             }
 
-            // Trigger System Notification
-            sendLocalNotification(
-                context = applicationContext,
-                title = "FinSmart Recurring Income 💰",
-                message = "Pemasukan rutin $title sebesar ${CurrencyFormatter.formatRupiah(amount)} berhasil dicatat ke $walletName!"
-            )
+            // Trigger System Notification (isolated from financial operation)
+            try {
+                sendLocalNotification(
+                    context = applicationContext,
+                    title = "FinSmart Recurring Income 💰",
+                    message = "Pemasukan rutin $title sebesar ${CurrencyFormatter.formatRupiah(amount)} berhasil dicatat ke $walletName!"
+                )
+            } catch (e: Exception) {
+                // Silently isolate notification posting failure so it never fails the worker
+            }
 
             Result.success()
         } catch (e: Exception) {
@@ -98,30 +105,42 @@ class RecurringTransactionWorker(
     }
 
     private fun sendLocalNotification(context: Context, title: String, message: String) {
-        val channelId = "finsmart_recurring_channel"
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "FinSmart Transaksi Berulang",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notifikasi transaksi berulang otomatis (Gaji / Rutin)"
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val hasPerm = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (!hasPerm) return
             }
-            notificationManager.createNotificationChannel(channel)
+
+            val channelId = "finsmart_recurring_channel"
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "FinSmart Transaksi Berulang",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                ).apply {
+                    description = "Notifikasi transaksi berulang otomatis (Gaji / Rutin)"
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val notification = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+                .build()
+
+            notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        } catch (e: Exception) {
+            // Silently catch to prevent notification delivery issues from disrupting worker
         }
-
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 
     companion object {
