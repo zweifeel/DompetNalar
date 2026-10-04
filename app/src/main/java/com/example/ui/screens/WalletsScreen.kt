@@ -65,7 +65,7 @@ fun WalletsScreen(
     onOpenDebtPlanner: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val totalNetWorth = wallets.sumOf { it.balance }
+    val totalWalletBalance = wallets.sumOf { it.balance }
 
     LazyColumn(
         modifier = modifier
@@ -130,7 +130,7 @@ fun WalletsScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = if (isPrivacyMode) "Rp •••••••" else CurrencyFormatter.formatRupiah(totalNetWorth),
+                        text = if (isPrivacyMode) "Rp •••••••" else CurrencyFormatter.formatRupiah(totalWalletBalance),
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

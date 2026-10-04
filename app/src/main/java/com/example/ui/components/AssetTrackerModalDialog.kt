@@ -75,6 +75,9 @@ fun AssetTrackerModalDialog(
     totalWalletBalance: Double,
     assets: List<AssetItem> = emptyList(),
     debts: List<DebtItem> = emptyList(),
+    netWorth: Double = totalWalletBalance + assets.sumOf { it.currentValue } - debts.sumOf { it.amount },
+    totalAssetsValue: Double = assets.sumOf { it.currentValue },
+    totalDebtsAmount: Double = debts.sumOf { it.amount },
     onSaveAsset: (AssetItem) -> Unit = {},
     onDeleteAsset: (AssetItem) -> Unit = {},
     onDeleteCategory: (AssetCategory) -> Unit = {},
@@ -97,10 +100,6 @@ fun AssetTrackerModalDialog(
     var isResetConfirmDialogOpen by remember { mutableStateOf(false) }
     var isDeleteCategoryDialogOpen by remember { mutableStateOf(false) }
     var assetItemToDelete by remember { mutableStateOf<AssetItem?>(null) }
-
-    val totalAssetsValue = assetList.sumOf { it.currentValue }
-    val totalDebtsAmount = debts.sumOf { it.amount }
-    val netWorth = totalWalletBalance + totalAssetsValue - totalDebtsAmount
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

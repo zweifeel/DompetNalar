@@ -164,6 +164,9 @@ fun FinSmartApp(
     val budgetLimits by financeViewModel.budgetLimits.collectAsStateWithLifecycle()
     val debts by financeViewModel.debts.collectAsStateWithLifecycle()
     val assets by financeViewModel.assets.collectAsStateWithLifecycle()
+    val netWorth by financeViewModel.netWorth.collectAsStateWithLifecycle()
+    val totalAssetsValue by financeViewModel.totalAssetsValue.collectAsStateWithLifecycle()
+    val totalDebtsAmount by financeViewModel.totalDebtsAmount.collectAsStateWithLifecycle()
 
     val isAddTransactionOpen by financeViewModel.isAddTransactionOpen.collectAsStateWithLifecycle()
     val defaultTransactionType by financeViewModel.defaultTransactionType.collectAsStateWithLifecycle()
@@ -710,6 +713,9 @@ fun FinSmartApp(
                     totalWalletBalance = totalBalance,
                     assets = assets,
                     debts = debts,
+                    netWorth = netWorth,
+                    totalAssetsValue = totalAssetsValue,
+                    totalDebtsAmount = totalDebtsAmount,
                     onSaveAsset = { financeViewModel.saveAsset(it) },
                     onDeleteAsset = { financeViewModel.deleteAsset(it) },
                     onDeleteCategory = { financeViewModel.deleteAssetsByCategory(it) },

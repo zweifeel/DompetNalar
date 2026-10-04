@@ -239,6 +239,22 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         list.sumOf { it.balance }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
+    val totalAssetsValue: StateFlow<Double> = assets.map { list ->
+        list.sumOf { it.currentValue }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val totalDebtsAmount: StateFlow<Double> = debts.map { list ->
+        list.sumOf { it.amount }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val netWorth: StateFlow<Double> = combine(
+        totalBalance,
+        totalAssetsValue,
+        totalDebtsAmount
+    ) { balance, assetsValue, debtsValue ->
+        balance + assetsValue - debtsValue
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
     val filteredTransactions: StateFlow<List<TransactionItem>> = combine(
         allTransactions,
         _searchQuery,
