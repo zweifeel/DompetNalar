@@ -46,6 +46,7 @@ fun DeleteAccountDialog(
 ) {
     var passwordInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val isGuest = currentUser == null || currentUser.isGuest
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -89,7 +90,11 @@ fun DeleteAccountDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username}' akan dihapus secara permanen dari perangkat dan database.",
+                            text = if (isGuest) {
+                                "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, dan data lokal sesi tamu akan dihapus secara permanen dari perangkat dan database."
+                            } else {
+                                "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username}' akan dihapus secara permanen dari perangkat dan database."
+                            },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -98,30 +103,39 @@ fun DeleteAccountDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "Konfirmasi Kata Sandi / PIN:",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(6.dp))
+                if (isGuest) {
+                    Text(
+                        text = "Sesi Mode Tamu tidak memerlukan kata sandi. Mengonfirmasi tindakan ini akan langsung menghapus seluruh riwayat mutasi, dompet, dan data lokal secara permanen dari perangkat.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "Konfirmasi Kata Sandi / PIN:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                OutlinedTextField(
-                    value = passwordInput,
-                    onValueChange = {
-                        passwordInput = it
-                        errorMessage = null
-                    },
-                    label = { Text("Masukkan kata sandi akun") },
-                    placeholder = { Text("••••••••") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("input_confirm_delete_account_password")
-                )
+                    OutlinedTextField(
+                        value = passwordInput,
+                        onValueChange = {
+                            passwordInput = it
+                            errorMessage = null
+                        },
+                        label = { Text("Masukkan kata sandi akun") },
+                        placeholder = { Text("••••••••") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_confirm_delete_account_password")
+                    )
+                }
 
                 errorMessage?.let { err ->
                     Spacer(modifier = Modifier.height(8.dp))
@@ -132,13 +146,13 @@ fun DeleteAccountDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (passwordInput.isBlank()) {
+                    if (!isGuest && passwordInput.isBlank()) {
                         errorMessage = "Kata sandi wajib diisi untuk konfirmasi keamanan."
                         return@Button
                     }
-                    val isSuccess = onConfirmDelete(passwordInput.trim())
+                    val isSuccess = onConfirmDelete(if (isGuest) "" else passwordInput.trim())
                     if (!isSuccess) {
-                        errorMessage = "Kata sandi salah. Penghapusan akun dibatalkan."
+                        errorMessage = if (isGuest) "Penghapusan akun dibatalkan." else "Kata sandi salah. Penghapusan akun dibatalkan."
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),

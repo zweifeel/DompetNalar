@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.AccountMode
 import com.example.data.model.AssetCategory
@@ -124,6 +125,35 @@ abstract class FinSmartDatabase : RoomDatabase() {
             }
         }
 
+        val DEFAULT_CATEGORIES = listOf(
+            CategoryItem(name = "Makanan & Minuman", type = TransactionType.EXPENSE, iconName = "restaurant", colorHex = "#EF4444"),
+            CategoryItem(name = "Transportasi & Bensin", type = TransactionType.EXPENSE, iconName = "commute", colorHex = "#F59E0B"),
+            CategoryItem(name = "Belanja & Hobi", type = TransactionType.EXPENSE, iconName = "shopping_bag", colorHex = "#EC4899"),
+            CategoryItem(name = "Tagihan & Utilitas", type = TransactionType.EXPENSE, iconName = "receipt", colorHex = "#8B5CF6"),
+            CategoryItem(name = "Kesehatan", type = TransactionType.EXPENSE, iconName = "medical_services", colorHex = "#06B6D4"),
+            CategoryItem(name = "Pendidikan", type = TransactionType.EXPENSE, iconName = "school", colorHex = "#3B82F6"),
+            CategoryItem(name = "Hiburan & Langganan", type = TransactionType.EXPENSE, iconName = "movie", colorHex = "#6366F1"),
+            CategoryItem(name = "Lain-lain", type = TransactionType.EXPENSE, iconName = "more_horiz", colorHex = "#64748B"),
+
+            CategoryItem(name = "Gaji Pokok", type = TransactionType.INCOME, iconName = "payments", colorHex = "#10B981"),
+            CategoryItem(name = "Bonus & Tunjangan", type = TransactionType.INCOME, iconName = "card_giftcard", colorHex = "#059669"),
+            CategoryItem(name = "Investasi & Dividen", type = TransactionType.INCOME, iconName = "trending_up", colorHex = "#047857"),
+            CategoryItem(name = "Penjualan / Omset", type = TransactionType.INCOME, iconName = "store", colorHex = "#0D9488"),
+            CategoryItem(name = "Pemasukan Lain", type = TransactionType.INCOME, iconName = "account_balance_wallet", colorHex = "#0284C7")
+        )
+
+        /**
+         * Atomically wipes all user and financial records from all Room tables (FEAT-30 Right to Erasure)
+         * and reseeds ONLY the 13 generic default categories taxonomy.
+         * NO users, wallets, debts, assets, transactions, or budgets are recreated.
+         */
+        suspend fun wipeAccountDataInTransaction(database: FinSmartDatabase) {
+            database.withTransaction {
+                database.clearAllTables()
+                database.categoryDao().insertCategories(DEFAULT_CATEGORIES)
+            }
+        }
+
         suspend fun populateInitialData(database: FinSmartDatabase) {
             val walletDao = database.walletDao()
             val categoryDao = database.categoryDao()
@@ -176,23 +206,7 @@ abstract class FinSmartDatabase : RoomDatabase() {
             }
 
             if (categoryDao.getCategoryCount() == 0) {
-                val initialCategories = listOf(
-                    CategoryItem(name = "Makanan & Minuman", type = TransactionType.EXPENSE, iconName = "restaurant", colorHex = "#EF4444"),
-                    CategoryItem(name = "Transportasi & Bensin", type = TransactionType.EXPENSE, iconName = "commute", colorHex = "#F59E0B"),
-                    CategoryItem(name = "Belanja & Hobi", type = TransactionType.EXPENSE, iconName = "shopping_bag", colorHex = "#EC4899"),
-                    CategoryItem(name = "Tagihan & Utilitas", type = TransactionType.EXPENSE, iconName = "receipt", colorHex = "#8B5CF6"),
-                    CategoryItem(name = "Kesehatan", type = TransactionType.EXPENSE, iconName = "medical_services", colorHex = "#06B6D4"),
-                    CategoryItem(name = "Pendidikan", type = TransactionType.EXPENSE, iconName = "school", colorHex = "#3B82F6"),
-                    CategoryItem(name = "Hiburan & Langganan", type = TransactionType.EXPENSE, iconName = "movie", colorHex = "#6366F1"),
-                    CategoryItem(name = "Lain-lain", type = TransactionType.EXPENSE, iconName = "more_horiz", colorHex = "#64748B"),
-
-                    CategoryItem(name = "Gaji Pokok", type = TransactionType.INCOME, iconName = "payments", colorHex = "#10B981"),
-                    CategoryItem(name = "Bonus & Tunjangan", type = TransactionType.INCOME, iconName = "card_giftcard", colorHex = "#059669"),
-                    CategoryItem(name = "Investasi & Dividen", type = TransactionType.INCOME, iconName = "trending_up", colorHex = "#047857"),
-                    CategoryItem(name = "Penjualan / Omset", type = TransactionType.INCOME, iconName = "store", colorHex = "#0D9488"),
-                    CategoryItem(name = "Pemasukan Lain", type = TransactionType.INCOME, iconName = "account_balance_wallet", colorHex = "#0284C7")
-                )
-                categoryDao.insertCategories(initialCategories)
+                categoryDao.insertCategories(DEFAULT_CATEGORIES)
             }
 
             if (userDao.getUserCount() == 0) {

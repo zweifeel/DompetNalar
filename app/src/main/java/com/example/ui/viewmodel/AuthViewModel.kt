@@ -14,12 +14,14 @@ import com.example.data.model.UserRole
 import com.example.data.repository.UserRepository
 import com.example.util.GamificationManager
 import com.example.util.PasswordHasher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Random
 
@@ -487,18 +489,62 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             return false
         }
 
-        viewModelScope.launch {
-            // Delete user record from database
-            if (!user.isGuest && user.id > 0) {
-                userRepository.deleteUser(user)
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. Atomic Room database wipe & category reseed
+            FinSmartDatabase.wipeAccountDataInTransaction(database)
+
+            // 2. Cancel all scheduled background tasks (RecurringTransactionWorker, AutoSyncWorker)
+            try {
+                androidx.work.WorkManager.getInstance(getApplication()).cancelAllWork()
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "Gagal membatalkan WorkManager tasks", e)
             }
-            // Clear local preferences
+
+            // 3. Disconnect Google Drive & clear drive preferences
+            try {
+                com.example.util.GoogleDriveService.disconnect(getApplication())
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "Gagal disconnect Google Drive", e)
+            }
+
+            // 4. Clear SharedPreferences
             prefs.edit().clear().apply()
-            _currentUser.value = null
-            _isDeleteAccountOpen.value = false
-            _isSuccessToast.value = "Akun dan seluruh data lokal berhasil dihapus secara permanen."
-            onDeleted()
-            _isAuthModalOpen.value = true
+            try {
+                getApplication<Application>().getSharedPreferences("finsmart_prefs", Context.MODE_PRIVATE)
+                    .edit().clear().apply()
+            } catch (e: Exception) {
+                android.util.Log.e("AuthViewModel", "Gagal membersihkan finsmart_prefs", e)
+            }
+
+            // 5. Reset in-memory state flows on Main thread
+            withContext(Dispatchers.Main) {
+                _currentUser.value = null
+                _singleFeaturePassCredits.value = 0
+                _isDriveConnected.value = false
+                _driveEmail.value = ""
+                _driveLastBackup.value = ""
+                _driveAutoSync.value = false
+                _gamificationState.value = UserGamificationState(
+                    level = 1,
+                    currentXp = 0,
+                    xpForNextLevel = 100,
+                    dailyStreak = 0,
+                    bestStreak = 0,
+                    personality = FinancialPersonality.BALANCED,
+                    activeIconEdition = AppIconEdition.DEFAULT_CLASSIC,
+                    customBackgroundUri = null,
+                    customBackgroundOpacity = 0.3f,
+                    isNoSpendChallengeActive = false,
+                    mainPin = "123456",
+                    duressPin = "999999",
+                    isBiometricEnabled = false,
+                    unlockedBadgeIds = setOf("rookie_planner")
+                )
+                _isDeleteAccountOpen.value = false
+                _isSuccessToast.value = "Akun dan seluruh data lokal berhasil dihapus secara permanen."
+                onDeleted()
+                _isAuthModalOpen.value = true
+            }
         }
 
         return true
