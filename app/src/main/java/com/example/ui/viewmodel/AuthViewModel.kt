@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Random
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
@@ -627,6 +628,24 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _isSuccessToast.value = "Memulai pemulihan data..."
             val result = com.example.util.GoogleDriveService.restoreNow(getApplication(), database)
             _isSuccessToast.value = result.second
+        }
+    }
+
+    fun triggerPortableBackup(password: String, onComplete: ((Boolean, String, File?) -> Unit)? = null) {
+        viewModelScope.launch {
+            _isSuccessToast.value = "Membuat cadangan portabel..."
+            val result = com.example.util.GoogleDriveService.backupPortableNow(getApplication(), database, password)
+            _isSuccessToast.value = result.second
+            onComplete?.invoke(result.first, result.second, result.third)
+        }
+    }
+
+    fun triggerPortableRestore(backupJson: String?, password: String, onComplete: ((Boolean, String) -> Unit)? = null) {
+        viewModelScope.launch {
+            _isSuccessToast.value = "Mendekripsi dan memulihkan cadangan portabel..."
+            val result = com.example.util.GoogleDriveService.restorePortableNow(getApplication(), database, backupJson, password)
+            _isSuccessToast.value = result.second
+            onComplete?.invoke(result.first, result.second)
         }
     }
 

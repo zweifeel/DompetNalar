@@ -21,3 +21,16 @@ debug.keystore
 app/release/
 .idea/deploymentTargetSelector.xml
 .idea/deviceManager.xml
+# PRD Automation temporary files
+*.candidate
+*.candidate.*
+*.bak
+__pycache__/
+*.pyc
+
+# Firebase applet configuration
+firebase-applet-config.json
+
+# Local IDE directories
+.idea/
+.vscode/

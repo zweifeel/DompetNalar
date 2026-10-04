@@ -1,0 +1,132 @@
+name: FinSmart Canonical CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+# Enforce least-privilege permissions globally across the workflow
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Verify FinSmart
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      - name: 3. Set up Python 3.12 for PRD Validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 4. Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: 5. Setup Android Debug Keystore
+        run: |
+          mkdir -p ~/.android ~/.config/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
+
+      - name: 6. Create Dummy google-services.json if missing
+        run: |
+          if [ ! -f "app/google-services.json" ]; then
+            echo '{
+              "project_info": { "project_number": "000000000000", "project_id": "finsmart-dummy", "storage_bucket": "finsmart.appspot.com" },
+              "client": [{ "client_info": { "mobilesdk_app_id": "1:000000000000:android:0000000000000000", "android_client_info": { "package_name": "com.example.finsmart" } }, "api_key": [{ "current_key": "AIzaSyDummyKeyForBuildOnly" }] }]
+            }' > app/google-services.json
+          fi
+
+      - name: 7. Validate PRD Baseline & Architecture Traceability
+        run: python3 scripts/update_prd.py --validate PRD.md
+
+      - name: 8. Execute Mandatory Unit Tests
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: 9. Build Debug APK
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: 10. Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: finsmart-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+  release:
+    name: Publish Auto-Versioned Release
+    needs: [build-and-test]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      - name: 3. Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: 4. Setup Android Debug Keystore
+        run: |
+          mkdir -p ~/.android ~/.config/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
+
+      - name: 5. Create Dummy google-services.json if missing
+        run: |
+          if [ ! -f "app/google-services.json" ]; then
+            echo '{
+              "project_info": { "project_number": "000000000000", "project_id": "finsmart-dummy", "storage_bucket": "finsmart.appspot.com" },
+              "client": [{ "client_info": { "mobilesdk_app_id": "1:000000000000:android:0000000000000000", "android_client_info": { "package_name": "com.example.finsmart" } }, "api_key": [{ "current_key": "AIzaSyDummyKeyForBuildOnly" }] }]
+            }' > app/google-services.json
+          fi
+
+      - name: 6. Build Release APK
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: 7. Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: finsmart-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      - name: 8. Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

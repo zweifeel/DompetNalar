@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.AccountMode
 import com.example.data.model.BudgetLimitItem
@@ -23,7 +24,7 @@ import kotlinx.coroutines.launch
 @Database(
     entities = [Wallet::class, TransactionItem::class, CategoryItem::class, User::class, SplitBillHistoryItem::class, BudgetLimitItem::class, FeedbackItem::class],
     version = 5,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class FinSmartDatabase : RoomDatabase() {
     abstract fun walletDao(): WalletDao
@@ -38,6 +39,16 @@ abstract class FinSmartDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: FinSmartDatabase? = null
 
+        /**
+         * Registry of explicit Room migrations.
+         * All future schema version bumps (e.g., from 5 to 6) MUST define and register
+         * a Migration object here instead of relying on destructive migration.
+         */
+        val MIGRATIONS: Array<Migration> = arrayOf(
+            // Future explicit migrations will be registered here, e.g.:
+            // MIGRATION_5_6,
+        )
+
         fun getDatabase(context: Context, scope: CoroutineScope): FinSmartDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -46,7 +57,7 @@ abstract class FinSmartDatabase : RoomDatabase() {
                     "finsmart_database"
                 )
                     .addCallback(FinSmartDatabaseCallback(scope))
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(*MIGRATIONS)
                     .build()
                 INSTANCE = instance
                 instance

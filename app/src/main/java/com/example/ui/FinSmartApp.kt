@@ -469,6 +469,12 @@ fun FinSmartApp(
                         onToggleAutoSync = { enabled -> authViewModel.toggleAutoSync(enabled) },
                         onTriggerBackup = { authViewModel.triggerManualBackup() },
                         onTriggerRestore = { authViewModel.triggerManualRestore() },
+                        onTriggerPortableBackup = { password, callback ->
+                            authViewModel.triggerPortableBackup(password, callback)
+                        },
+                        onTriggerPortableRestore = { backupJson, password, callback ->
+                            authViewModel.triggerPortableRestore(backupJson, password, callback)
+                        },
                         onOpenGamificationHub = { authViewModel.openGamificationHub() },
                         onOpenPersonalityQuiz = { authViewModel.openPersonalityQuiz() },
                         onOpenDuressPinModal = { authViewModel.openDuressPinModal() },

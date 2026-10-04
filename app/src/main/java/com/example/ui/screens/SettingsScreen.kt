@@ -1,9 +1,20 @@
 package com.example.ui.screens
 
+import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -130,6 +141,8 @@ fun SettingsScreen(
     onToggleAutoSync: (Boolean) -> Unit,
     onTriggerBackup: () -> Unit,
     onTriggerRestore: () -> Unit,
+    onTriggerPortableBackup: (String, (Boolean, String, File?) -> Unit) -> Unit = { _, _ -> },
+    onTriggerPortableRestore: (String?, String, (Boolean, String) -> Unit) -> Unit = { _, _, _ -> },
     onOpenGamificationHub: () -> Unit = {},
     onOpenPersonalityQuiz: () -> Unit = {},
     onOpenDuressPinModal: () -> Unit = {},
@@ -183,6 +196,41 @@ fun SettingsScreen(
                 ThemeEngine.setCustomWallpaper(context, uri.toString(), customWallpaperOpacity)
                 Toast.makeText(context, "Latar belakang berhasil diterapkan!", Toast.LENGTH_SHORT).show()
                 isWallpaperDialogOpen = true
+            }
+        }
+    )
+
+    var isBackupChoiceDialogOpen by remember { mutableStateOf(false) }
+    var isPortableBackupDialogOpen by remember { mutableStateOf(false) }
+    var isRestoreChoiceDialogOpen by remember { mutableStateOf(false) }
+    var isPortableRestoreDialogOpen by remember { mutableStateOf(false) }
+
+    var portableBackupPassword by remember { mutableStateOf("") }
+    var portableBackupConfirmPassword by remember { mutableStateOf("") }
+    var portableBackupPasswordVisible by remember { mutableStateOf(false) }
+    var portableBackupConfirmVisible by remember { mutableStateOf(false) }
+    var portableBackupError by remember { mutableStateOf<String?>(null) }
+    var isCreatingPortableBackup by remember { mutableStateOf(false) }
+
+    var portableRestorePassword by remember { mutableStateOf("") }
+    var portableRestorePasswordVisible by remember { mutableStateOf(false) }
+    var portableRestoreError by remember { mutableStateOf<String?>(null) }
+    var isRestoringPortableBackup by remember { mutableStateOf(false) }
+    var selectedRestoreFileName by remember { mutableStateOf<String?>(null) }
+    var selectedRestoreFileContent by remember { mutableStateOf<String?>(null) }
+
+    val backupPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            if (uri != null) {
+                selectedRestoreFileName = uri.lastPathSegment ?: "backup.json"
+                try {
+                    val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                    selectedRestoreFileContent = content
+                    portableRestoreError = null
+                } catch (e: Exception) {
+                    portableRestoreError = "Gagal membaca file: ${e.message}"
+                }
             }
         }
     )
@@ -535,7 +583,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Button(
-                                onClick = onTriggerBackup,
+                                onClick = { isBackupChoiceDialogOpen = true },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("btn_backup_now"),
@@ -545,13 +593,55 @@ fun SettingsScreen(
                             }
 
                             OutlinedButton(
-                                onClick = onTriggerRestore,
+                                onClick = { isRestoreChoiceDialogOpen = true },
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("btn_restore_data"),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Text("Pulihkan Data", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    portableBackupPassword = ""
+                                    portableBackupConfirmPassword = ""
+                                    portableBackupError = null
+                                    isPortableBackupDialogOpen = true
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("btn_portable_backup"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp), tint = FinSmartPrimary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Cadangan Portabel", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    portableRestorePassword = ""
+                                    portableRestoreError = null
+                                    selectedRestoreFileName = null
+                                    selectedRestoreFileContent = null
+                                    isPortableRestoreDialogOpen = true
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("btn_portable_restore"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Pulihkan Portabel", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
 
@@ -1333,6 +1423,542 @@ fun SettingsScreen(
             masterDevViewModel = masterDevViewModel,
             onDismiss = {
                 masterDevViewModel.dismissPublishModal()
+            }
+        )
+    }
+
+    // 7. Backup Choice Dialog (Device Local vs Portable)
+    if (isBackupChoiceDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isBackupChoiceDialogOpen = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pilihan Pencadangan Data", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Pilih metode pencadangan yang sesuai dengan kebutuhan Anda:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Option A: Device Local Backup
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                isBackupChoiceDialogOpen = false
+                                onTriggerBackup()
+                            }
+                            .testTag("btn_choice_device_backup")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(FinSmartPrimary.copy(alpha = 0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Security, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Cadangan Perangkat (Otomatis)", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Menggunakan Android Keystore. Cepat, otomatis & tanpa perlu kata sandi.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Option B: Portable Backup
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, FinSmartPrimary.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                isBackupChoiceDialogOpen = false
+                                portableBackupPassword = ""
+                                portableBackupConfirmPassword = ""
+                                portableBackupError = null
+                                isPortableBackupDialogOpen = true
+                            }
+                            .testTag("btn_choice_portable_backup")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(FinSmartPrimary.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Key, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Cadangan Portabel (Kata Sandi)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Terenkripsi AES-256-GCM dengan kata sandi khusus. Dapat dipindahkan ke perangkat lain.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { isBackupChoiceDialogOpen = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // 8. Portable Backup Dialog (Password Setup & Export)
+    if (isPortableBackupDialogOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isCreatingPortableBackup) {
+                    isPortableBackupDialogOpen = false
+                    portableBackupPassword = ""
+                    portableBackupConfirmPassword = ""
+                    portableBackupError = null
+                }
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Key, contentDescription = null, tint = FinSmartPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Buat Cadangan Portabel", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Tentukan kata sandi untuk melindungi cadangan Anda. Data dienkripsi secara independen tanpa bergantung pada kunci hardware perangkat ini.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = portableBackupPassword,
+                        onValueChange = {
+                            portableBackupPassword = it
+                            portableBackupError = null
+                        },
+                        label = { Text("Kata Sandi Cadangan") },
+                        placeholder = { Text("Minimal 6 karakter") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        trailingIcon = {
+                            IconButton(onClick = { portableBackupPasswordVisible = !portableBackupPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (portableBackupPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (portableBackupPasswordVisible) "Sembunyikan" else "Tampilkan"
+                                )
+                            }
+                        },
+                        visualTransformation = if (portableBackupPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_portable_backup_password")
+                    )
+
+                    OutlinedTextField(
+                        value = portableBackupConfirmPassword,
+                        onValueChange = {
+                            portableBackupConfirmPassword = it
+                            portableBackupError = null
+                        },
+                        label = { Text("Konfirmasi Kata Sandi") },
+                        placeholder = { Text("Ketik ulang kata sandi") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        trailingIcon = {
+                            IconButton(onClick = { portableBackupConfirmVisible = !portableBackupConfirmVisible }) {
+                                Icon(
+                                    imageVector = if (portableBackupConfirmVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (portableBackupConfirmVisible) "Sembunyikan" else "Tampilkan"
+                                )
+                            }
+                        },
+                        visualTransformation = if (portableBackupConfirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_portable_backup_confirm_password")
+                    )
+
+                    if (!portableBackupError.isNullOrBlank()) {
+                        Text(
+                            text = portableBackupError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.testTag("text_portable_backup_error")
+                        )
+                    }
+
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "Catatan: Jangan lupakan kata sandi ini. FinSmart tidak menyimpannya di server demi keamanan privasi Anda.",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val pass = portableBackupPassword.trim()
+                        val confirmPass = portableBackupConfirmPassword.trim()
+                        when {
+                            pass.isEmpty() -> {
+                                portableBackupError = "Kata sandi cadangan tidak boleh kosong."
+                            }
+                            pass.length < 6 -> {
+                                portableBackupError = "Kata sandi cadangan minimal 6 karakter."
+                            }
+                            pass != confirmPass -> {
+                                portableBackupError = "Konfirmasi kata sandi tidak cocok."
+                            }
+                            else -> {
+                                isCreatingPortableBackup = true
+                                portableBackupError = null
+                                val capturedPassword = pass
+                                // Clear password states from UI immediately
+                                portableBackupPassword = ""
+                                portableBackupConfirmPassword = ""
+                                onTriggerPortableBackup(capturedPassword) { success, message, file ->
+                                    isCreatingPortableBackup = false
+                                    if (success) {
+                                        isPortableBackupDialogOpen = false
+                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                        if (file != null && file.exists()) {
+                                            try {
+                                                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                    type = "application/json"
+                                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                    putExtra(Intent.EXTRA_SUBJECT, "FinSmart Portable Backup")
+                                                    putExtra(Intent.EXTRA_TEXT, "File cadangan portabel FinSmart terenkripsi.")
+                                                }
+                                                context.startActivity(Intent.createChooser(shareIntent, "Bagikan / Simpan File Cadangan Portabel"))
+                                            } catch (e: Exception) {
+                                                Log.w("SettingsScreen", "Gagal memanggil share chooser: ${e.message}")
+                                            }
+                                        }
+                                    } else {
+                                        portableBackupError = message
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    enabled = !isCreatingPortableBackup,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
+                    modifier = Modifier.testTag("btn_submit_portable_backup")
+                ) {
+                    Text(if (isCreatingPortableBackup) "Memproses..." else "Cadangkan & Ekspor", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        isPortableBackupDialogOpen = false
+                        portableBackupPassword = ""
+                        portableBackupConfirmPassword = ""
+                        portableBackupError = null
+                    },
+                    enabled = !isCreatingPortableBackup
+                ) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // 9. Restore Choice Dialog (Device Local vs Portable)
+    if (isRestoreChoiceDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isRestoreChoiceDialogOpen = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pilihan Pemulihan Data", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Pilih sumber data cadangan yang ingin dipulihkan ke aplikasi ini:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Option A: Device Local Restore
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                isRestoreChoiceDialogOpen = false
+                                onTriggerRestore()
+                            }
+                            .testTag("btn_choice_device_restore")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Pulihkan Cadangan Perangkat", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Pulihkan dari cadangan lokal / Google Drive sandbox perangkat ini.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Option B: Portable Restore
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, FinSmartPrimary.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                isRestoreChoiceDialogOpen = false
+                                portableRestorePassword = ""
+                                portableRestoreError = null
+                                selectedRestoreFileName = null
+                                selectedRestoreFileContent = null
+                                isPortableRestoreDialogOpen = true
+                            }
+                            .testTag("btn_choice_portable_restore")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(FinSmartPrimary.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Key, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Pulihkan Cadangan Portabel (Kata Sandi)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Pilih file cadangan (.json) dan dekripsi menggunakan kata sandi Anda.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { isRestoreChoiceDialogOpen = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // 10. Portable Restore Dialog (Password Input & Validation)
+    if (isPortableRestoreDialogOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isRestoringPortableBackup) {
+                    isPortableRestoreDialogOpen = false
+                    portableRestorePassword = ""
+                    portableRestoreError = null
+                    selectedRestoreFileName = null
+                    selectedRestoreFileContent = null
+                }
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Key, contentDescription = null, tint = FinSmartPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pulihkan Cadangan Portabel", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Pilih file cadangan dan masukkan kata sandi yang digunakan saat pencadangan:",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // File picker indicator & action
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(
+                                text = if (selectedRestoreFileName != null) "File Terpilih: $selectedRestoreFileName" else "Sumber: finsmart_portable_backup.json (Sandbox/Lokal)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedButton(
+                                onClick = { backupPickerLauncher.launch("*/*") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("btn_pick_backup_file"),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Pilih File Cadangan Lain (.json)", fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = portableRestorePassword,
+                        onValueChange = {
+                            portableRestorePassword = it
+                            portableRestoreError = null
+                        },
+                        label = { Text("Kata Sandi Cadangan") },
+                        placeholder = { Text("Masukkan kata sandi") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        trailingIcon = {
+                            IconButton(onClick = { portableRestorePasswordVisible = !portableRestorePasswordVisible }) {
+                                Icon(
+                                    imageVector = if (portableRestorePasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (portableRestorePasswordVisible) "Sembunyikan" else "Tampilkan"
+                                )
+                            }
+                        },
+                        visualTransformation = if (portableRestorePasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_portable_restore_password")
+                    )
+
+                    if (!portableRestoreError.isNullOrBlank()) {
+                        Text(
+                            text = portableRestoreError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.testTag("text_portable_restore_error")
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val pass = portableRestorePassword.trim()
+                        if (pass.isEmpty()) {
+                            portableRestoreError = "Kata sandi pemulihan tidak boleh kosong."
+                            return@Button
+                        }
+                        isRestoringPortableBackup = true
+                        portableRestoreError = null
+                        val capturedPassword = pass
+                        val capturedContent = selectedRestoreFileContent
+                        // Clear password from memory/state
+                        portableRestorePassword = ""
+                        onTriggerPortableRestore(capturedContent, capturedPassword) { success, message ->
+                            isRestoringPortableBackup = false
+                            if (success) {
+                                isPortableRestoreDialogOpen = false
+                                selectedRestoreFileName = null
+                                selectedRestoreFileContent = null
+                                portableRestoreError = null
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                            } else {
+                                portableRestoreError = message
+                            }
+                        }
+                    },
+                    enabled = !isRestoringPortableBackup,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
+                    modifier = Modifier.testTag("btn_submit_portable_restore")
+                ) {
+                    Text(if (isRestoringPortableBackup) "Mendekripsi..." else "Pulihkan Data", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        isPortableRestoreDialogOpen = false
+                        portableRestorePassword = ""
+                        portableRestoreError = null
+                        selectedRestoreFileName = null
+                        selectedRestoreFileContent = null
+                    },
+                    enabled = !isRestoringPortableBackup
+                ) {
+                    Text("Batal")
+                }
             }
         )
     }

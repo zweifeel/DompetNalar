@@ -22,6 +22,7 @@ object GoogleDriveService {
     const val DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file"
     private const val PUBLIC_FOLDER_NAME = "FinSmart_Backups"
     private const val BACKUP_FILE_NAME = "finsmart_backup.json"
+    private const val PORTABLE_BACKUP_FILE_NAME = "finsmart_portable_backup.json"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -78,8 +79,47 @@ object GoogleDriveService {
     }
 
     /**
-     * Export all database contents, encrypt with AES-256, and upload to Root Google Drive Public Folder ("FinSmart_Backups").
-     * Uses Scope DRIVE_FILE so files are visible & editable by user in Google Drive app/web.
+     * Atomically and safely writes backup data, archiving any existing Format v1 backup
+     * to prevent accidental data loss.
+     */
+    private fun writeBackupFileSafely(targetDir: File, fileName: String, content: String) {
+        if (!targetDir.exists()) {
+            targetDir.mkdirs()
+        }
+        val targetFile = File(targetDir, fileName)
+        val tempFile = File(targetDir, "$fileName.tmp")
+
+        // 1. Write content to temporary file first
+        tempFile.writeText(content)
+
+        // 2. If existing target file is Format v1, preserve it as an archive
+        if (targetFile.exists() && targetFile.length() > 0) {
+            try {
+                val existingText = targetFile.readText()
+                if (!EncryptionUtils.isFormatV2(existingText)) {
+                    val legacyBak = File(targetDir, "$fileName.v1.bak")
+                    targetFile.copyTo(legacyBak, overwrite = true)
+                    Log.d(TAG, "Cadangan legacy v1 diarsipkan secara aman di: ${legacyBak.name}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Gagal membuat arsip cadangan legacy: ${e.message}")
+            }
+        }
+
+        // 3. Atomically replace target file
+        if (targetFile.exists()) {
+            targetFile.delete()
+        }
+        val renamed = tempFile.renameTo(targetFile)
+        if (!renamed) {
+            tempFile.copyTo(targetFile, overwrite = true)
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Export all database contents, encrypt with Format v2 (AES-GCM-256 authenticated AEAD),
+     * and persist to local fallback and Google Drive Public Root Sandbox.
      */
     suspend fun backupNow(context: Context, database: FinSmartDatabase): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
@@ -107,32 +147,23 @@ object GoogleDriveService {
             val adapter = moshi.adapter(BackupDataPayload::class.java)
             val jsonStr = adapter.toJson(payload)
 
-            // 4. Encrypt using AES-256
+            // 4. Encrypt using Format v2 (AES-GCM-256 authenticated AEAD envelope)
             val encryptedData = EncryptionUtils.encrypt(jsonStr)
 
-            // 5. Save locally as fallback in public folder structure
+            // 5. Save locally as fallback using atomic write
             val localBackupDir = File(context.filesDir, PUBLIC_FOLDER_NAME)
-            if (!localBackupDir.exists()) {
-                localBackupDir.mkdirs()
-            }
-            val localFile = File(localBackupDir, BACKUP_FILE_NAME)
-            localFile.writeText(encryptedData)
+            writeBackupFileSafely(localBackupDir, BACKUP_FILE_NAME, encryptedData)
 
-            // 6. Save in Google Drive Public Root Sandbox ("FinSmart_Backups" / "finsmart_backup.json")
-            // This ensures the file is visible, editable, and downloadable directly by user in Google Drive app/web.
+            // 6. Save in Google Drive Public Root Sandbox using atomic write
             val googleDrivePublicRoot = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME")
-            if (!googleDrivePublicRoot.exists()) {
-                googleDrivePublicRoot.mkdirs()
-            }
-            val cloudFile = File(googleDrivePublicRoot, BACKUP_FILE_NAME)
-            cloudFile.writeText(encryptedData)
+            writeBackupFileSafely(googleDrivePublicRoot, BACKUP_FILE_NAME, encryptedData)
 
             // Save last backup timestamp
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit().putLong(KEY_LAST_BACKUP, System.currentTimeMillis()).apply()
 
-            Log.d(TAG, "Pencadangan berhasil di folder publik root: ${cloudFile.absolutePath}")
-            Pair(true, "Pencadangan berhasil diunggah ke Google Drive ($PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME)")
+            Log.d(TAG, "Pencadangan Format v2 (AES-GCM) berhasil disimpan.")
+            Pair(true, "Pencadangan berhasil diunggah ke Google Drive ($PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME) [Format v2 Terautentikasi]")
         } catch (e: Exception) {
             Log.e(TAG, "Gagal melakukan pencadangan", e)
             Pair(false, "Gagal mencadangkan data: ${e.message}")
@@ -141,6 +172,7 @@ object GoogleDriveService {
 
     /**
      * Restore from Root Google Drive Public Folder ("FinSmart_Backups/finsmart_backup.json").
+     * Supports both Format v2 (AES-GCM) and Format v1 (Legacy AES-CBC) with seamless auto-dispatch.
      */
     suspend fun restoreNow(context: Context, database: FinSmartDatabase): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
@@ -166,26 +198,202 @@ object GoogleDriveService {
             // 1. Read encrypted string
             val encryptedText = targetFile.readText()
 
-            // 2. Decrypt
+            // 2. Identify format
+            val isV2 = EncryptionUtils.isFormatV2(encryptedText)
+            val formatLabel = if (isV2) "Format v2 (AES-GCM Terautentikasi)" else "Format v1 (Legacy AES-CBC)"
+
+            // 3. Decrypt with auto-dispatch
             val decryptedJson = EncryptionUtils.decrypt(encryptedText)
 
-            // 3. Deserialize with Moshi
+            // 4. Deserialize with Moshi
             val adapter = moshi.adapter(BackupDataPayload::class.java)
             val payload = adapter.fromJson(decryptedJson)
                 ?: return@withContext Pair(false, "Gagal mengurai isi data cadangan $BACKUP_FILE_NAME.")
 
-            // 4. Restore tables into Room Database
+            // 5. Restore tables into Room Database atomically
             database.runInTransaction {
                 com.example.ui.viewmodel.FinanceViewModel.restoreDatabaseInTransaction(database, payload)
             }
 
-            // 5. Post-restore migration hook: sanitize and migrate legacy plaintext passwords in restored database
+            // 6. Post-restore migration hook: sanitize and migrate legacy plaintext passwords in restored database
             PasswordHasher.migrateLegacyPasswords(database.userDao())
 
-            Pair(true, "Pemulihan data berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan dari '$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME' (Tanggal: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})")
+            // 7. Non-destructive auto-upgrade: If restored from legacy v1, upgrade local backup to v2
+            if (!isV2) {
+                try {
+                    val upgradedV2Data = EncryptionUtils.encrypt(decryptedJson)
+                    val localBackupDir = File(context.filesDir, PUBLIC_FOLDER_NAME)
+                    writeBackupFileSafely(localBackupDir, BACKUP_FILE_NAME, upgradedV2Data)
+                    val googleDrivePublicRoot = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME")
+                    writeBackupFileSafely(googleDrivePublicRoot, BACKUP_FILE_NAME, upgradedV2Data)
+                    Log.d(TAG, "Cadangan berhasil dimigrasikan ke Format v2 secara non-destruktif.")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Peringatan: Gagal melakukan migrasi non-destruktif ke v2: ${e.message}")
+                }
+            }
+
+            Pair(
+                true,
+                "Pemulihan data berhasil [$formatLabel]! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan dari '$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME' (Tanggal: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})"
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Gagal memulihkan data", e)
             Pair(false, "Gagal memulihkan data: ${e.message}")
+        }
+    }
+
+    /**
+     * Export all database contents, encrypt with Format v2 using a custom user passphrase
+     * via PBKDF2-HMAC-SHA256 (100,000 iterations, 16-byte random salt, AES-256-GCM AEAD).
+     * Does NOT use AndroidKeyStore, enabling full cross-device and reinstall portability.
+     */
+    suspend fun backupPortableNow(
+        context: Context,
+        database: FinSmartDatabase,
+        password: String
+    ): Triple<Boolean, String, File?> = withContext(Dispatchers.IO) {
+        if (password.isBlank()) {
+            return@withContext Triple(false, "Kata sandi cadangan tidak boleh kosong.", null)
+        }
+        try {
+            // 1. Fetch all data from DAOs
+            val wallets = database.walletDao().getAllWallets().first()
+            val transactions = database.transactionDao().getAllTransactions().first()
+            val categories = database.categoryDao().getAllCategories().first()
+            val users = database.userDao().getAllUsers().first()
+            val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory().first()
+            val budgetLimits = database.budgetLimitDao().getAllBudgetLimits().first()
+
+            // 2. Build payload
+            val payload = BackupDataPayload(
+                version = 1,
+                wallets = wallets,
+                transactions = transactions,
+                categories = categories,
+                users = users,
+                splitBillHistory = splitBillHistory,
+                budgetLimits = budgetLimits,
+                exportedAt = System.currentTimeMillis()
+            )
+
+            // 3. Serialize to JSON
+            val adapter = moshi.adapter(BackupDataPayload::class.java)
+            val jsonStr = adapter.toJson(payload)
+
+            // 4. Encrypt using Format v2 (PBKDF2-HMAC-SHA256 + AES-GCM-256)
+            val encryptedEnvelope = EncryptionUtils.encryptV2(jsonStr, customPassphrase = password)
+
+            // 5. Save in sandbox and local public folders
+            val localBackupDir = File(context.filesDir, PUBLIC_FOLDER_NAME)
+            writeBackupFileSafely(localBackupDir, PORTABLE_BACKUP_FILE_NAME, encryptedEnvelope)
+
+            val googleDrivePublicRoot = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME")
+            writeBackupFileSafely(googleDrivePublicRoot, PORTABLE_BACKUP_FILE_NAME, encryptedEnvelope)
+
+            // 6. Write to shareable export file
+            val exportDir = File(context.filesDir, "Backups_Export")
+            if (!exportDir.exists()) {
+                exportDir.mkdirs()
+            }
+            val timeTag = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val exportFile = File(exportDir, "finsmart_portable_backup_$timeTag.json")
+            exportFile.writeText(encryptedEnvelope)
+
+            Log.d(TAG, "Pencadangan portabel Format v2 berhasil dibuat.")
+            Triple(true, "Cadangan portabel berhasil dibuat [Format v2 Terenkripsi Kata Sandi].", exportFile)
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membuat cadangan portabel", e)
+            Triple(false, "Gagal membuat cadangan portabel: ${e.message}", null)
+        }
+    }
+
+    /**
+     * Restore from a portable Format v2 backup using user passphrase.
+     * Enforces strict order of operations:
+     * 1. Validate password not blank
+     * 2. Validate backup content not blank
+     * 3. Validate envelope is Format v2
+     * 4. Verify envelope.keyProtection == "PBKDF2"
+     * 5. Cryptographic AEAD decryption (BadTagException caught on wrong password or tampering)
+     * 6. Deserialization of BackupDataPayload
+     * 7. Validation of core payload entities
+     * 8. ONLY AFTER ALL PREVIOUS CHECKS SUCCEED: mutate database in transaction
+     */
+    suspend fun restorePortableNow(
+        context: Context,
+        database: FinSmartDatabase,
+        backupContent: String?,
+        password: String
+    ): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        if (password.isBlank()) {
+            return@withContext Pair(false, "Kata sandi pemulihan tidak boleh kosong.")
+        }
+
+        try {
+            val contentToDecrypt = if (!backupContent.isNullOrBlank()) {
+                backupContent.trim()
+            } else {
+                val portableFile = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME/$PORTABLE_BACKUP_FILE_NAME")
+                val localFile = File(context.filesDir, "$PUBLIC_FOLDER_NAME/$PORTABLE_BACKUP_FILE_NAME")
+                when {
+                    portableFile.exists() && portableFile.length() > 0 -> portableFile.readText().trim()
+                    localFile.exists() && localFile.length() > 0 -> localFile.readText().trim()
+                    else -> return@withContext Pair(false, "File cadangan portabel tidak ditemukan. Silakan pilih file cadangan (.json).")
+                }
+            }
+
+            if (!EncryptionUtils.isFormatV2(contentToDecrypt)) {
+                return@withContext Pair(false, "Format file tidak didukung atau bukan Format v2 terautentikasi.")
+            }
+
+            val envelopeAdapter = moshi.adapter(com.example.data.model.BackupEnvelopeV2::class.java)
+            val envelope = try {
+                envelopeAdapter.fromJson(contentToDecrypt)
+            } catch (e: Exception) {
+                null
+            } ?: return@withContext Pair(false, "File cadangan rusak: struktur envelope v2 tidak valid.")
+
+            if (envelope.keyProtection != "PBKDF2") {
+                return@withContext Pair(false, "File cadangan ini menggunakan kunci perangkat lokal, bukan kata sandi portabel.")
+            }
+
+            // Cryptographic decryption & AEAD verification
+            val decryptedJson = try {
+                EncryptionUtils.decryptV2(contentToDecrypt, password)
+            } catch (e: javax.crypto.AEADBadTagException) {
+                return@withContext Pair(false, "Kata sandi salah atau isi cadangan telah diubah (integritas gagal).")
+            } catch (e: Exception) {
+                return@withContext Pair(false, "Gagal mendekripsi: kata sandi salah atau data cadangan rusak.")
+            }
+
+            // JSON Payload Deserialization
+            val payloadAdapter = moshi.adapter(BackupDataPayload::class.java)
+            val payload = try {
+                payloadAdapter.fromJson(decryptedJson)
+            } catch (e: Exception) {
+                null
+            } ?: return@withContext Pair(false, "Gagal membaca isi data cadangan (struktur data rusak).")
+
+            // Payload Entity Validation
+            if (payload.wallets == null || payload.categories == null || payload.transactions == null) {
+                return@withContext Pair(false, "Data cadangan tidak lengkap atau tidak valid.")
+            }
+
+            // MUTATE ROOM DATABASE ONLY AFTER ALL CHECKS PASS
+            database.runInTransaction {
+                com.example.ui.viewmodel.FinanceViewModel.restoreDatabaseInTransaction(database, payload)
+            }
+
+            // Sanitize legacy passwords
+            PasswordHasher.migrateLegacyPasswords(database.userDao())
+
+            Pair(
+                true,
+                "Pemulihan data portabel berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan (Tanggal cadangan: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})."
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal memulihkan cadangan portabel", e)
+            Pair(false, "Gagal memulihkan cadangan portabel: ${e.message}")
         }
     }
 

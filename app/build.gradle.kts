@@ -113,10 +113,19 @@ android {
         buildConfig = true
     }
     testOptions { unitTests { isIncludeAndroidResources = true } }
+    sourceSets {
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
+        getByName("test").assets.directories.add("$projectDir/schemas")
+    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = true
     }
+}
+
+// Configure Room Schema export directory for KSP
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
