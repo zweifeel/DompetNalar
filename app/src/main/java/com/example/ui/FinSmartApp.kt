@@ -68,6 +68,7 @@ import com.example.ui.components.ReceiptGeneratorModalDialog
 import com.example.ui.components.SmartMasterPaywallDialog
 import com.example.ui.components.WalletDialog
 import com.example.util.NotificationDataHelper
+import com.example.util.rememberShakeDetector
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -136,6 +137,7 @@ fun FinSmartApp(
     val authError by authViewModel.authError.collectAsStateWithLifecycle()
     val changePasswordError by authViewModel.changePasswordError.collectAsStateWithLifecycle()
     val toastMessage by authViewModel.isSuccessToast.collectAsStateWithLifecycle()
+    val shakeGestureAction by authViewModel.shakeGestureAction.collectAsStateWithLifecycle()
 
     // Google Drive Sync States
     val isDriveConnected by authViewModel.isDriveConnected.collectAsStateWithLifecycle()
@@ -202,6 +204,25 @@ fun FinSmartApp(
         toastMessage?.let { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             authViewModel.clearToast()
+        }
+    }
+
+    // FEAT-36 Shake Gesture Detector Guard & Trigger
+    val isAnyBlockingModalActive = isAuthModalOpen || isDeleteAccountOpen ||
+        isDuressPinModalOpen || isReceiptGeneratorOpen || isAddTransactionOpen ||
+        isPaywallOpen || isMasterDevPanelOpen || isNotificationCenterOpen ||
+        isInitialMasterSetupOpen || isChangePasswordOpen || isProminentDisclosureOpen
+
+    rememberShakeDetector(
+        enabled = shakeGestureAction != "OFF" && !isAnyBlockingModalActive
+    ) {
+        when (shakeGestureAction) {
+            "TRANSACTION" -> {
+                financeViewModel.openAddTransaction(TransactionType.EXPENSE)
+            }
+            "STEALTH" -> {
+                authViewModel.activateStealthMode()
+            }
         }
     }
 
@@ -534,7 +555,9 @@ fun FinSmartApp(
                         dailyStreak = gamificationState.dailyStreak,
                         onOpenFeedback = { currentScreen = NavigationScreen.FEEDBACK },
                         onOpenDevFeedbackViewer = { currentScreen = NavigationScreen.DEV_FEEDBACK_VIEWER },
-                        onOpenChangePassword = { authViewModel.openChangePassword() }
+                        onOpenChangePassword = { authViewModel.openChangePassword() },
+                        shakeGestureAction = shakeGestureAction,
+                        onUpdateShakeGestureAction = { authViewModel.updateShakeGestureAction(it) }
                     )
                 }
 

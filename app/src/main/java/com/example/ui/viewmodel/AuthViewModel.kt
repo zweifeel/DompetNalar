@@ -126,6 +126,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString("user_profile_photo_uri", uri).apply()
     }
 
+    // FEAT-36 Shake Gesture Action ("OFF", "TRANSACTION", "STEALTH")
+    private val _shakeGestureAction = MutableStateFlow(prefs.getString("shake_gesture_action", "OFF") ?: "OFF")
+    val shakeGestureAction: StateFlow<String> = _shakeGestureAction.asStateFlow()
+
+    fun updateShakeGestureAction(action: String) {
+        _shakeGestureAction.value = action
+        prefs.edit().putString("shake_gesture_action", action).apply()
+        try {
+            getApplication<Application>().getSharedPreferences("finsmart_prefs", Context.MODE_PRIVATE)
+                .edit().putString("shake_gesture_action", action).apply()
+        } catch (_: Exception) {}
+    }
+
     private val _gamificationState = MutableStateFlow(
         UserGamificationState(
             level = prefs.getInt("gamify_level", 1),
@@ -520,6 +533,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             withContext(Dispatchers.Main) {
                 _currentUser.value = null
                 _singleFeaturePassCredits.value = 0
+                _shakeGestureAction.value = "OFF"
                 _isDriveConnected.value = false
                 _driveEmail.value = ""
                 _driveLastBackup.value = ""
@@ -776,6 +790,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _isSuccessToast.value = "✓ Keamanan Diverifikasi! Mode Asli Aktif"
         } else {
             _isSuccessToast.value = "❌ PIN Salah!"
+        }
+    }
+
+    /**
+     * Activates Stealth Mode directly (used by FEAT-36 Shake Gesture).
+     */
+    fun activateStealthMode() {
+        val state = _gamificationState.value
+        if (!state.isStealthMode) {
+            _gamificationState.value = state.copy(isStealthMode = true)
+            _isSuccessToast.value = "⚠️ FinSmart Masuk Mode Stealth"
         }
     }
 

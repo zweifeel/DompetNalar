@@ -58,6 +58,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material.icons.filled.Stars
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.SwitchAccount
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Visibility
@@ -155,6 +156,8 @@ fun SettingsScreen(
     onOpenFeedback: () -> Unit = {},
     onOpenDevFeedbackViewer: () -> Unit = {},
     onOpenChangePassword: () -> Unit = {},
+    shakeGestureAction: String = "OFF",
+    onUpdateShakeGestureAction: (String) -> Unit = {},
     updateViewModel: UpdateViewModel = viewModel(),
     masterDevViewModel: MasterDevViewModel = viewModel(),
     modifier: Modifier = Modifier
@@ -186,6 +189,7 @@ fun SettingsScreen(
     var isAppIconDialogOpen by remember { mutableStateOf(false) }
     var isCheckUpdateDialogOpen by remember { mutableStateOf(false) }
     var isChangelogOpen by remember { mutableStateOf(false) }
+    var isShakeGestureDialogOpen by remember { mutableStateOf(false) }
 
     var tempOpacity by remember(customWallpaperOpacity) { mutableStateOf(customWallpaperOpacity) }
 
@@ -507,6 +511,19 @@ fun SettingsScreen(
                         title = "Duress PIN & Security Suite",
                         subtitle = "PIN Utama & PIN Darurat (Mode Stealth / Dummy)",
                         onClick = onOpenDuressPinModal
+                    )
+
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    SettingsRowItem(
+                        icon = Icons.Default.Vibration,
+                        title = "Aksi Goyang HP (Shake Gesture)",
+                        subtitle = when (shakeGestureAction) {
+                            "TRANSACTION" -> "Catat Cepat (Buka Lembar Transaksi)"
+                            "STEALTH" -> "Mode Stealth Darurat (Samarkan Aplikasi)"
+                            else -> "Nonaktif (Default)"
+                        },
+                        onClick = { isShakeGestureDialogOpen = true }
                     )
                 }
             }
@@ -876,6 +893,85 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    // Shake Gesture Selector Dialog (FEAT-36)
+    if (isShakeGestureDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isShakeGestureDialogOpen = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Aksi Goyang HP (Shake Gesture)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Pilih aksi pintas saat perangkat digoyangkan secara mantap (> 2.5g):",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val options = listOf(
+                        Triple("OFF", "Nonaktif", "Sensor mati, tidak ada aksi goyangan (Bawaan)"),
+                        Triple("TRANSACTION", "Catat Cepat", "Buka lembar input transaksi baru"),
+                        Triple("STEALTH", "Mode Stealth Darurat", "Samarkan antarmuka seketika ke Mode Kalkulator")
+                    )
+
+                    options.forEach { (actionKey, title, desc) ->
+                        val isSelected = shakeGestureAction == actionKey
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onUpdateShakeGestureAction(actionKey)
+                                    isShakeGestureDialogOpen = false
+                                    Toast.makeText(context, "Aksi goyangan: $title", Toast.LENGTH_SHORT).show()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (isSelected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = title,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = desc,
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { isShakeGestureDialogOpen = false }) {
+                    Text("Tutup")
+                }
+            }
+        )
     }
 
     // 1. Theme Mode Dialog (Light, Dark, Auto-Time, System)
