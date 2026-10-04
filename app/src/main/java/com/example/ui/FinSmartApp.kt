@@ -162,6 +162,8 @@ fun FinSmartApp(
     val selectedWalletFilter by financeViewModel.selectedWalletFilter.collectAsStateWithLifecycle()
     val splitBillHistory by financeViewModel.splitBillHistory.collectAsStateWithLifecycle()
     val budgetLimits by financeViewModel.budgetLimits.collectAsStateWithLifecycle()
+    val debts by financeViewModel.debts.collectAsStateWithLifecycle()
+    val assets by financeViewModel.assets.collectAsStateWithLifecycle()
 
     val isAddTransactionOpen by financeViewModel.isAddTransactionOpen.collectAsStateWithLifecycle()
     val defaultTransactionType by financeViewModel.defaultTransactionType.collectAsStateWithLifecycle()
@@ -693,6 +695,11 @@ fun FinSmartApp(
             // AI Debt Payoff Strategy Planner Modal (Bab 12)
             if (isDebtPlannerOpen) {
                 DebtPlannerModalDialog(
+                    debts = debts,
+                    onSaveDebt = { financeViewModel.saveDebt(it) },
+                    onDeleteDebt = { financeViewModel.deleteDebt(it) },
+                    onDeleteCategory = { financeViewModel.deleteDebtsByCategory(it) },
+                    onClearAllDebts = { financeViewModel.clearAllDebts() },
                     onDismiss = { authViewModel.closeDebtPlanner() }
                 )
             }
@@ -701,6 +708,12 @@ fun FinSmartApp(
             if (isAssetTrackerOpen) {
                 AssetTrackerModalDialog(
                     totalWalletBalance = totalBalance,
+                    assets = assets,
+                    debts = debts,
+                    onSaveAsset = { financeViewModel.saveAsset(it) },
+                    onDeleteAsset = { financeViewModel.deleteAsset(it) },
+                    onDeleteCategory = { financeViewModel.deleteAssetsByCategory(it) },
+                    onClearAllAssets = { financeViewModel.clearAllAssets() },
                     onDismiss = { authViewModel.closeAssetTracker() }
                 )
             }

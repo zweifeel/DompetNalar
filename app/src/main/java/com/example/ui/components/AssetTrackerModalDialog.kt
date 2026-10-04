@@ -59,6 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.model.AssetCategory
+import com.example.data.model.AssetItem
+import com.example.data.model.DebtItem
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.theme.GoldAccent
@@ -66,48 +69,22 @@ import com.example.ui.theme.IncomeGreen
 import com.example.util.CurrencyFormatter
 import java.util.UUID
 
-enum class AssetCategory(val displayName: String, val annualDepreciationPercent: Double) {
-    ELECTRONICS("Elektronik / Gadget", 20.0),
-    VEHICLE("Kendaraan Motor/Mobil", 15.0),
-    PROPERTY("Properti / Rumah", -3.0), // Appreciates by 3%/yr
-    GOLD_INVESTMENT("Emas & Tabungan", -5.0) // Appreciates by 5%/yr
-}
-
-data class AssetItem(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String,
-    val initialValue: Double,
-    val purchaseYear: Int,
-    val category: AssetCategory
-) {
-    val currentValue: Double
-        get() {
-            val yearsPassed = (2026 - purchaseYear).coerceAtLeast(0)
-            val depreciationRate = category.annualDepreciationPercent / 100.0
-            var valCalc = initialValue
-            for (i in 0 until yearsPassed) {
-                valCalc -= valCalc * depreciationRate
-            }
-            return valCalc.coerceAtLeast(0.0)
-        }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssetTrackerModalDialog(
     totalWalletBalance: Double,
+    assets: List<AssetItem> = emptyList(),
+    debts: List<DebtItem> = emptyList(),
+    onSaveAsset: (AssetItem) -> Unit = {},
+    onDeleteAsset: (AssetItem) -> Unit = {},
+    onDeleteCategory: (AssetCategory) -> Unit = {},
+    onClearAllAssets: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val assetList = remember {
-        mutableStateListOf(
-            AssetItem(name = "MacBook Pro M2", initialValue = 24000000.0, purchaseYear = 2024, category = AssetCategory.ELECTRONICS),
-            AssetItem(name = "Honda Vario 160", initialValue = 28000000.0, purchaseYear = 2023, category = AssetCategory.VEHICLE),
-            AssetItem(name = "Logam Mulia Antam 10g", initialValue = 13000000.0, purchaseYear = 2022, category = AssetCategory.GOLD_INVESTMENT)
-        )
-    }
+    val assetList = assets
 
     // Form states
     var editingAssetId by remember { mutableStateOf<String?>(null) }
@@ -122,8 +99,8 @@ fun AssetTrackerModalDialog(
     var assetItemToDelete by remember { mutableStateOf<AssetItem?>(null) }
 
     val totalAssetsValue = assetList.sumOf { it.currentValue }
-    val simulatedDebts = 15000000.0 // Sample active debt
-    val netWorth = totalWalletBalance + totalAssetsValue - simulatedDebts
+    val totalDebtsAmount = debts.sumOf { it.amount }
+    val netWorth = totalWalletBalance + totalAssetsValue - totalDebtsAmount
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -232,7 +209,7 @@ fun AssetTrackerModalDialog(
 
                         Column(horizontalAlignment = Alignment.End) {
                             Text("Beban Hutang", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("-${CurrencyFormatter.formatCompactRupiah(simulatedDebts)}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ExpenseRed)
+                            Text("-${CurrencyFormatter.formatCompactRupiah(totalDebtsAmount)}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ExpenseRed)
                         }
                     }
                 }
@@ -454,19 +431,28 @@ fun AssetTrackerModalDialog(
                                 }
 
                                 if (editingAssetId != null) {
-                                    val index = assetList.indexOfFirst { it.id == editingAssetId }
-                                    if (index != -1) {
-                                        assetList[index] = assetList[index].copy(
-                                            name = inputAssetName,
-                                            initialValue = value,
-                                            purchaseYear = year,
-                                            category = selectedCategory
+                                    val existing = assetList.firstOrNull { it.id == editingAssetId }
+                                    if (existing != null) {
+                                        onSaveAsset(
+                                            existing.copy(
+                                                name = inputAssetName,
+                                                initialValue = value,
+                                                purchaseYear = year,
+                                                category = selectedCategory
+                                            )
                                         )
                                         Toast.makeText(context, "Data aset berhasil diperbarui!", Toast.LENGTH_SHORT).show()
                                     }
                                     editingAssetId = null
                                 } else {
-                                    assetList.add(AssetItem(name = inputAssetName, initialValue = value, purchaseYear = year, category = selectedCategory))
+                                    onSaveAsset(
+                                        AssetItem(
+                                            name = inputAssetName,
+                                            initialValue = value,
+                                            purchaseYear = year,
+                                            category = selectedCategory
+                                        )
+                                    )
                                     Toast.makeText(context, "Aset berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
                                 }
 
@@ -509,7 +495,7 @@ fun AssetTrackerModalDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        assetList.clear()
+                        onClearAllAssets()
                         isResetConfirmDialogOpen = false
                         Toast.makeText(context, "Seluruh daftar aset telah di-reset (Fresh Start)! 🧹", Toast.LENGTH_SHORT).show()
                     },
@@ -558,7 +544,7 @@ fun AssetTrackerModalDialog(
                                 Text("${cat.displayName} ($count item)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 Button(
                                     onClick = {
-                                        assetList.removeAll { it.category == cat }
+                                        onDeleteCategory(cat)
                                         isDeleteCategoryDialogOpen = false
                                         Toast.makeText(context, "Seluruh aset kategori '${cat.displayName}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
                                     },
@@ -597,7 +583,7 @@ fun AssetTrackerModalDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        assetList.removeAll { it.id == asset.id }
+                        onDeleteAsset(asset)
                         assetItemToDelete = null
                         Toast.makeText(context, "Aset '${asset.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
                     },

@@ -1,7 +1,7 @@
 package com.example.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.example.ui.components.DebtItem
+import com.example.data.model.DebtItem
 import com.example.ui.components.DebtPayoffStrategy
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

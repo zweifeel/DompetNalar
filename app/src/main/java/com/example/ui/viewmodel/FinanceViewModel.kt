@@ -6,9 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.local.FinSmartDatabase
 import com.example.data.local.BudgetLimitDao
 import com.example.data.local.SplitBillHistoryDao
+import com.example.data.local.DebtDao
+import com.example.data.local.AssetDao
 import com.example.data.model.AccountMode
+import com.example.data.model.AssetCategory
+import com.example.data.model.AssetItem
 import com.example.data.model.BudgetLimitItem
 import com.example.data.model.CategoryItem
+import com.example.data.model.DebtItem
 import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
@@ -46,6 +51,8 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     private val repository: FinanceRepository
     private val splitBillHistoryDao: SplitBillHistoryDao
     private val budgetLimitDao: BudgetLimitDao
+    private val debtDao: DebtDao
+    private val assetDao: AssetDao
 
     private val _accountMode = MutableStateFlow(AccountMode.PERSONAL)
     val accountMode: StateFlow<AccountMode> = _accountMode.asStateFlow()
@@ -90,6 +97,66 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         )
         splitBillHistoryDao = database.splitBillHistoryDao()
         budgetLimitDao = database.budgetLimitDao()
+        debtDao = database.debtDao()
+        assetDao = database.assetDao()
+    }
+
+    val debts: StateFlow<List<DebtItem>> = debtDao.getAllDebts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveDebt(debt: DebtItem) {
+        viewModelScope.launch {
+            debtDao.insertDebt(debt)
+        }
+    }
+
+    fun deleteDebt(debt: DebtItem) {
+        viewModelScope.launch {
+            debtDao.deleteDebt(debt)
+        }
+    }
+
+    fun deleteDebtsByCategory(category: String) {
+        viewModelScope.launch {
+            debts.value.filter { it.category == category }.forEach {
+                debtDao.deleteDebt(it)
+            }
+        }
+    }
+
+    fun clearAllDebts() {
+        viewModelScope.launch {
+            debtDao.clearAllDebts()
+        }
+    }
+
+    val assets: StateFlow<List<AssetItem>> = assetDao.getAllAssets()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveAsset(asset: AssetItem) {
+        viewModelScope.launch {
+            assetDao.insertAsset(asset)
+        }
+    }
+
+    fun deleteAsset(asset: AssetItem) {
+        viewModelScope.launch {
+            assetDao.deleteAsset(asset)
+        }
+    }
+
+    fun deleteAssetsByCategory(category: AssetCategory) {
+        viewModelScope.launch {
+            assets.value.filter { it.category == category }.forEach {
+                assetDao.deleteAsset(it)
+            }
+        }
+    }
+
+    fun clearAllAssets() {
+        viewModelScope.launch {
+            assetDao.clearAllAssets()
+        }
     }
 
     val budgetLimits: StateFlow<List<BudgetLimitItem>> = budgetLimitDao.getAllBudgetLimits()
@@ -532,6 +599,8 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 payload.transactions.forEach { database.transactionDao().insertTransaction(it) }
                 payload.splitBillHistory.forEach { database.splitBillHistoryDao().insertSplitBillHistory(it) }
                 payload.budgetLimits.forEach { database.budgetLimitDao().insertBudgetLimit(it) }
+                payload.debts.forEach { database.debtDao().insertDebt(it) }
+                payload.assets.forEach { database.assetDao().insertAsset(it) }
             }
         }
     }

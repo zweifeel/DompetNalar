@@ -130,6 +130,8 @@ object GoogleDriveService {
             val users = database.userDao().getAllUsers().first()
             val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory().first()
             val budgetLimits = database.budgetLimitDao().getAllBudgetLimits().first()
+            val debts = database.debtDao().getAllDebts().first()
+            val assets = database.assetDao().getAllAssets().first()
 
             // 2. Build payload
             val payload = BackupDataPayload(
@@ -140,6 +142,8 @@ object GoogleDriveService {
                 users = users,
                 splitBillHistory = splitBillHistory,
                 budgetLimits = budgetLimits,
+                debts = debts,
+                assets = assets,
                 exportedAt = System.currentTimeMillis()
             )
 
@@ -263,6 +267,8 @@ object GoogleDriveService {
             val users = database.userDao().getAllUsers().first()
             val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory().first()
             val budgetLimits = database.budgetLimitDao().getAllBudgetLimits().first()
+            val debts = database.debtDao().getAllDebts().first()
+            val assets = database.assetDao().getAllAssets().first()
 
             // 2. Build payload
             val payload = BackupDataPayload(
@@ -273,6 +279,8 @@ object GoogleDriveService {
                 users = users,
                 splitBillHistory = splitBillHistory,
                 budgetLimits = budgetLimits,
+                debts = debts,
+                assets = assets,
                 exportedAt = System.currentTimeMillis()
             )
 

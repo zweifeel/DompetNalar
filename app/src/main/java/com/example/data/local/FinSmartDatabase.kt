@@ -7,8 +7,11 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.AccountMode
+import com.example.data.model.AssetCategory
+import com.example.data.model.AssetItem
 import com.example.data.model.BudgetLimitItem
 import com.example.data.model.CategoryItem
+import com.example.data.model.DebtItem
 import com.example.data.model.FeedbackItem
 import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
@@ -19,11 +22,22 @@ import com.example.data.model.Wallet
 import com.example.data.model.WalletType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Wallet::class, TransactionItem::class, CategoryItem::class, User::class, SplitBillHistoryItem::class, BudgetLimitItem::class, FeedbackItem::class],
-    version = 5,
+    entities = [
+        Wallet::class,
+        TransactionItem::class,
+        CategoryItem::class,
+        User::class,
+        SplitBillHistoryItem::class,
+        BudgetLimitItem::class,
+        FeedbackItem::class,
+        DebtItem::class,
+        AssetItem::class
+    ],
+    version = 6,
     exportSchema = true
 )
 abstract class FinSmartDatabase : RoomDatabase() {
@@ -34,19 +48,52 @@ abstract class FinSmartDatabase : RoomDatabase() {
     abstract fun splitBillHistoryDao(): SplitBillHistoryDao
     abstract fun budgetLimitDao(): BudgetLimitDao
     abstract fun feedbackDao(): FeedbackDao
+    abstract fun debtDao(): DebtDao
+    abstract fun assetDao(): AssetDao
 
     companion object {
         @Volatile
         private var INSTANCE: FinSmartDatabase? = null
 
         /**
+         * Migration from version 5 to 6:
+         * Adds non-destructive tables for FEAT-32 (debts) and FEAT-33 (assets).
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `debts` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `amount` REAL NOT NULL,
+                        `interestRatePercent` REAL NOT NULL,
+                        `minMonthlyPayment` REAL NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `dueDate` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `assets` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `initialValue` REAL NOT NULL,
+                        `purchaseYear` INTEGER NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+            }
+        }
+
+        /**
          * Registry of explicit Room migrations.
-         * All future schema version bumps (e.g., from 5 to 6) MUST define and register
-         * a Migration object here instead of relying on destructive migration.
          */
         val MIGRATIONS: Array<Migration> = arrayOf(
-            // Future explicit migrations will be registered here, e.g.:
-            // MIGRATION_5_6,
+            MIGRATION_5_6
         )
 
         fun getDatabase(context: Context, scope: CoroutineScope): FinSmartDatabase {
@@ -160,6 +207,26 @@ abstract class FinSmartDatabase : RoomDatabase() {
                     )
                 )
                 userDao.insertUsers(initialUsers)
+            }
+
+            val debtDao = database.debtDao()
+            if (debtDao.getAllDebts().first().isEmpty()) {
+                val initialDebts = listOf(
+                    DebtItem(name = "Kartu Kredit BCA", amount = 15000000.0, interestRatePercent = 21.0, minMonthlyPayment = 1500000.0, category = "Kartu Kredit", dueDate = "Tgl 15 tiap bulan"),
+                    DebtItem(name = "Pinjaman Online A", amount = 3000000.0, interestRatePercent = 18.0, minMonthlyPayment = 500000.0, category = "Pinjaman Online", dueDate = "Tgl 20 tiap bulan"),
+                    DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan")
+                )
+                debtDao.insertDebts(initialDebts)
+            }
+
+            val assetDao = database.assetDao()
+            if (assetDao.getAllAssets().first().isEmpty()) {
+                val initialAssets = listOf(
+                    AssetItem(name = "MacBook Pro M2", initialValue = 24000000.0, purchaseYear = 2024, category = AssetCategory.ELECTRONICS),
+                    AssetItem(name = "Honda Vario 160", initialValue = 28000000.0, purchaseYear = 2023, category = AssetCategory.VEHICLE),
+                    AssetItem(name = "Logam Mulia Antam 10g", initialValue = 13000000.0, purchaseYear = 2022, category = AssetCategory.GOLD_INVESTMENT)
+                )
+                assetDao.insertAssets(initialAssets)
             }
         }
     }

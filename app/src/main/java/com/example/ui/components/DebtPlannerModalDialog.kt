@@ -67,18 +67,9 @@ import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.FinSmartPrimary
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import com.example.data.model.DebtItem
 import java.util.Locale
 import java.util.UUID
-
-data class DebtItem(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String,
-    val amount: Double,
-    val interestRatePercent: Double,
-    val minMonthlyPayment: Double,
-    val category: String = "Lain-lain",
-    val dueDate: String = "15 tiap bulan"
-)
 
 enum class DebtPayoffStrategy(val title: String, val description: String) {
     DUE_DATE("Tenggat Terdekat ⏰", "Mengurutkan hutang berdasarkan tanggal jatuh tempo paling dekat ke yang paling jauh."),
@@ -101,20 +92,18 @@ private fun calculateDaysUntilDue(dueDateStr: String): Int {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DebtPlannerModalDialog(
+    debts: List<DebtItem> = emptyList(),
+    onSaveDebt: (DebtItem) -> Unit = {},
+    onDeleteDebt: (DebtItem) -> Unit = {},
+    onDeleteCategory: (String) -> Unit = {},
+    onClearAllDebts: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val debtCategories = listOf("Kartu Kredit", "Pinjaman Online", "Cicilan Kendaraan", "Pinjaman Bank", "Lain-lain")
-
-    val debtList = remember {
-        mutableStateListOf(
-            DebtItem(name = "Kartu Kredit BCA", amount = 15000000.0, interestRatePercent = 21.0, minMonthlyPayment = 1500000.0, category = "Kartu Kredit", dueDate = "Tgl 15 tiap bulan"),
-            DebtItem(name = "Pinjaman Online A", amount = 3000000.0, interestRatePercent = 18.0, minMonthlyPayment = 500000.0, category = "Pinjaman Online", dueDate = "Tgl 20 tiap bulan"),
-            DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan")
-        )
-    }
+    val debtList = debts
 
     var selectedStrategy by remember { mutableStateOf(DebtPayoffStrategy.DUE_DATE) }
     var monthlyBudgetInput by remember { mutableStateOf("3000000") }
@@ -594,22 +583,24 @@ fun DebtPlannerModalDialog(
 
                                 if (editingDebtId != null) {
                                     // Update existing item
-                                    val index = debtList.indexOfFirst { it.id == editingDebtId }
-                                    if (index != -1) {
-                                        debtList[index] = debtList[index].copy(
-                                            name = inputDebtName,
-                                            amount = amount,
-                                            interestRatePercent = interest,
-                                            minMonthlyPayment = amount * 0.1,
-                                            category = inputDebtCategory,
-                                            dueDate = inputDebtDueDate
+                                    val existing = debtList.firstOrNull { it.id == editingDebtId }
+                                    if (existing != null) {
+                                        onSaveDebt(
+                                            existing.copy(
+                                                name = inputDebtName,
+                                                amount = amount,
+                                                interestRatePercent = interest,
+                                                minMonthlyPayment = amount * 0.1,
+                                                category = inputDebtCategory,
+                                                dueDate = inputDebtDueDate
+                                            )
                                         )
                                         Toast.makeText(context, "Data hutang berhasil diperbarui!", Toast.LENGTH_SHORT).show()
                                     }
                                     editingDebtId = null
                                 } else {
                                     // Add new item
-                                    debtList.add(
+                                    onSaveDebt(
                                         DebtItem(
                                             name = inputDebtName,
                                             amount = amount,
@@ -661,7 +652,7 @@ fun DebtPlannerModalDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        debtList.clear()
+                        onClearAllDebts()
                         isResetConfirmDialogOpen = false
                         Toast.makeText(context, "Seluruh daftar hutang telah di-reset (Fresh Start)! 🧹", Toast.LENGTH_SHORT).show()
                     },
@@ -710,7 +701,7 @@ fun DebtPlannerModalDialog(
                                 Text("$cat ($count item)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 Button(
                                     onClick = {
-                                        debtList.removeAll { it.category == cat }
+                                        onDeleteCategory(cat)
                                         isDeleteCategoryDialogOpen = false
                                         Toast.makeText(context, "Seluruh hutang dalam kategori '$cat' berhasil dihapus!", Toast.LENGTH_SHORT).show()
                                     },
@@ -749,7 +740,7 @@ fun DebtPlannerModalDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        debtList.removeAll { it.id == debt.id }
+                        onDeleteDebt(debt)
                         debtItemToDelete = null
                         Toast.makeText(context, "Pinjaman '${debt.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
                     },
