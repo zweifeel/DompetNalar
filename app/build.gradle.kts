@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -40,26 +41,38 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val localProperties = Properties().apply {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) {
+            file.inputStream().use { load(it) }
+        }
+    }
+
+    fun getReleaseSigningProperty(key: String): String? {
+        return System.getenv(key)
+            ?: (project.findProperty(key) as? String)
+            ?: localProperties.getProperty(key)
+    }
+
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release-key.jks"
+            val keystorePath = getReleaseSigningProperty("KEYSTORE_PATH")
+                ?: getReleaseSigningProperty("RELEASE_KEYSTORE_PATH")
+                ?: "${rootDir}/release-key.jks"
             val keystoreFile = file(keystorePath)
 
-            // Jika file keystore release tidak ada (misal di GitHub Actions), gunakan config debug
-            if (keystoreFile.exists()) {
+            val sPassword = getReleaseSigningProperty("RELEASE_KEYSTORE_PASSWORD")
+                ?: getReleaseSigningProperty("STORE_PASSWORD")
+            val kAlias = getReleaseSigningProperty("RELEASE_KEY_ALIAS")
+                ?: getReleaseSigningProperty("KEY_ALIAS")
+            val kPassword = getReleaseSigningProperty("RELEASE_KEY_PASSWORD")
+                ?: getReleaseSigningProperty("KEY_PASSWORD")
+
+            if (keystoreFile.exists() && !sPassword.isNullOrBlank() && !kAlias.isNullOrBlank() && !kPassword.isNullOrBlank()) {
                 storeFile = keystoreFile
-                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD") ?: "android"
-                keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: System.getenv("KEY_ALIAS") ?: "upload"
-                keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD") ?: "android"
-            } else {
-                // Fallback ke config debug bawaan
-                val debugKeystore = file("${rootDir}/debug.keystore")
-                if (debugKeystore.exists()) {
-                    storeFile = debugKeystore
-                }
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
+                storePassword = sPassword
+                keyAlias = kAlias
+                keyPassword = kPassword
             }
         }
         getByName("debug") {
@@ -79,16 +92,15 @@ android {
     buildTypes {
         release {
             isCrunchPngs = false
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Jika file release keystore ada, gunakan release signing.
-            // Jika tidak ada (seperti di GitHub Actions), set null agar menghasilkan Unsigned APK tanpa error.
-            val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release-key.jks"
-            if (file(keystorePath).exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true && !releaseSigning.storePassword.isNullOrBlank()) {
+                signingConfig = releaseSigning
             } else {
                 signingConfig = null
             }
