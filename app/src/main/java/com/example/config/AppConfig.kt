@@ -21,7 +21,7 @@ object AppConfig {
     const val APP_NAME = "FinSmart"
     const val APP_VERSION_NAME = "1.0.3"
     const val APP_VERSION_CODE = 3
-    const val APP_AUTHOR = "Lukas"
+    const val APP_AUTHOR = "SleepyKoala"
     const val COPYRIGHT_YEAR = "2026"
 
     const val DANA_PAYMENT_NUMBER = "085155076566"

@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
+import com.example.data.model.ExportFormatConfig
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import java.io.File
@@ -205,7 +206,7 @@ object ReportExporter {
             textGray
         )
         canvas.drawText(
-            "© 2026 Lukas • FinSmart Kelola Keuangan Cerdas. Seluruh data dienkripsi lokal.",
+            "© 2026 SleepyKoala • FinSmart Kelola Keuangan Cerdas. Seluruh data dienkripsi lokal.",
             30f,
             pageHeight - 30f,
             textGray
@@ -261,6 +262,69 @@ object ReportExporter {
                 "${tx.id},\"$dateStr\",\"${tx.type.name}\",\"$titleEscaped\",\"$categoryEscaped\"," +
                         "\"$walletEscaped\",\"$targetWalletEscaped\",${tx.amount},\"$noteEscaped\",\"$tagsEscaped\",\"${tx.accountMode}\"\n"
             )
+        }
+
+        writer.flush()
+        writer.close()
+        fileOutputStream.close()
+
+        return csvFile
+    }
+
+    fun exportWithCustomFormat(
+        context: Context,
+        transactions: List<TransactionItem>,
+        format: ExportFormatConfig,
+        periodTitle: String = "Laporan Keuangan",
+        username: String = "Pengguna"
+    ): File {
+        if (format.type.equals("PDF", ignoreCase = true)) {
+            return exportToPdf(context, transactions, periodTitle, username)
+        }
+
+        val exportDir = File(context.cacheDir, "reports")
+        if (!exportDir.exists()) exportDir.mkdirs()
+
+        val sdfFilename = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val csvFile = File(exportDir, "FinSmart_Laporan_$sdfFilename.csv")
+        val fileOutputStream = FileOutputStream(csvFile)
+
+        // Write UTF-8 BOM
+        fileOutputStream.write(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()))
+
+        val writer = csvFile.bufferedWriter()
+        val delimiter = format.delimiter
+
+        // Header
+        if (format.includeHeader) {
+            val headerLine = format.columns.joinToString(separator = delimiter) { "\"$it\"" }
+            writer.write(headerLine + "\n")
+        }
+
+        val dateSdf = try {
+            SimpleDateFormat(format.dateFormat, Locale.getDefault())
+        } catch (_: Exception) {
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        }
+
+        transactions.forEach { tx ->
+            val rowValues = format.columns.map { col ->
+                when (col) {
+                    "ID" -> tx.id.toString()
+                    "Tanggal" -> "\"${dateSdf.format(Date(tx.timestamp))}\""
+                    "Tipe" -> "\"${tx.type.name}\""
+                    "Judul" -> "\"${escapeCsvField(tx.title)}\""
+                    "Kategori" -> "\"${escapeCsvField(tx.category)}\""
+                    "Sumber Dompet" -> "\"${escapeCsvField(tx.walletName)}\""
+                    "Tujuan Dompet" -> "\"${escapeCsvField(tx.targetWalletName ?: "")}\""
+                    "Nominal" -> tx.amount.toString()
+                    "Catatan" -> "\"${escapeCsvField(tx.note)}\""
+                    "Tag" -> "\"${escapeCsvField(tx.tags)}\""
+                    "Mode" -> "\"${tx.accountMode}\""
+                    else -> "\"\""
+                }
+            }
+            writer.write(rowValues.joinToString(separator = delimiter) + "\n")
         }
 
         writer.flush()

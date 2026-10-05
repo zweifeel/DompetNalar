@@ -108,7 +108,6 @@ fun FeedbackScreen(
         },
         modifier = modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .testTag("feedback_screen")
     ) { innerPadding ->
         LazyColumn(

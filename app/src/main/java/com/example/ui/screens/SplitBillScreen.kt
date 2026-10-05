@@ -759,7 +759,7 @@ fun SplitBillScreen(
                                 OutlinedTextField(
                                     value = paymentTargetInfo,
                                     onValueChange = { paymentTargetInfo = it },
-                                    placeholder = { Text("Contoh: BCA 1234567890 (a.n Lukas)") },
+                                    placeholder = { Text("Contoh: BCA 1234567890 (a.n Nama Pemilik Rekening)") },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp)
                                 )

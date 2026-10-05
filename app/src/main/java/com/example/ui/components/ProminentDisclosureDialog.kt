@@ -187,13 +187,13 @@ fun ProminentDisclosureDialog(
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = "Kontak Pengembang:",
+                        text = "Informasi Pengembang:",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Developer: ${AppConfig.APP_AUTHOR}\nEmail Dukungan: ${AppConfig.SUPPORT_EMAIL}\nVersi: ${AppConfig.APP_VERSION_NAME} (Dual-Mode Architecture Ready)",
+                        text = "Developer: ${AppConfig.APP_AUTHOR}\nVersi: ${AppConfig.APP_VERSION_NAME} (Dual-Mode Architecture Ready)",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -291,7 +291,7 @@ fun AiChatScreen(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = "Gemini 3.5 Flash",
+                                    text = "Gemini 3.5 Flash Lite",
                                     color = FinSmartPrimary,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,

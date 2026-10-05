@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.time.LocalTime
+import java.util.Calendar
 
 enum class AppThemeMode(val title: String, val subtitle: String) {
     SYSTEM("Ikuti Sistem HP (Default)", "Mengikuti mode terang/gelap bawaan pengaturan HP"),
@@ -131,8 +131,7 @@ object ThemeEngine {
 
     fun isNightTime(): Boolean {
         return try {
-            val now = LocalTime.now()
-            val hour = now.hour
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             hour >= 18 || hour < 6
         } catch (_: Exception) {
             false

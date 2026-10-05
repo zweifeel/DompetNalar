@@ -19,10 +19,10 @@ import java.util.concurrent.TimeUnit
 
 interface GeminiApiService {
     /**
-     * Endpoint teruji untuk Gemini 2.0 Flash pada v1beta API.
+     * Endpoint teruji untuk Gemini 3.5 Flash Lite pada v1beta API.
      * Path static tanpa variabel mencegah encoding titik dua (:) dari Retrofit.
      */
-    @POST("v1beta/models/gemini-2.0-flash:generateContent")
+    @POST("v1beta/models/gemini-3.5-flash-lite:generateContent")
     suspend fun generateContent(
         @Query("key") apiKey: String,
         @Body request: GeminiGenerateRequest
@@ -103,12 +103,12 @@ object GeminiClient {
 
     /**
      * Eksekusi request dengan mekanisme Exponential Backoff (1s, 2s, 4s) maksimal 3x retry.
-     * Menggunakan model resmi gemini-2.0-flash via Query Parameter 'key'.
+     * Menggunakan model resmi gemini-3.5-flash-lite via Query Parameter 'key'.
      */
     suspend fun executeGenerateWithRetry(
         apiKey: String = getApiKey(),
         request: GeminiGenerateRequest,
-        modelName: String = "gemini-2.0-flash",
+        modelName: String = "gemini-3.5-flash-lite",
         maxRetries: Int = 3
     ): GeminiGenerateResponse {
         val cleanKey = if (apiKey.isBlank()) getApiKey() else apiKey.trim().replace("\"", "").replace("'", "").trim()
@@ -125,7 +125,7 @@ object GeminiClient {
         for (attempt in 1..maxRetries) {
             try {
                 Log.d(TAG, "Memanggil Gemini API ($modelName, Percobaan $attempt/$maxRetries)...")
-                return if (modelName == "gemini-2.0-flash") {
+                return if (modelName == "gemini-3.5-flash-lite") {
                     apiService.generateContent(cleanKey, request)
                 } else {
                     apiService.generateContentForModel(modelName, cleanKey, request)
@@ -133,25 +133,48 @@ object GeminiClient {
             } catch (e: HttpException) {
                 val statusCode = e.code()
                 val requestUrl = e.response()?.raw()?.request?.url?.toString() ?: "N/A"
+                val safeUrl = requestUrl.substringBefore("?")
                 val errorBody = try { e.response()?.errorBody()?.string() } catch (_: Exception) { "N/A" }
-                Log.e(TAG, "HttpException [HTTP $statusCode] URL: $requestUrl | Body: $errorBody", e)
+                Log.e(TAG, "HttpException [HTTP $statusCode] URL: $safeUrl | Body: $errorBody", e)
 
-                if (statusCode == 404) {
-                    throw IllegalStateException(
-                        "Endpoint/Model tidak ditemukan (HTTP 404). " +
-                        "API Key di BuildConfig/local.properties belum valid, expired, atau di-revoke oleh Google karena terdeteksi di-hardcode. " +
-                        "Periksa kembali GEMINI_API_KEY di Google AI Studio."
-                    )
+                when (statusCode) {
+                    400 -> {
+                        throw IllegalStateException(
+                            "Permintaan atau format gambar tidak valid (HTTP 400). Periksa kembali data input AI."
+                        )
+                    }
+                    401, 403 -> {
+                        throw IllegalStateException(
+                            "Autentikasi/otorisasi gagal (HTTP $statusCode). Periksa validitas izin API key Google AI Studio."
+                        )
+                    }
+                    404 -> {
+                        throw IllegalStateException(
+                            "Model atau endpoint AI tidak tersedia (HTTP 404). Model mungkin tidak aktif atau URL endpoint salah."
+                        )
+                    }
+                    429 -> {
+                        if (attempt == maxRetries) {
+                            throw IllegalStateException(
+                                "Batas kuota API terlampaui (HTTP 429). Silakan tunggu beberapa saat sebelum mencoba lagi."
+                            )
+                        }
+                    }
+                    500, 502, 503, 504 -> {
+                        if (attempt == maxRetries) {
+                            throw IllegalStateException(
+                                "Layanan server AI Google sedang mengalami kendala sementara (HTTP $statusCode). Silakan coba lagi nanti."
+                            )
+                        }
+                    }
+                    else -> {
+                        throw IllegalStateException(
+                            "Terjadi kesalahan pada layanan AI (HTTP $statusCode)."
+                        )
+                    }
                 }
 
-                if (statusCode == 401 || statusCode == 403) {
-                    throw IllegalStateException(
-                        "Autentikasi ditolak (HTTP $statusCode). " +
-                        "API Key Google AI Studio tidak valid atau izin ditolak. Pastikan key aktif."
-                    )
-                }
-
-                val isTransientError = statusCode in listOf(503, 429, 500, 502, 504)
+                val isTransientError = statusCode in listOf(429, 500, 502, 503, 504)
                 if (attempt == maxRetries || !isTransientError) throw e
 
                 Log.w(TAG, "Percobaan $attempt gagal [HTTP $statusCode]. Menunggu ${currentDelayMs}ms sebelum retry...")

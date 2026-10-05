@@ -312,7 +312,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     prefs.edit().putLong("saved_user_id", user.id).apply()
                     _isAuthModalOpen.value = false
                     if (user.role == UserRole.MASTER_DEV) {
-                        _isSuccessToast.value = "Selamat Datang Master Developer Lukas! 👑"
+                        _isSuccessToast.value = "Selamat Datang Master Developer ${com.example.config.AppConfig.APP_AUTHOR}! 👑"
                     } else {
                         _isSuccessToast.value = "Berhasil masuk sebagai ${user.username}"
                     }

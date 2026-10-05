@@ -388,7 +388,7 @@ fun SmartMasterPaywallDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Developer Lukas akan segera meng-approve akun Anda menjadi Smart Master 👑.",
+                                text = "Developer ${com.example.config.AppConfig.APP_AUTHOR} akan segera meng-approve akun Anda menjadi Smart Master 👑.",
                                 fontSize = 11.sp,
                                 color = Color(0xFF047857),
                                 textAlign = TextAlign.Center

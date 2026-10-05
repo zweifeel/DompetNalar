@@ -106,7 +106,6 @@ fun DevFeedbackViewerScreen(
         },
         modifier = modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .testTag("dev_feedback_viewer_screen")
     ) { innerPadding ->
         if (feedbacks.isEmpty()) {

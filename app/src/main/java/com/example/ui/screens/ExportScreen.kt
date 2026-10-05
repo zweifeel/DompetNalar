@@ -68,13 +68,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.example.data.model.AccountMode
+import com.example.data.model.ExportFormatConfig
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.ui.components.ExportFormatManagementDialog
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.theme.IncomeGreen
 import com.example.util.CurrencyFormatter
+import com.example.util.ExportFormatManager
 import com.example.util.ReportExporter
+import androidx.compose.material.icons.filled.Tune
 import java.io.File
 import java.util.Calendar
 import java.util.Date
@@ -105,6 +109,13 @@ fun ExportScreen(
     var selectedMode by remember { mutableStateOf(currentAccountMode) }
     var selectedPeriod by remember { mutableStateOf(ExportPeriod.THIS_MONTH) }
     var selectedFormat by remember { mutableStateOf(ExportFormat.PDF) }
+    var availableFormats by remember { mutableStateOf(ExportFormatManager.getAllFormats(context)) }
+    var selectedFormatConfig by remember {
+        mutableStateOf(
+            availableFormats.find { it.id == ExportFormatManager.getActiveFormatId(context) } ?: availableFormats.first()
+        )
+    }
+    var isManageFormatsOpen by remember { mutableStateOf(false) }
 
     // Custom Date Range states (millis)
     var customStartDate by remember {
@@ -455,72 +466,96 @@ fun ExportScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "3. Pilih Format File Laporan",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // PDF Option
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { selectedFormat = ExportFormat.PDF },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (selectedFormat == ExportFormat.PDF) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                border = if (selectedFormat == ExportFormat.PDF) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null
+                            Text(
+                                "3. Pilih Format File Laporan",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            OutlinedButton(
+                                onClick = { isManageFormatsOpen = true },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(30.dp).testTag("btn_manage_export_formats")
                             ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(14.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Print,
-                                        contentDescription = null,
-                                        tint = if (selectedFormat == ExportFormat.PDF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Dokumen PDF", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("Siap cetak, rapi & formal", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
+                                Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Kelola Format", fontSize = 11.sp)
                             }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                            // Excel Option
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { selectedFormat = ExportFormat.EXCEL_CSV },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (selectedFormat == ExportFormat.EXCEL_CSV) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                border = if (selectedFormat == ExportFormat.EXCEL_CSV) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null
-                            ) {
-                                Column(
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            availableFormats.forEach { format ->
+                                val isSel = selectedFormatConfig.id == format.id
+                                Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(14.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                        .clickable {
+                                            selectedFormatConfig = format
+                                            ExportFormatManager.setActiveFormatId(context, format.id)
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSel) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = if (isSel) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.GridOn,
-                                        contentDescription = null,
-                                        tint = if (selectedFormat == ExportFormat.EXCEL_CSV) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Excel Spreadsheet", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("Format .csv siap olah data", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = if (format.type == "PDF") Icons.Default.Print else Icons.Default.GridOn,
+                                                contentDescription = null,
+                                                tint = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(format.name, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Surface(
+                                                        color = if (format.isBuiltIn) Color(0xFF6B7280).copy(alpha = 0.2f) else FinSmartPrimary.copy(alpha = 0.2f),
+                                                        shape = RoundedCornerShape(4.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = if (format.isBuiltIn) "Bawaan" else "Kustom",
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (format.isBuiltIn) Color(0xFF374151) else FinSmartPrimary,
+                                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                        )
+                                                    }
+                                                }
+                                                val subText = if (format.type == "PDF") {
+                                                    "PDF Formal siap cetak • ${format.columns.size} Kolom"
+                                                } else {
+                                                    "CSV • Delimiter '${format.delimiter}' • ${format.columns.size} Kolom"
+                                                }
+                                                Text(subText, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        Icon(
+                                            imageVector = if (isSel) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                                            contentDescription = null,
+                                            tint = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -607,11 +642,13 @@ fun ExportScreen(
                             }
 
                             try {
-                                val generatedFile = if (selectedFormat == ExportFormat.PDF) {
-                                    ReportExporter.exportToPdf(context, filteredTransactions, displayPeriodTitle, username)
-                                } else {
-                                    ReportExporter.exportToCsv(context, filteredTransactions)
-                                }
+                                val generatedFile = ReportExporter.exportWithCustomFormat(
+                                    context = context,
+                                    transactions = filteredTransactions,
+                                    format = selectedFormatConfig,
+                                    periodTitle = displayPeriodTitle,
+                                    username = username
+                                )
 
                                 val savedFile = ReportExporter.saveToPublicDownloads(context, generatedFile)
                                 if (savedFile != null) {
@@ -637,7 +674,7 @@ fun ExportScreen(
                         Icon(Icons.Default.Download, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (selectedFormat == ExportFormat.PDF) "Download Dokumen PDF Laporan" else "Download Excel Spreadsheet Laporan",
+                            text = "Download Laporan (${selectedFormatConfig.name})",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
@@ -652,14 +689,16 @@ fun ExportScreen(
                             }
 
                             try {
-                                val generatedFile = if (selectedFormat == ExportFormat.PDF) {
-                                    ReportExporter.exportToPdf(context, filteredTransactions, displayPeriodTitle, username)
-                                } else {
-                                    ReportExporter.exportToCsv(context, filteredTransactions)
-                                }
+                                val generatedFile = ReportExporter.exportWithCustomFormat(
+                                    context = context,
+                                    transactions = filteredTransactions,
+                                    format = selectedFormatConfig,
+                                    periodTitle = displayPeriodTitle,
+                                    username = username
+                                )
 
                                 val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", generatedFile)
-                                val mimeType = if (selectedFormat == ExportFormat.PDF) "application/pdf" else "text/comma-separated-values"
+                                val mimeType = if (selectedFormatConfig.type == "PDF") "application/pdf" else "text/comma-separated-values"
 
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = mimeType
@@ -692,6 +731,20 @@ fun ExportScreen(
                 }
             }
         }
+    }
+
+    if (isManageFormatsOpen) {
+        ExportFormatManagementDialog(
+            onDismiss = {
+                isManageFormatsOpen = false
+                availableFormats = ExportFormatManager.getAllFormats(context)
+                val activeId = ExportFormatManager.getActiveFormatId(context)
+                selectedFormatConfig = availableFormats.find { it.id == activeId } ?: availableFormats.first()
+            },
+            onFormatSelected = { format ->
+                selectedFormatConfig = format
+            }
+        )
     }
 }
 

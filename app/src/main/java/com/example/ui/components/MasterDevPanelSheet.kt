@@ -129,7 +129,7 @@ fun MasterDevPanelSheet(
                                 shape = RoundedCornerShape(6.dp)
                             ) {
                                 Text(
-                                    text = "LUKAS",
+                                    text = "SLEEPYKOALA",
                                     color = Color.White,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,

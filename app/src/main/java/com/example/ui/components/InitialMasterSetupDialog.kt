@@ -93,7 +93,7 @@ fun InitialMasterSetupDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "👑 Pengaturan Awal Master Developer (Lukas):",
+                            text = "👑 Pengaturan Awal Master Developer (${com.example.config.AppConfig.APP_AUTHOR}):",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = FinSmartPrimary

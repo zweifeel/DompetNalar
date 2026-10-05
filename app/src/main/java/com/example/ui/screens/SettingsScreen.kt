@@ -102,8 +102,11 @@ import com.example.data.model.AppIconEdition
 import com.example.data.model.User
 import com.example.data.model.UserRole
 import com.example.ui.components.ChangelogBottomSheet
+import com.example.ui.components.ExportFormatManagementDialog
 import com.example.ui.components.PublishUpdateBottomSheet
 import com.example.ui.components.UpdateAvailableBottomSheet
+import com.example.util.InstallSourceHelper
+import androidx.compose.material.icons.filled.Tune
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.viewmodel.MasterDevViewModel
@@ -190,6 +193,8 @@ fun SettingsScreen(
     var isCheckUpdateDialogOpen by remember { mutableStateOf(false) }
     var isChangelogOpen by remember { mutableStateOf(false) }
     var isShakeGestureDialogOpen by remember { mutableStateOf(false) }
+    var isManageExportFormatsOpen by remember { mutableStateOf(false) }
+    val isGooglePlayInstalled = remember { InstallSourceHelper.isInstalledFromGooglePlay(context) }
 
     var tempOpacity by remember(customWallpaperOpacity) { mutableStateOf(customWallpaperOpacity) }
 
@@ -348,7 +353,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = currentUser?.email ?: "lunachroc07@gmail.com",
+                                text = currentUser?.email ?: "",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -678,7 +683,7 @@ fun SettingsScreen(
                         }
                     } else {
                         Button(
-                            onClick = { onConnectDrive(currentUser?.email ?: "lunachroc07@gmail.com") },
+                            onClick = { onConnectDrive(currentUser?.email ?: "") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("btn_connect_drive"),
@@ -707,25 +712,27 @@ fun SettingsScreen(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
 
-                    SettingsRowItem(
-                        icon = Icons.Default.SystemUpdate,
-                        title = "Cek Pembaruan Versi",
-                        subtitle = if (isCheckingUpdate) "Memeriksa ke Google Drive..." else "FinSmart v${AppConfig.APP_VERSION_NAME} (Build ${AppConfig.APP_VERSION_CODE}) • Cek Pembaruan Drive",
-                        onClick = {
-                            updateViewModel.checkForUpdates(context, showFeedbackIfLatest = true)
-                        }
-                    )
+                    if (!isGooglePlayInstalled) {
+                        SettingsRowItem(
+                            icon = Icons.Default.SystemUpdate,
+                            title = "Cek Pembaruan Versi",
+                            subtitle = if (isCheckingUpdate) "Memeriksa ke Google Drive..." else "FinSmart v${AppConfig.APP_VERSION_NAME} (Build ${AppConfig.APP_VERSION_CODE}) • Cek Pembaruan Drive",
+                            onClick = {
+                                updateViewModel.checkForUpdates(context, showFeedbackIfLatest = true)
+                            }
+                        )
 
-                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                        Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
-                    SettingsRowItem(
-                        icon = Icons.Default.Description,
-                        title = "Catatan Rilis / Changelog (v1.0.3)",
-                        subtitle = "Lihat pembaruan fitur & log perubahan terbaru",
-                        onClick = { isChangelogOpen = true }
-                    )
+                        SettingsRowItem(
+                            icon = Icons.Default.Description,
+                            title = "Catatan Rilis / Changelog (v1.0.3)",
+                            subtitle = "Lihat pembaruan fitur & log perubahan terbaru",
+                            onClick = { isChangelogOpen = true }
+                        )
 
-                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                        Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                    }
 
                     SettingsRowItem(
                         icon = Icons.Default.Feedback,
@@ -741,6 +748,15 @@ fun SettingsScreen(
                         title = "Ekspor Laporan Keuangan",
                         subtitle = "PDF formal atau Excel Spreadsheet (.csv)",
                         onClick = onOpenExportReport
+                    )
+
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    SettingsRowItem(
+                        icon = Icons.Default.Tune,
+                        title = "Kelola Format Ekspor",
+                        subtitle = "Atur kolom kustom, pemisah CSV, dan format laporan",
+                        onClick = { isManageExportFormatsOpen = true }
                     )
 
                     Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
@@ -786,8 +802,8 @@ fun SettingsScreen(
             }
         }
 
-        // CARD 5: Developer Tools & Update Publisher (MasterDev / Lukas only)
-        if (role == UserRole.MASTER_DEV || currentUser?.username.equals("Lukas", ignoreCase = true) || currentUser?.email.equals("lunachroc07@gmail.com", ignoreCase = true)) {
+        // CARD 5: Developer Tools & Update Publisher (MasterDev / Lukas only - hidden on Google Play)
+        if (!isGooglePlayInstalled && (role == UserRole.MASTER_DEV || currentUser?.username.equals("Lukas", ignoreCase = true) || currentUser?.email.equals("lunachroc07@gmail.com", ignoreCase = true))) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -887,7 +903,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "© 2026 Lukas • All Rights Reserved",
+                    text = "© ${AppConfig.COPYRIGHT_YEAR} ${AppConfig.APP_AUTHOR} • All Rights Reserved",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
@@ -1495,6 +1511,13 @@ fun SettingsScreen(
     if (isChangelogOpen) {
         ChangelogBottomSheet(
             onDismiss = { isChangelogOpen = false }
+        )
+    }
+
+    // 4b. Export Format Management Dialog
+    if (isManageExportFormatsOpen) {
+        ExportFormatManagementDialog(
+            onDismiss = { isManageExportFormatsOpen = false }
         )
     }
 

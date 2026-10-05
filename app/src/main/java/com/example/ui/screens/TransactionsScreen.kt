@@ -91,7 +91,6 @@ fun TransactionsScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding()
             .testTag("transactions_screen"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(

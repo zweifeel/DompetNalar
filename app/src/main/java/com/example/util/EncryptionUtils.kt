@@ -57,6 +57,7 @@ object EncryptionUtils {
      * Cross-platform Base64 helper ensuring graceful operation across
      * Android runtime (API 24+) and JVM test runners.
      */
+    @android.annotation.SuppressLint("NewApi")
     internal object Base64Compat {
         fun encodeToString(bytes: ByteArray): String {
             return try {
