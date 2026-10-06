@@ -267,9 +267,11 @@ class FinSmartDatabaseTest {
     @Test
     fun testMigrationRegistryDefined() {
         assertNotNull(FinSmartDatabase.MIGRATIONS)
-        assertEquals(1, FinSmartDatabase.MIGRATIONS.size)
+        assertEquals(2, FinSmartDatabase.MIGRATIONS.size)
         assertEquals(5, FinSmartDatabase.MIGRATIONS[0].startVersion)
         assertEquals(6, FinSmartDatabase.MIGRATIONS[0].endVersion)
+        assertEquals(6, FinSmartDatabase.MIGRATIONS[1].startVersion)
+        assertEquals(7, FinSmartDatabase.MIGRATIONS[1].endVersion)
     }
 
     @Test

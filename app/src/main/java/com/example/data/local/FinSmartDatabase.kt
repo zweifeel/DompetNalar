@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
         DebtItem::class,
         AssetItem::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class FinSmartDatabase : RoomDatabase() {
@@ -91,10 +91,18 @@ abstract class FinSmartDatabase : RoomDatabase() {
         }
 
         /**
+         * Migration from version 6 to 7 (DEF-03 Stage 1):
+         * ownership columns, Category `userId`/`isSystem`, Budget `localId` schema and
+         * physical Foreign Keys. See [Migration6To7] for details.
+         */
+        val MIGRATION_6_7: Migration = Migration6To7
+
+        /**
          * Registry of explicit Room migrations.
          */
         val MIGRATIONS: Array<Migration> = arrayOf(
-            MIGRATION_5_6
+            MIGRATION_5_6,
+            MIGRATION_6_7
         )
 
         fun getDatabase(context: Context, scope: CoroutineScope): FinSmartDatabase {
@@ -125,21 +133,25 @@ abstract class FinSmartDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * The 13 canonical system categories (`isSystem = true`, `userId = NULL`).
+         * Must stay in sync with [Migration6To7.CANONICAL_SYSTEM_CATEGORIES].
+         */
         val DEFAULT_CATEGORIES = listOf(
-            CategoryItem(name = "Makanan & Minuman", type = TransactionType.EXPENSE, iconName = "restaurant", colorHex = "#EF4444"),
-            CategoryItem(name = "Transportasi & Bensin", type = TransactionType.EXPENSE, iconName = "commute", colorHex = "#F59E0B"),
-            CategoryItem(name = "Belanja & Hobi", type = TransactionType.EXPENSE, iconName = "shopping_bag", colorHex = "#EC4899"),
-            CategoryItem(name = "Tagihan & Utilitas", type = TransactionType.EXPENSE, iconName = "receipt", colorHex = "#8B5CF6"),
-            CategoryItem(name = "Kesehatan", type = TransactionType.EXPENSE, iconName = "medical_services", colorHex = "#06B6D4"),
-            CategoryItem(name = "Pendidikan", type = TransactionType.EXPENSE, iconName = "school", colorHex = "#3B82F6"),
-            CategoryItem(name = "Hiburan & Langganan", type = TransactionType.EXPENSE, iconName = "movie", colorHex = "#6366F1"),
-            CategoryItem(name = "Lain-lain", type = TransactionType.EXPENSE, iconName = "more_horiz", colorHex = "#64748B"),
+            CategoryItem(name = "Makanan & Minuman", type = TransactionType.EXPENSE, iconName = "restaurant", colorHex = "#EF4444", isSystem = true),
+            CategoryItem(name = "Transportasi & Bensin", type = TransactionType.EXPENSE, iconName = "commute", colorHex = "#F59E0B", isSystem = true),
+            CategoryItem(name = "Belanja & Hobi", type = TransactionType.EXPENSE, iconName = "shopping_bag", colorHex = "#EC4899", isSystem = true),
+            CategoryItem(name = "Tagihan & Utilitas", type = TransactionType.EXPENSE, iconName = "receipt", colorHex = "#8B5CF6", isSystem = true),
+            CategoryItem(name = "Kesehatan", type = TransactionType.EXPENSE, iconName = "medical_services", colorHex = "#06B6D4", isSystem = true),
+            CategoryItem(name = "Pendidikan", type = TransactionType.EXPENSE, iconName = "school", colorHex = "#3B82F6", isSystem = true),
+            CategoryItem(name = "Hiburan & Langganan", type = TransactionType.EXPENSE, iconName = "movie", colorHex = "#6366F1", isSystem = true),
+            CategoryItem(name = "Lain-lain", type = TransactionType.EXPENSE, iconName = "more_horiz", colorHex = "#64748B", isSystem = true),
 
-            CategoryItem(name = "Gaji Pokok", type = TransactionType.INCOME, iconName = "payments", colorHex = "#10B981"),
-            CategoryItem(name = "Bonus & Tunjangan", type = TransactionType.INCOME, iconName = "card_giftcard", colorHex = "#059669"),
-            CategoryItem(name = "Investasi & Dividen", type = TransactionType.INCOME, iconName = "trending_up", colorHex = "#047857"),
-            CategoryItem(name = "Penjualan / Omset", type = TransactionType.INCOME, iconName = "store", colorHex = "#0D9488"),
-            CategoryItem(name = "Pemasukan Lain", type = TransactionType.INCOME, iconName = "account_balance_wallet", colorHex = "#0284C7")
+            CategoryItem(name = "Gaji Pokok", type = TransactionType.INCOME, iconName = "payments", colorHex = "#10B981", isSystem = true),
+            CategoryItem(name = "Bonus & Tunjangan", type = TransactionType.INCOME, iconName = "card_giftcard", colorHex = "#059669", isSystem = true),
+            CategoryItem(name = "Investasi & Dividen", type = TransactionType.INCOME, iconName = "trending_up", colorHex = "#047857", isSystem = true),
+            CategoryItem(name = "Penjualan / Omset", type = TransactionType.INCOME, iconName = "store", colorHex = "#0D9488", isSystem = true),
+            CategoryItem(name = "Pemasukan Lain", type = TransactionType.INCOME, iconName = "account_balance_wallet", colorHex = "#0284C7", isSystem = true)
         )
 
         /**
