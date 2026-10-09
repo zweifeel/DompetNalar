@@ -10,6 +10,8 @@ import android.util.Base64
 import android.util.Log
 import com.example.data.model.ReceiptItem
 import com.example.data.model.ReceiptScanResult
+import com.example.data.model.TaxTreatment
+import com.example.util.ReceiptCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -25,8 +27,8 @@ object ReceiptAiOcrScanner {
 
     /**
      * Fallback realistic presets matching user receipt samples:
-     * Preset 1: Indomaret Mojopuro Gede
-     * Preset 2: Momoyo Dukun Gresik
+     * Preset 1: Indomaret Mojopuro Gede (PPN Inclusive)
+     * Preset 2: Momoyo Dukun Gresik (PB1 Exclusive)
      */
     fun generateRealisticReceiptFallback(imageUriStr: String? = null, presetType: Int = 1): ReceiptScanResult {
         val today = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date())
@@ -41,6 +43,7 @@ object ReceiptAiOcrScanner {
                 serviceCharge = 0.0,
                 discount = 500.0,
                 totalAmount = 9700.0,
+                taxTreatment = TaxTreatment.INCLUSIVE,
                 items = listOf(
                     ReceiptItem(name = "GAGA 100 JALAPENO 75", qty = 1, price = 3700.0, total = 3700.0),
                     ReceiptItem(name = "INDOMIE TORI KARA 89", qty = 1, price = 6500.0, total = 6500.0)
@@ -58,6 +61,7 @@ object ReceiptAiOcrScanner {
                 serviceCharge = 0.0,
                 discount = 0.0,
                 totalAmount = 36000.0,
+                taxTreatment = TaxTreatment.EXCLUSIVE,
                 items = listOf(
                     ReceiptItem(name = "Matcha - Fiesta Sundae", qty = 1, price = 16000.0, total = 16000.0),
                     ReceiptItem(name = "Roasted Oolong Milk Tea", qty = 1, price = 20000.0, total = 20000.0)
@@ -75,6 +79,7 @@ object ReceiptAiOcrScanner {
                 serviceCharge = 0.0,
                 discount = 0.0,
                 totalAmount = 0.0,
+                taxTreatment = TaxTreatment.UNKNOWN,
                 items = emptyList(),
                 imageUri = imageUriStr,
                 rawText = "Silakan masukkan detail belanja atau gunakan contoh."
@@ -139,6 +144,7 @@ object ReceiptAiOcrScanner {
               "nama_toko": "Nama Toko / Resto / Merchant",
               "tanggal": "DD-MM-YYYY",
               "subtotal": 0.0,
+              "diskon": 0.0,
               "pajak_ppn": 0.0,
               "total_akhir": 0.0,
               "items": [
@@ -161,11 +167,12 @@ object ReceiptAiOcrScanner {
                - jumlah: Angka kuantitas (integer, minimal 1).
                - harga_satuan: Harga satuan per item (Double/Number murni tanpa 'Rp', titik, atau koma).
                - total_harga: Total harga item (jumlah * harga_satuan).
-            4. subtotal: Total harga barang sebelum pajak dan diskon.
-            5. pajak_ppn: Nilai PPN / PB1 / Tax jika tertera pada struk (contoh: PPN= 1.011 -> 1011.0). Isi 0.0 jika tidak ada.
-            6. total_akhir: Nominal akhir yang wajib dibayar (TOTAL BELANJA / Total Harga / Nominal Pembayaran).
-            7. Semua nilai nominal harus berupa angka Double/Number murni tanpa 'Rp', titik, atau koma.
-            8. KEMBALIKAN HANYA TEKS JSON VALID TANPA MARKDOWN TAG (DILARANG menggunakan ```json atau ```).
+            4. subtotal: Total harga barang sebelum diskon/potongan (HARGA JUAL / Subtotal sebelum potongan voucher).
+            5. diskon: Nilai voucher, diskon, promo, atau potongan belanja jika ada (contoh: 'VC REJOICE ... (10,600)' atau 'ANDA HEMAT : 10,600' -> 10600.0). Isi 0.0 jika tidak ada potongan. Selalu kembalikan angka positif murni.
+            6. pajak_ppn: Nilai PPN / PB1 / Tax jika tertera pada struk (contoh: PPN= 9.400 -> 9400.0). Isi 0.0 jika tidak ada.
+            7. total_akhir: Nominal akhir yang wajib dibayar (TOTAL BELANJA / Total Harga / Nominal Pembayaran).
+            8. Semua nilai nominal harus berupa angka Double/Number murni tanpa 'Rp', titik, atau koma.
+            9. KEMBALIKAN HANYA TEKS JSON VALID TANPA MARKDOWN TAG (DILARANG menggunakan ```json atau ```).
         """.trimIndent()
 
         val request = GeminiGenerateRequest(
@@ -200,14 +207,11 @@ object ReceiptAiOcrScanner {
 
         val json = JSONObject(cleanText.substring(start, end + 1))
 
-        fun parseDoubleSafe(obj: JSONObject, vararg keys: String, defaultVal: Double = 0.0): Double {
+        fun parseDouble(obj: JSONObject, vararg keys: String, defaultVal: Double = 0.0): Double {
             for (key in keys) {
-                val raw = obj.opt(key) ?: continue
-                if (raw is Number) return raw.toDouble()
-                val str = raw.toString().replace("Rp", "", ignoreCase = true).trim()
-                val clean = str.replace(".", "").replace(",", ".").filter { it.isDigit() || it == '.' }
-                val parsed = clean.toDoubleOrNull()
-                if (parsed != null) return parsed
+                if (obj.has(key)) {
+                    return ReceiptCalculator.parseAmountSafe(obj.opt(key), defaultVal)
+                }
             }
             return defaultVal
         }
@@ -219,8 +223,8 @@ object ReceiptAiOcrScanner {
             val itemObj = itemsArray.optJSONObject(i) ?: continue
             val name = (itemObj.optString("nama_barang").ifBlank { itemObj.optString("name") }).ifBlank { "Item ${i + 1}" }
             val qty = itemObj.optInt("jumlah", itemObj.optInt("qty", 1)).coerceAtLeast(1)
-            val price = parseDoubleSafe(itemObj, "harga_satuan", "price", defaultVal = 0.0)
-            val total = parseDoubleSafe(itemObj, "total_harga", "total", defaultVal = price * qty)
+            val price = parseDouble(itemObj, "harga_satuan", "price", defaultVal = 0.0)
+            val total = parseDouble(itemObj, "total_harga", "total", defaultVal = price * qty)
             itemsList.add(
                 ReceiptItem(
                     name = name,
@@ -235,10 +239,32 @@ object ReceiptAiOcrScanner {
         val rawDate = (json.optString("tanggal").ifBlank { json.optString("date") }).trim()
         val date = normalizeDate(rawDate)
 
-        val subtotal = parseDoubleSafe(json, "subtotal", defaultVal = itemsList.sumOf { it.total })
-        val tax = parseDoubleSafe(json, "pajak_ppn", "tax", defaultVal = 0.0)
-        val rawTotal = parseDoubleSafe(json, "total_akhir", "totalAmount", defaultVal = 0.0)
-        val finalTotal = if (rawTotal > 0.0) rawTotal else (subtotal + tax).coerceAtLeast(0.0)
+        val subtotal = parseDouble(json, "subtotal", defaultVal = itemsList.sumOf { it.total })
+        val discount = parseDouble(json, "diskon", "discount", "voucher", "potongan", defaultVal = 0.0)
+        val tax = parseDouble(json, "pajak_ppn", "tax", "pajak", defaultVal = 0.0)
+        val rawTotal = parseDouble(json, "total_akhir", "totalAmount", "total", defaultVal = 0.0)
+
+        val taxTreatment = ReceiptCalculator.determineTaxTreatment(
+            merchantName = merchant,
+            rawText = cleanText,
+            subtotal = subtotal,
+            tax = tax,
+            service = 0.0,
+            discount = discount,
+            totalAmount = rawTotal
+        )
+
+        val finalTotal = if (rawTotal > 0.0) {
+            rawTotal
+        } else {
+            ReceiptCalculator.calculateTotal(
+                subtotal = subtotal,
+                tax = tax,
+                service = 0.0,
+                discount = discount,
+                taxTreatment = taxTreatment
+            )
+        }
 
         return ReceiptScanResult(
             merchantName = merchant,
@@ -247,7 +273,10 @@ object ReceiptAiOcrScanner {
             categoryIcon = if (merchant.contains("Indomaret", ignoreCase = true) || merchant.contains("Alfa", ignoreCase = true)) "shopping_bag" else "restaurant",
             subtotal = subtotal,
             tax = tax,
+            serviceCharge = 0.0,
+            discount = discount,
             totalAmount = finalTotal,
+            taxTreatment = taxTreatment,
             items = itemsList,
             imageUri = imageUriStr,
             rawText = cleanText

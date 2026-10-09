@@ -97,11 +97,13 @@ import com.example.data.model.AccountMode
 import com.example.data.model.CategoryItem
 import com.example.data.model.ReceiptItem
 import com.example.data.model.ReceiptScanResult
+import com.example.data.model.TaxTreatment
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.theme.IncomeGreen
 import com.example.util.CurrencyFormatter
+import com.example.util.ReceiptCalculator
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -149,6 +151,7 @@ fun ReceiptScanScreen(
     var editService by remember { mutableStateOf(0.0) }
     var editDiscount by remember { mutableStateOf(0.0) }
     var editTotalAmount by remember { mutableStateOf(0.0) }
+    var editTaxTreatment by remember { mutableStateOf(TaxTreatment.UNKNOWN) }
     var editItems by remember { mutableStateOf<List<ReceiptItem>>(emptyList()) }
     var selectedWallet by remember { mutableStateOf(wallets.firstOrNull()) }
 
@@ -159,6 +162,10 @@ fun ReceiptScanScreen(
     var editingItemQty by remember { mutableStateOf("1") }
     var editingItemIndex by remember { mutableStateOf(-1) }
 
+    // Edit Discount Dialog state
+    var isDiscountDialogOpen by remember { mutableStateOf(false) }
+    var editingDiscountText by remember { mutableStateOf("") }
+
     fun syncScanResultToForm(result: ReceiptScanResult) {
         scannedResult = result
         editMerchantName = result.merchantName
@@ -168,15 +175,29 @@ fun ReceiptScanScreen(
         editTax = result.tax
         editService = result.serviceCharge
         editDiscount = result.discount
+        editTaxTreatment = result.taxTreatment
         editTotalAmount = result.totalAmount
         editItems = result.items
         selectedWallet = wallets.firstOrNull()
     }
 
-    fun recalculateTotals(items: List<ReceiptItem>, tax: Double, service: Double, discount: Double) {
-        val newSubtotal = items.sumOf { it.total }
-        editSubtotal = newSubtotal
-        editTotalAmount = (newSubtotal + tax + service - discount).coerceAtLeast(0.0)
+    fun recalculateTotals(
+        items: List<ReceiptItem>,
+        tax: Double,
+        service: Double,
+        discount: Double,
+        taxTreatment: TaxTreatment
+    ) {
+        val (newSub, newTotal) = ReceiptCalculator.recalculate(
+            items = items,
+            tax = tax,
+            service = service,
+            discount = discount,
+            taxTreatment = taxTreatment,
+            fallbackTotal = editTotalAmount
+        )
+        editSubtotal = newSub
+        editTotalAmount = newTotal
     }
 
     fun processReceipt(bitmap: Bitmap?, uri: Uri?) {
@@ -710,7 +731,14 @@ fun ReceiptScanScreen(
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
+                                        .padding(vertical = 4.dp)
+                                        .clickable {
+                                            editingItemIndex = index
+                                            editingItemName = item.name
+                                            editingItemPrice = if (item.price > 0) item.price.toLong().toString() else ""
+                                            editingItemQty = item.qty.toString()
+                                            isItemDialogOpen = true
+                                        },
                                     shape = RoundedCornerShape(10.dp),
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                                 ) {
@@ -745,7 +773,7 @@ fun ReceiptScanScreen(
                                                 val updated = editItems.toMutableList()
                                                 updated.removeAt(index)
                                                 editItems = updated
-                                                recalculateTotals(updated, editTax, editService, editDiscount)
+                                                recalculateTotals(updated, editTax, editService, editDiscount, editTaxTreatment)
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {
@@ -768,13 +796,47 @@ fun ReceiptScanScreen(
                                 Text(CurrencyFormatter.formatRupiah(editSubtotal), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                             }
 
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Pajak / PB1 (10%):", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(CurrencyFormatter.formatRupiah(editTax), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            if (editTax > 0) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val taxLabel = when (editTaxTreatment) {
+                                        TaxTreatment.INCLUSIVE -> "Pajak / PPN (Sudah Termasuk):"
+                                        TaxTreatment.EXCLUSIVE -> "Pajak / PB1 (Biaya Tambahan):"
+                                        TaxTreatment.UNKNOWN -> "Pajak (Perlu Diperiksa):"
+                                    }
+                                    Text(taxLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(CurrencyFormatter.formatRupiah(editTax), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 2.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    FilterChip(
+                                        selected = editTaxTreatment == TaxTreatment.INCLUSIVE,
+                                        onClick = {
+                                            editTaxTreatment = TaxTreatment.INCLUSIVE
+                                            recalculateTotals(editItems, editTax, editService, editDiscount, TaxTreatment.INCLUSIVE)
+                                        },
+                                        label = { Text("Pajak Termasuk (Inklusif)", fontSize = 10.sp) },
+                                        modifier = Modifier.testTag("chip_tax_inclusive")
+                                    )
+                                    FilterChip(
+                                        selected = editTaxTreatment == TaxTreatment.EXCLUSIVE,
+                                        onClick = {
+                                            editTaxTreatment = TaxTreatment.EXCLUSIVE
+                                            recalculateTotals(editItems, editTax, editService, editDiscount, TaxTreatment.EXCLUSIVE)
+                                        },
+                                        label = { Text("Pajak Tambahan (Eksklusif)", fontSize = 10.sp) },
+                                        modifier = Modifier.testTag("chip_tax_exclusive")
+                                    )
+                                }
                             }
 
                             if (editService > 0) {
@@ -788,14 +850,35 @@ fun ReceiptScanScreen(
                                 }
                             }
 
-                            if (editDiscount > 0) {
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("Potongan Diskon:", fontSize = 12.sp, color = IncomeGreen)
+                                    IconButton(
+                                        onClick = {
+                                            editingDiscountText = if (editDiscount > 0) editDiscount.toLong().toString() else ""
+                                            isDiscountDialogOpen = true
+                                        },
+                                        modifier = Modifier.size(24.dp).testTag("btn_edit_discount")
+                                    ) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit Diskon", modifier = Modifier.size(14.dp), tint = IncomeGreen)
+                                    }
+                                }
+                                if (editDiscount > 0) {
                                     Text("- " + CurrencyFormatter.formatRupiah(editDiscount), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = IncomeGreen)
+                                } else {
+                                    TextButton(
+                                        onClick = {
+                                            editingDiscountText = ""
+                                            isDiscountDialogOpen = true
+                                        }
+                                    ) {
+                                        Text("+ Tambah Diskon", fontSize = 11.sp, color = IncomeGreen)
+                                    }
                                 }
                             }
 
@@ -875,10 +958,15 @@ fun ReceiptScanScreen(
                                 // Save to Transaction Button
                                 Button(
                                     onClick = {
+                                        if (editTotalAmount <= 0.0) {
+                                            Toast.makeText(context, "Total transaksi harus lebih dari Rp 0.", Toast.LENGTH_SHORT).show()
+                                            return@Button
+                                        }
                                         val wallet = selectedWallet ?: wallets.firstOrNull()
                                         if (wallet != null) {
                                             val itemNotes = editItems.joinToString("\n") { "• ${it.qty}x ${it.name} (${CurrencyFormatter.formatRupiah(it.total)})" }
-                                            val fullNote = "Nota: $editMerchantName\n$itemNotes\nSubtotal: ${CurrencyFormatter.formatRupiah(editSubtotal)}, Pajak: ${CurrencyFormatter.formatRupiah(editTax)}"
+                                            val discountNote = if (editDiscount > 0) ", Diskon: ${CurrencyFormatter.formatRupiah(editDiscount)}" else ""
+                                            val fullNote = "Nota: $editMerchantName\n$itemNotes\nSubtotal: ${CurrencyFormatter.formatRupiah(editSubtotal)}, Pajak: ${CurrencyFormatter.formatRupiah(editTax)}$discountNote"
 
                                             onSaveTransaction(
                                                 editMerchantName.ifBlank { "Belanja Struk" },
@@ -922,6 +1010,7 @@ fun ReceiptScanScreen(
                                             serviceCharge = editService,
                                             discount = editDiscount,
                                             totalAmount = editTotalAmount,
+                                            taxTreatment = editTaxTreatment,
                                             items = editItems
                                         )
                                         onOpenSplitBill(updatedResult)
@@ -996,7 +1085,7 @@ fun ReceiptScanScreen(
                                 list.add(newItem)
                             }
                             editItems = list
-                            recalculateTotals(list, editTax, editService, editDiscount)
+                            recalculateTotals(list, editTax, editService, editDiscount, editTaxTreatment)
                             isItemDialogOpen = false
                         }
                     }
@@ -1006,6 +1095,41 @@ fun ReceiptScanScreen(
             },
             dismissButton = {
                 TextButton(onClick = { isItemDialogOpen = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // Edit Discount Dialog
+    if (isDiscountDialogOpen) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { isDiscountDialogOpen = false },
+            title = { Text("Edit Potongan Diskon / Voucher", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = editingDiscountText,
+                    onValueChange = { editingDiscountText = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Nominal Diskon (Rp)") },
+                    placeholder = { Text("Contoh: 10600") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().testTag("input_edit_discount")
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val parsed = editingDiscountText.toDoubleOrNull() ?: 0.0
+                        editDiscount = parsed
+                        recalculateTotals(editItems, editTax, editService, parsed, editTaxTreatment)
+                        isDiscountDialogOpen = false
+                    }
+                ) {
+                    Text("Terapkan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isDiscountDialogOpen = false }) {
                     Text("Batal")
                 }
             }

@@ -5,6 +5,7 @@ import com.example.data.model.ReceiptItem
 import com.example.data.model.ReceiptScanResult
 import com.example.data.model.SplitBillPerson
 import com.example.data.model.SplitBillResult
+import com.example.data.model.TaxTreatment
 import java.util.Locale
 
 data class SimpleSplitResult(
@@ -73,12 +74,13 @@ object SplitBillCalculator {
         }
 
         val baseSubtotal = if (receipt.subtotal > 0) receipt.subtotal else items.sumOf { it.total }
+        val isTaxInclusive = receipt.taxTreatment == TaxTreatment.INCLUSIVE
 
         val breakdowns = people.map { person ->
             val pSubtotal = personSubtotalMap[person.id] ?: 0.0
             val ratio = if (baseSubtotal > 0) pSubtotal / baseSubtotal else if (people.isNotEmpty()) 1.0 / people.size else 0.0
 
-            val taxShare = receipt.tax * ratio
+            val taxShare = if (isTaxInclusive) 0.0 else receipt.tax * ratio
             val serviceShare = receipt.serviceCharge * ratio
             val discountShare = receipt.discount * ratio
             val totalToPay = ((pSubtotal + taxShare + serviceShare) - discountShare).coerceAtLeast(0.0)
@@ -97,7 +99,8 @@ object SplitBillCalculator {
         val calculatedGrandTotal = if (receipt.totalAmount > 0) {
             receipt.totalAmount
         } else {
-            ((baseSubtotal + receipt.tax + receipt.serviceCharge) - receipt.discount).coerceAtLeast(0.0)
+            val taxToAdd = if (isTaxInclusive) 0.0 else receipt.tax
+            ((baseSubtotal + taxToAdd + receipt.serviceCharge) - receipt.discount).coerceAtLeast(0.0)
         }
 
         return SplitBillResult(

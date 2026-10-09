@@ -11,6 +11,12 @@ data class ReceiptItem(
     val assignedPersonIds: List<String> = emptyList()
 )
 
+enum class TaxTreatment {
+    INCLUSIVE,  // Pajak sudah termasuk dalam harga / subtotal (contoh: PPN ritel minimarket/supermarket)
+    EXCLUSIVE,  // Pajak ditambahkan di atas subtotal (contoh: PB1 / Pajak Restoran 10%)
+    UNKNOWN     // Belum dapat dipastikan, pertahankan total OCR dan minta pemeriksaan pengguna
+}
+
 data class ReceiptScanResult(
     val id: String = UUID.randomUUID().toString(),
     val merchantName: String = "",
@@ -22,6 +28,7 @@ data class ReceiptScanResult(
     val serviceCharge: Double = 0.0,
     val discount: Double = 0.0,
     val totalAmount: Double = 0.0,
+    val taxTreatment: TaxTreatment = TaxTreatment.UNKNOWN,
     val items: List<ReceiptItem> = emptyList(),
     val imageUri: String? = null,
     val rawText: String? = null
