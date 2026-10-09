@@ -2,6 +2,7 @@ package com.example.util
 
 import com.example.data.model.BudgetLimitItem
 import com.example.data.model.DebtItem
+import com.example.data.model.InstallmentPlanItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.Wallet
 import com.example.ui.components.NotificationItem
@@ -19,6 +20,7 @@ object NotificationDataHelper {
         budgetLimits: List<BudgetLimitItem>,
         currentMonthExpenses: List<TransactionItem>,
         recentTransactions: List<TransactionItem> = emptyList(),
+        installmentPlans: List<InstallmentPlanItem> = emptyList(),
         dailyStreak: Int = 1,
         calendar: Calendar = Calendar.getInstance()
     ): List<NotificationItem> {
@@ -83,6 +85,48 @@ object NotificationDataHelper {
                         NotificationItem(
                             title = "Tagihan Terlewat: ${debt.name}",
                             message = "Jatuh tempo ${debt.dueDate} telah terlewat $daysPassed hari lalu. Pastikan tagihan telah dibayarkan untuk menghindari denda.",
+                            timeAgo = "$daysPassed hari lalu",
+                            isWarning = true
+                        )
+                    )
+                }
+            }
+        }
+
+        // 2B. Installment Plans Due-Date & Overdue Reminders
+        installmentPlans.forEach { plan ->
+            if (plan.isCompleted || plan.remainingTenor <= 0 || (!plan.status.equals("AKTIF", ignoreCase = true) && !plan.status.equals("ACTIVE", ignoreCase = true))) return@forEach
+
+            val dueDay = Regex("\\d+").find(plan.nextDueDate)?.value?.toIntOrNull()
+            val formattedAmount = CurrencyFormatter.formatRupiah(plan.installmentAmount)
+            val periodStr = "Ke-${plan.currentPeriod}/${plan.totalTenor}"
+
+            if (dueDay != null) {
+                if (dueDay == today) {
+                    notifications.add(
+                        NotificationItem(
+                            title = "Jatuh Tempo Cicilan Hari Ini: ${plan.name}",
+                            message = "Angsuran ${plan.name} ($periodStr) sebesar $formattedAmount jatuh tempo hari ini (${plan.nextDueDate}). Segera bayar angsuran!",
+                            timeAgo = "Hari ini",
+                            isWarning = true
+                        )
+                    )
+                } else if (dueDay in (today + 1)..(today + 3)) {
+                    val daysLeft = dueDay - today
+                    notifications.add(
+                        NotificationItem(
+                            title = "Pengingat Cicilan: ${plan.name}",
+                            message = "Angsuran ${plan.name} ($periodStr) jatuh tempo dalam $daysLeft hari (${plan.nextDueDate}). Siapkan dana sebesar $formattedAmount.",
+                            timeAgo = "$daysLeft hari lagi",
+                            isWarning = true
+                        )
+                    )
+                } else if (today > dueDay && (today - dueDay) in 1..7) {
+                    val daysPassed = today - dueDay
+                    notifications.add(
+                        NotificationItem(
+                            title = "Cicilan Terlewat: ${plan.name}",
+                            message = "Angsuran ${plan.name} ($periodStr) pada ${plan.nextDueDate} telah terlewat $daysPassed hari lalu. Harap segera konfirmasi pembayaran.",
                             timeAgo = "$daysPassed hari lalu",
                             isWarning = true
                         )

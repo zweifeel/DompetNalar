@@ -13,5 +13,6 @@ data class BackupDataPayload(
     val budgetLimits: List<BudgetLimitItem> = emptyList(),
     val debts: List<DebtItem> = emptyList(),
     val assets: List<AssetItem> = emptyList(),
+    val installmentPlans: List<InstallmentPlanItem> = emptyList(),
     val exportedAt: Long = System.currentTimeMillis()
 )

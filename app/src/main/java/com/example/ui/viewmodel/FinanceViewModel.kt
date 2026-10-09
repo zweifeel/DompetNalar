@@ -9,12 +9,14 @@ import com.example.data.local.BudgetLimitDao
 import com.example.data.local.SplitBillHistoryDao
 import com.example.data.local.DebtDao
 import com.example.data.local.AssetDao
+import com.example.data.local.InstallmentPlanDao
 import com.example.data.model.AccountMode
 import com.example.data.model.AssetCategory
 import com.example.data.model.AssetItem
 import com.example.data.model.BudgetLimitItem
 import com.example.data.model.CategoryItem
 import com.example.data.model.DebtItem
+import com.example.data.model.InstallmentPlanItem
 import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
@@ -22,6 +24,7 @@ import com.example.data.model.Wallet
 import com.example.data.model.BackupDataPayload
 import com.example.data.repository.FinanceRepository
 import com.example.data.session.SessionManager
+import com.example.util.InstallmentDateHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -56,6 +59,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     private val budgetLimitDao: BudgetLimitDao
     private val debtDao: DebtDao
     private val assetDao: AssetDao
+    private val installmentPlanDao: InstallmentPlanDao
 
     private val _accountMode = MutableStateFlow(AccountMode.PERSONAL)
     val accountMode: StateFlow<AccountMode> = _accountMode.asStateFlow()
@@ -106,6 +110,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         budgetLimitDao = database.budgetLimitDao()
         debtDao = database.debtDao()
         assetDao = database.assetDao()
+        installmentPlanDao = database.installmentPlanDao()
 
         // Cleanup ephemeral states on logout or user switch
         viewModelScope.launch {
@@ -124,6 +129,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     val debts: StateFlow<List<DebtItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
         if (userId != null && userId > 0L) debtDao.getAllDebts(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val installmentPlans: StateFlow<List<InstallmentPlanItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) installmentPlanDao.getAllInstallmentPlans(userId) else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveDebt(debt: DebtItem) {
@@ -153,6 +162,87 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
             debtDao.clearAllDebts(userId)
+        }
+    }
+
+    fun saveInstallmentPlan(plan: InstallmentPlanItem) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            installmentPlanDao.insertInstallmentPlan(plan.copy(userId = userId))
+        }
+    }
+
+    fun deleteInstallmentPlan(plan: InstallmentPlanItem) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            installmentPlanDao.deleteInstallmentPlan(plan.id, userId)
+        }
+    }
+
+    private val activePaymentPlanIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    fun confirmInstallmentPayment(
+        plan: InstallmentPlanItem,
+        walletId: Long? = null,
+        notes: String? = null
+    ) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            if (plan.userId != userId) return@launch
+
+            // Double-click / concurrency protection
+            if (!activePaymentPlanIds.add(plan.id)) return@launch
+
+            try {
+                // Fetch fresh authoritative state from DAO
+                val currentPlan = installmentPlanDao.getInstallmentPlanById(plan.id, userId) ?: plan
+                if (currentPlan.remainingTenor <= 0 || currentPlan.isCompleted) return@launch
+
+                val newPaidCount = currentPlan.paidCount + 1
+                val newRemaining = currentPlan.totalTenor - newPaidCount
+                val isNowCompleted = newRemaining <= 0
+                val newStatus = if (isNowCompleted) "SELESAI" else "AKTIF"
+
+                val nextDue = if (!isNowCompleted) {
+                    InstallmentDateHelper.calculateNextDueDate(currentPlan.nextDueDate, currentPlan.anchorDay)
+                } else {
+                    currentPlan.nextDueDate
+                }
+
+                val newRemainingPrincipal = currentPlan.totalRemainingPrincipal?.let {
+                    val updated = it - currentPlan.installmentAmount
+                    if (updated < 0.0) 0.0 else updated
+                }
+
+                val updatedPlan = currentPlan.copy(
+                    paidCount = newPaidCount,
+                    status = newStatus,
+                    nextDueDate = nextDue,
+                    totalRemainingPrincipal = newRemainingPrincipal,
+                    lastPaymentDate = System.currentTimeMillis()
+                )
+
+                if (walletId != null && walletId > 0L) {
+                    val walletName = wallets.value.firstOrNull { it.id == walletId }?.name ?: "Dompet"
+                    val paymentTx = TransactionItem(
+                        title = "Angsuran ${currentPlan.name} (${newPaidCount}/${currentPlan.totalTenor})",
+                        amount = currentPlan.installmentAmount,
+                        type = TransactionType.EXPENSE,
+                        category = "Cicilan & Hutang",
+                        walletId = walletId,
+                        walletName = walletName,
+                        timestamp = System.currentTimeMillis(),
+                        note = notes ?: "Pembayaran angsuran ke-$newPaidCount dari ${currentPlan.totalTenor}",
+                        tags = "installment_plan_id:${currentPlan.id},period:$newPaidCount",
+                        userId = userId
+                    )
+                    repository.insertTransaction(userId, paymentTx)
+                }
+
+                installmentPlanDao.insertInstallmentPlan(updatedPlan)
+            } finally {
+                activePaymentPlanIds.remove(plan.id)
+            }
         }
     }
 
@@ -730,6 +820,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     throw IllegalArgumentException("Nilai aset '${a.name}' tidak valid.")
                 }
             }
+            for (p in payload.installmentPlans) {
+                if (p.installmentAmount.isNaN() || p.installmentAmount.isInfinite() || p.installmentAmount < 0.0) {
+                    throw IllegalArgumentException("Nominal angsuran '${p.name}' tidak valid.")
+                }
+            }
 
             // 3. Eksekusi mutasi dalam satu transaksi atomik Room dengan dukungan rollback penuh
             database.withTransaction {
@@ -738,6 +833,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 database.splitBillHistoryDao().clearAllHistory(targetUserId)
                 database.budgetLimitDao().clearAllBudgetLimits(targetUserId)
                 database.debtDao().clearAllDebts(targetUserId)
+                database.installmentPlanDao().clearAllInstallmentPlans(targetUserId)
                 database.assetDao().clearAllAssets(targetUserId)
                 database.categoryDao().clearCustomCategories(targetUserId)
                 database.walletDao().clearAllWallets(targetUserId)
@@ -842,6 +938,17 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     database.splitBillHistoryDao().insertSplitBillHistory(
                         history.copy(
                             id = historyId,
+                            userId = targetUserId
+                        )
+                    )
+                }
+
+                // I. Insert Installment Plans
+                for (plan in payload.installmentPlans) {
+                    val planId = if (plan.id.isBlank()) java.util.UUID.randomUUID().toString() else plan.id
+                    database.installmentPlanDao().insertInstallmentPlan(
+                        plan.copy(
+                            id = planId,
                             userId = targetUserId
                         )
                     )

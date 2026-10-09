@@ -36,9 +36,10 @@ import kotlinx.coroutines.launch
         BudgetLimitItem::class,
         FeedbackItem::class,
         DebtItem::class,
-        AssetItem::class
+        AssetItem::class,
+        com.example.data.model.InstallmentPlanItem::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class FinSmartDatabase : RoomDatabase() {
@@ -51,6 +52,7 @@ abstract class FinSmartDatabase : RoomDatabase() {
     abstract fun feedbackDao(): FeedbackDao
     abstract fun debtDao(): DebtDao
     abstract fun assetDao(): AssetDao
+    abstract fun installmentPlanDao(): InstallmentPlanDao
 
     companion object {
         @Volatile
@@ -96,13 +98,15 @@ abstract class FinSmartDatabase : RoomDatabase() {
          * physical Foreign Keys. See [Migration6To7] for details.
          */
         val MIGRATION_6_7: Migration = Migration6To7
+        val MIGRATION_7_8: Migration = Migration7To8
 
         /**
          * Registry of explicit Room migrations.
          */
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_5_6,
-            MIGRATION_6_7
+            MIGRATION_6_7,
+            MIGRATION_7_8
         )
 
         fun getDatabase(context: Context, scope: CoroutineScope): FinSmartDatabase {

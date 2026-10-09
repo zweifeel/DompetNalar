@@ -621,7 +621,7 @@ class Migration6To7Test {
             .build()
 
         assertNotNull(roomDb.openHelper.writableDatabase)
-        assertEquals(7, roomDb.openHelper.writableDatabase.version)
+        assertEquals(8, roomDb.openHelper.writableDatabase.version)
 
         // Seed initial data using normal populateInitialData callback logic
         runBlocking {

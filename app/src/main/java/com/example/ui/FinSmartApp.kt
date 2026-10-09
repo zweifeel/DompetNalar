@@ -184,14 +184,16 @@ fun FinSmartApp(
     val netWorth by financeViewModel.netWorth.collectAsStateWithLifecycle()
     val totalAssetsValue by financeViewModel.totalAssetsValue.collectAsStateWithLifecycle()
     val totalDebtsAmount by financeViewModel.totalDebtsAmount.collectAsStateWithLifecycle()
+    val installmentPlans by financeViewModel.installmentPlans.collectAsStateWithLifecycle()
 
-    val notifications = remember(wallets, debts, budgetLimits, currentMonthExpenses, allTransactions, gamificationState.dailyStreak) {
+    val notifications = remember(wallets, debts, budgetLimits, currentMonthExpenses, allTransactions, installmentPlans, gamificationState.dailyStreak) {
         NotificationDataHelper.generateNotifications(
             wallets = wallets,
             debts = debts,
             budgetLimits = budgetLimits,
             currentMonthExpenses = currentMonthExpenses,
             recentTransactions = allTransactions,
+            installmentPlans = installmentPlans,
             dailyStreak = gamificationState.dailyStreak
         )
     }
@@ -776,10 +778,18 @@ fun FinSmartApp(
             if (isDebtPlannerOpen) {
                 DebtPlannerModalDialog(
                     debts = debts,
+                    installmentPlans = installmentPlans,
+                    wallets = wallets,
+                    transactions = allTransactions,
                     onSaveDebt = { financeViewModel.saveDebt(it) },
                     onDeleteDebt = { financeViewModel.deleteDebt(it) },
                     onDeleteCategory = { financeViewModel.deleteDebtsByCategory(it) },
                     onClearAllDebts = { financeViewModel.clearAllDebts() },
+                    onSaveInstallmentPlan = { financeViewModel.saveInstallmentPlan(it) },
+                    onConfirmInstallmentPayment = { plan, walletId, notes ->
+                        financeViewModel.confirmInstallmentPayment(plan, walletId, notes)
+                    },
+                    onDeleteInstallmentPlan = { financeViewModel.deleteInstallmentPlan(it) },
                     onDismiss = { authViewModel.closeDebtPlanner() }
                 )
             }
