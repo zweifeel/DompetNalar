@@ -626,7 +626,7 @@ class Migration6To7Test {
         // Seed initial data using normal populateInitialData callback logic
         runBlocking {
             FinSmartDatabase.populateInitialData(roomDb)
-            val categories = roomDb.categoryDao().getAllCategories().first()
+            val categories = roomDb.categoryDao().getSystemCategories().first()
             assertEquals(13, categories.size)
             assertTrue("All seeded default categories must be isSystem = true", categories.all { it.isSystem })
             assertTrue("All seeded default categories must have userId = null", categories.all { it.userId == null })

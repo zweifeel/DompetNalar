@@ -222,30 +222,33 @@ class BackupEncryptionTest {
     // ==========================================
 
     private fun seedInitialDatabase(): Wallet {
+        val userId = 10L
         val initialWallet = Wallet(
             id = 10L,
             name = "Dompet Awal Perangkat",
             balance = 350000.0,
             type = WalletType.CASH,
-            accountMode = AccountMode.PERSONAL.name
+            accountMode = AccountMode.PERSONAL.name,
+            userId = userId
         )
         val initialCategory = CategoryItem(
             id = 10L,
             name = "Kebutuhan Pokok",
             type = TransactionType.EXPENSE,
             iconName = "groceries",
-            colorHex = "#4CAF50"
+            colorHex = "#4CAF50",
+            userId = userId
         )
         val initialUser = User(
-            id = 10L,
+            id = userId,
             username = "ExistingUser",
             email = "existing@finsmart.local",
             role = UserRole.FREE_MEMBER
         )
         runBlocking {
+            db.userDao().insertUsers(listOf(initialUser))
             db.walletDao().insertWallets(listOf(initialWallet))
             db.categoryDao().insertCategories(listOf(initialCategory))
-            db.userDao().insertUsers(listOf(initialUser))
         }
         return initialWallet
     }
@@ -253,8 +256,9 @@ class BackupEncryptionTest {
     @Test
     fun testA_PortableExportProducesV2Envelope() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
         val password = "StrongBackupPassword#2026"
-        val (success, message, file) = GoogleDriveService.backupPortableNow(context, db, password)
+        val (success, message, file) = GoogleDriveService.backupPortableNow(context, db, password, userId)
 
         assertTrue("Pembuatan cadangan portabel harus sukses", success)
         assertNotNull("File cadangan portabel harus terbentuk", file)
@@ -276,20 +280,21 @@ class BackupEncryptionTest {
     @Test
     fun testB_PortableRestoreWithCorrectPasswordSucceeds() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
         val password = "CorrectPassword#123"
 
         // Export cadangan portabel
-        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, password)
+        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, password, userId)
         val backupContent = exportFile!!.readText()
 
         // Ubah data di DB untuk membuktikan pemulihan
-        db.walletDao().insertWallets(listOf(Wallet(id = 99L, name = "Temp Wallet", balance = 0.0, type = WalletType.BANK, accountMode = AccountMode.PERSONAL.name)))
+        db.walletDao().insertWallets(listOf(Wallet(id = 99L, name = "Temp Wallet", balance = 0.0, type = WalletType.BANK, accountMode = AccountMode.PERSONAL.name, userId = userId)))
 
         // Restore dengan kata sandi yang benar
         val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupContent, password)
         assertTrue("Pemulihan dengan kata sandi benar harus berhasil: $restoreMsg", restoreSuccess)
 
-        val wallets = db.walletDao().getAllWallets().first()
+        val wallets = db.walletDao().getAllWallets(userId).first()
         assertEquals(1, wallets.size)
         assertEquals("Dompet Awal Perangkat", wallets[0].name)
     }
@@ -297,10 +302,11 @@ class BackupEncryptionTest {
     @Test
     fun testC_PortableRestoreWithWrongPasswordFails() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
         val correctPassword = "CorrectPassword#123"
         val wrongPassword = "WrongPassword#999"
 
-        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, correctPassword)
+        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, correctPassword, userId)
         val backupContent = exportFile!!.readText()
 
         val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupContent, wrongPassword)
@@ -311,14 +317,15 @@ class BackupEncryptionTest {
     @Test
     fun testD_WrongPasswordDoesNotModifyDatabase() = runBlocking {
         val initialWallet = seedInitialDatabase()
+        val userId = 10L
         val correctPassword = "CorrectPassword#123"
         val wrongPassword = "WrongPassword#999"
 
-        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, correctPassword)
+        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, correctPassword, userId)
         val backupContent = exportFile!!.readText()
 
         // Cek kondisi database sebelum restore gagal
-        val walletsBefore = db.walletDao().getAllWallets().first()
+        val walletsBefore = db.walletDao().getAllWallets(userId).first()
         assertEquals(1, walletsBefore.size)
         assertEquals(initialWallet.name, walletsBefore[0].name)
         assertEquals(initialWallet.balance, walletsBefore[0].balance, 0.001)
@@ -328,7 +335,7 @@ class BackupEncryptionTest {
         assertFalse(restoreSuccess)
 
         // Verifikasi CRITICAL: Database TIDAK boleh dimodifikasi/dihapus sama sekali!
-        val walletsAfter = db.walletDao().getAllWallets().first()
+        val walletsAfter = db.walletDao().getAllWallets(userId).first()
         assertEquals("Jumlah dompet di database tidak boleh berubah", 1, walletsAfter.size)
         assertEquals("Nama dompet tidak boleh berubah", initialWallet.name, walletsAfter[0].name)
         assertEquals("Saldo dompet tidak boleh berubah", initialWallet.balance, walletsAfter[0].balance, 0.001)
@@ -337,9 +344,10 @@ class BackupEncryptionTest {
     @Test
     fun testE_TamperedPortableBackupFailsAuthentication() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
         val password = "CorrectPassword#123"
 
-        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, password)
+        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, password, userId)
         val originalContent = exportFile!!.readText()
 
         // Rusak 1 karakter pada ciphertext
@@ -356,9 +364,10 @@ class BackupEncryptionTest {
     @Test
     fun testF_TamperedPortableBackupDoesNotModifyDatabase() = runBlocking {
         val initialWallet = seedInitialDatabase()
+        val userId = 10L
         val password = "CorrectPassword#123"
 
-        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, password)
+        val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, password, userId)
         val originalContent = exportFile!!.readText()
 
         // Rusak 1 karakter pada IV
@@ -372,7 +381,7 @@ class BackupEncryptionTest {
         assertFalse(restoreSuccess)
 
         // Verifikasi CRITICAL: Database TIDAK boleh dimodifikasi sama sekali
-        val walletsAfter = db.walletDao().getAllWallets().first()
+        val walletsAfter = db.walletDao().getAllWallets(userId).first()
         assertEquals(1, walletsAfter.size)
         assertEquals(initialWallet.name, walletsAfter[0].name)
     }
@@ -380,9 +389,10 @@ class BackupEncryptionTest {
     @Test
     fun testG_EmptyPasswordIsRejected() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
 
         // 1. Ekspor dengan password kosong
-        val (exportSuccess, exportMsg, exportFile) = GoogleDriveService.backupPortableNow(context, db, "   ")
+        val (exportSuccess, exportMsg, exportFile) = GoogleDriveService.backupPortableNow(context, db, "   ", userId)
         assertFalse("Ekspor dengan kata sandi kosong wajib ditolak", exportSuccess)
         assertTrue(exportMsg.contains("kosong"))
 
@@ -404,9 +414,10 @@ class BackupEncryptionTest {
     @Test
     fun testI_PortableBackupDoesNotRequireAndroidKeyStore() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
         val password = "IndependentPassphrase#2026"
 
-        val (success, _, file) = GoogleDriveService.backupPortableNow(context, db, password)
+        val (success, _, file) = GoogleDriveService.backupPortableNow(context, db, password, userId)
         assertTrue(success)
 
         val envelope = moshi.adapter(BackupEnvelopeV2::class.java).fromJson(file!!.readText())!!
@@ -426,16 +437,17 @@ class BackupEncryptionTest {
     @Test
     fun testK_ExistingDeviceLocalBackupBehaviorStillPasses() = runBlocking {
         seedInitialDatabase()
+        val userId = 10L
 
         // 1. Device Local Backup
-        val (backupSuccess, backupMsg) = GoogleDriveService.backupNow(context, db)
+        val (backupSuccess, backupMsg) = GoogleDriveService.backupNow(context, db, userId)
         assertTrue("Device Local backupNow harus sukses: $backupMsg", backupSuccess)
 
         // 2. Device Local Restore
         val (restoreSuccess, restoreMsg) = GoogleDriveService.restoreNow(context, db)
         assertTrue("Device Local restoreNow harus sukses: $restoreMsg", restoreSuccess)
 
-        val wallets = db.walletDao().getAllWallets().first()
+        val wallets = db.walletDao().getAllWallets(userId).first()
         assertTrue(wallets.isNotEmpty())
     }
 }

@@ -70,8 +70,10 @@ class RecurringTransactionViewModel(application: Application) : AndroidViewModel
             )
             _recurringSchedules.value = _recurringSchedules.value + newSchedule
 
+            val userId = com.example.data.session.SessionManager.requireActiveUserId()
             RecurringTransactionWorker.scheduleRecurring(
                 context = getApplication(),
+                userId = userId,
                 title = title,
                 amount = amount,
                 type = type,

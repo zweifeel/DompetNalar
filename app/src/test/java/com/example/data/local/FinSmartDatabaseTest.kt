@@ -70,26 +70,30 @@ class FinSmartDatabaseTest {
     fun testPopulateInitialData() = runBlocking {
         FinSmartDatabase.populateInitialData(db)
 
-        val wallets = db.walletDao().getAllWallets().first()
-        assertEquals(4, wallets.size)
-
-        val categories = db.categoryDao().getAllCategories().first()
-        assertEquals(13, categories.size)
-
         val users = db.userDao().getAllUsers().first()
         assertEquals(1, users.size)
         assertEquals("Lukas", users[0].username)
         assertEquals(UserRole.MASTER_DEV, users[0].role)
+        val lukasId = users[0].id
 
-        val debts = db.debtDao().getAllDebts().first()
+        val wallets = db.walletDao().getAllWallets(lukasId).first()
+        assertEquals(4, wallets.size)
+
+        val categories = db.categoryDao().getAllCategories(lukasId).first()
+        assertEquals(13, categories.size)
+
+        val debts = db.debtDao().getAllDebts(lukasId).first()
         assertEquals(3, debts.size)
 
-        val assets = db.assetDao().getAllAssets().first()
+        val assets = db.assetDao().getAllAssets(lukasId).first()
         assertEquals(3, assets.size)
     }
 
     @Test
     fun testWalletAndTransactionOperations() = runBlocking {
+        val userId = 10L
+        db.userDao().insertUser(User(id = userId, username = "testuser", email = "test@example.com", role = UserRole.FREE_MEMBER))
+
         val wallet = Wallet(
             id = 100L,
             name = "Test Wallet",
@@ -99,11 +103,12 @@ class FinSmartDatabaseTest {
             colorHex = "#0B57D0",
             iconName = "bank",
             accountMode = AccountMode.PERSONAL.name,
-            isDefault = true
+            isDefault = true,
+            userId = userId
         )
         db.walletDao().insertWallet(wallet)
 
-        val retrievedWallet = db.walletDao().getWalletById(100L)
+        val retrievedWallet = db.walletDao().getWalletById(100L, userId)
         assertNotNull(retrievedWallet)
         assertEquals("Test Wallet", retrievedWallet?.name)
         assertEquals(500000.0, retrievedWallet?.balance ?: 0.0, 0.01)
@@ -120,11 +125,12 @@ class FinSmartDatabaseTest {
             timestamp = System.currentTimeMillis(),
             note = "Nasi Padang",
             tags = "#makan",
-            accountMode = AccountMode.PERSONAL.name
+            accountMode = AccountMode.PERSONAL.name,
+            userId = userId
         )
         db.transactionDao().insertTransaction(tx)
 
-        val transactions = db.transactionDao().getAllTransactions().first()
+        val transactions = db.transactionDao().getAllTransactions(userId).first()
         assertEquals(1, transactions.size)
         assertEquals("Makan Siang", transactions[0].title)
         assertEquals(45000.0, transactions[0].amount, 0.01)
@@ -132,6 +138,9 @@ class FinSmartDatabaseTest {
 
     @Test
     fun testDebtDaoOperations() = runBlocking {
+        val userId = 11L
+        db.userDao().insertUser(User(id = userId, username = "debtuser", email = "debt@example.com", role = UserRole.FREE_MEMBER))
+
         val debt = DebtItem(
             id = "debt-test-01",
             name = "Pinjaman Bank Mandiri",
@@ -140,12 +149,13 @@ class FinSmartDatabaseTest {
             minMonthlyPayment = 1000000.0,
             category = "Pinjaman Bank",
             dueDate = "Tgl 10 tiap bulan",
-            createdAt = 1700000000000L
+            createdAt = 1700000000000L,
+            userId = userId
         )
 
         // 1. Insert
         db.debtDao().insertDebt(debt)
-        var debts = db.debtDao().getAllDebts().first()
+        var debts = db.debtDao().getAllDebts(userId).first()
         assertEquals(1, debts.size)
         assertEquals("debt-test-01", debts[0].id)
         assertEquals("Pinjaman Bank Mandiri", debts[0].name)
@@ -157,37 +167,41 @@ class FinSmartDatabaseTest {
 
         // 2. Update
         val updatedDebt = debt.copy(amount = 8000000.0, minMonthlyPayment = 800000.0)
-        db.debtDao().updateDebt(updatedDebt)
-        debts = db.debtDao().getAllDebts().first()
+        db.debtDao().updateDebt(updatedDebt, userId)
+        debts = db.debtDao().getAllDebts(userId).first()
         assertEquals(1, debts.size)
         assertEquals(8000000.0, debts[0].amount, 0.01)
 
         // 3. Delete
-        db.debtDao().deleteDebt(updatedDebt)
-        debts = db.debtDao().getAllDebts().first()
+        db.debtDao().deleteDebt(updatedDebt, userId)
+        debts = db.debtDao().getAllDebts(userId).first()
         assertTrue(debts.isEmpty())
 
         // 4. Clear all
         db.debtDao().insertDebt(debt)
-        assertEquals(1, db.debtDao().getDebtCount())
-        db.debtDao().clearAllDebts()
-        assertEquals(0, db.debtDao().getDebtCount())
+        assertEquals(1, db.debtDao().getDebtCount(userId))
+        db.debtDao().clearAllDebts(userId)
+        assertEquals(0, db.debtDao().getDebtCount(userId))
     }
 
     @Test
     fun testAssetDaoOperations() = runBlocking {
+        val userId = 12L
+        db.userDao().insertUser(User(id = userId, username = "assetuser", email = "asset@example.com", role = UserRole.FREE_MEMBER))
+
         val asset = AssetItem(
             id = "asset-test-01",
             name = "iPhone 15 Pro",
             initialValue = 20000000.0,
             purchaseYear = 2024,
             category = AssetCategory.ELECTRONICS,
-            createdAt = 1700000000000L
+            createdAt = 1700000000000L,
+            userId = userId
         )
 
         // 1. Insert
         db.assetDao().insertAsset(asset)
-        var assets = db.assetDao().getAllAssets().first()
+        var assets = db.assetDao().getAllAssets(userId).first()
         assertEquals(1, assets.size)
         assertEquals("asset-test-01", assets[0].id)
         assertEquals("iPhone 15 Pro", assets[0].name)
@@ -200,33 +214,37 @@ class FinSmartDatabaseTest {
 
         // 3. Update
         val updatedAsset = asset.copy(initialValue = 22000000.0)
-        db.assetDao().updateAsset(updatedAsset)
-        assets = db.assetDao().getAllAssets().first()
+        db.assetDao().updateAsset(updatedAsset, userId)
+        assets = db.assetDao().getAllAssets(userId).first()
         assertEquals(1, assets.size)
         assertEquals(22000000.0, assets[0].initialValue, 0.01)
 
         // 4. Delete
-        db.assetDao().deleteAsset(updatedAsset)
-        assets = db.assetDao().getAllAssets().first()
+        db.assetDao().deleteAsset(updatedAsset, userId)
+        assets = db.assetDao().getAllAssets(userId).first()
         assertTrue(assets.isEmpty())
 
         // 5. Clear all
         db.assetDao().insertAsset(asset)
-        assertEquals(1, db.assetDao().getAssetCount())
-        db.assetDao().clearAllAssets()
-        assertEquals(0, db.assetDao().getAssetCount())
+        assertEquals(1, db.assetDao().getAssetCount(userId))
+        db.assetDao().clearAllAssets(userId)
+        assertEquals(0, db.assetDao().getAssetCount(userId))
     }
 
     @Test
     fun testBudgetLimitAndSplitBillOperations() = runBlocking {
+        val userId = 13L
+        db.userDao().insertUser(User(id = userId, username = "budgetuser", email = "budget@example.com", role = UserRole.FREE_MEMBER))
+
         val limit = BudgetLimitItem(
             id = "total_monthly",
             limitAmount = 3000000.0,
-            isCategory = false
+            isCategory = false,
+            userId = userId
         )
         db.budgetLimitDao().insertBudgetLimit(limit)
 
-        val limits = db.budgetLimitDao().getAllBudgetLimits().first()
+        val limits = db.budgetLimitDao().getAllBudgetLimits(userId).first()
         assertEquals(1, limits.size)
         assertEquals("total_monthly", limits[0].id)
         assertEquals(3000000.0, limits[0].limitAmount, 0.01)
@@ -237,11 +255,12 @@ class FinSmartDatabaseTest {
             date = "04-10-2026",
             totalAmount = 150000.0,
             formattedText = "Total: 150000",
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            userId = userId
         )
         db.splitBillHistoryDao().insertSplitBillHistory(splitBill)
 
-        val history = db.splitBillHistoryDao().getAllSplitBillHistory().first()
+        val history = db.splitBillHistoryDao().getAllSplitBillHistory(userId).first()
         assertEquals(1, history.size)
         assertEquals("Cafe Senja", history[0].merchantName)
     }

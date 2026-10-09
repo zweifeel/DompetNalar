@@ -81,13 +81,15 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _isSubmitting.value = true
             try {
+                val activeUserId = com.example.data.session.SessionManager.getActiveUserId()
                 val item = FeedbackItem(
                     userName = userName.ifBlank { "Pengguna FinSmart" },
                     userEmail = userEmail.ifBlank { "user@finsmart.local" },
                     rating = rating.coerceIn(1, 5),
                     category = category,
                     message = message.trim(),
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    userId = activeUserId
                 )
                 feedbackDao.insertFeedback(item)
                 _submissionSuccess.value = "Terima kasih! Masukan Anda berhasil dikirim ke pengembang."
@@ -102,7 +104,7 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
 
     fun deleteFeedback(id: String) {
         viewModelScope.launch {
-            feedbackDao.deleteFeedback(id)
+            feedbackDao.deleteFeedbackByAdmin(id)
         }
     }
 

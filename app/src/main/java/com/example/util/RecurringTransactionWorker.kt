@@ -36,6 +36,12 @@ class RecurringTransactionWorker(
 
     override suspend fun doWork(): Result {
         return try {
+            val userId = inputData.getLong("USER_ID", -1L)
+            if (userId <= 0L) {
+                // DEF-03: Missing or unauthenticated user context must fail safely without touching financial data
+                return Result.failure()
+            }
+
             val title = inputData.getString("TITLE") ?: "Gaji Bulanan Otomatis"
             val amount = inputData.getDouble("AMOUNT", 0.0)
             val typeStr = inputData.getString("TYPE") ?: "INCOME"
@@ -61,6 +67,10 @@ class RecurringTransactionWorker(
             val transactionDao = database.transactionDao()
             val walletDao = database.walletDao()
 
+            // Verify wallet exists and is owned by userId
+            val currentWallet = walletDao.getWalletById(walletId, userId)
+                ?: return Result.failure() // Wallet not owned by this user - abort!
+
             val txType = try { TransactionType.valueOf(typeStr) } catch (e: Exception) { TransactionType.INCOME }
 
             val newTx = TransactionItem(
@@ -75,17 +85,15 @@ class RecurringTransactionWorker(
                 timestamp = System.currentTimeMillis(),
                 note = "Pencatatan berulang otomatis oleh FinSmart Recurring Engine (Tgl $dayOfMonth)",
                 tags = "#recurring #salary",
-                accountMode = AccountMode.PERSONAL.name
+                accountMode = AccountMode.PERSONAL.name,
+                userId = userId
             )
 
             transactionDao.insertTransaction(newTx)
 
-            // Update wallet balance
-            val currentWallet = walletDao.getWalletById(walletId)
-            if (currentWallet != null) {
-                val newBal = if (txType == TransactionType.INCOME) currentWallet.balance + amount else currentWallet.balance - amount
-                walletDao.updateWallet(currentWallet.copy(balance = newBal.coerceAtLeast(0.0)))
-            }
+            // Update wallet balance with verified ownership
+            val newBal = if (txType == TransactionType.INCOME) currentWallet.balance + amount else currentWallet.balance - amount
+            walletDao.updateWallet(currentWallet.copy(balance = newBal.coerceAtLeast(0.0)), userId)
 
             // Trigger System Notification (isolated from financial operation)
             try {
@@ -146,6 +154,7 @@ class RecurringTransactionWorker(
     companion object {
         fun scheduleRecurring(
             context: Context,
+            userId: Long,
             title: String,
             amount: Double,
             type: TransactionType,
@@ -156,7 +165,9 @@ class RecurringTransactionWorker(
             interval: RecurringInterval,
             dayOfMonth: Int = 25
         ) {
+            require(userId > 0L) { "Cannot schedule recurring transaction without an authenticated userId" }
             val data = androidx.work.Data.Builder()
+                .putLong("USER_ID", userId)
                 .putString("TITLE", title)
                 .putDouble("AMOUNT", amount)
                 .putString("TYPE", type.name)
@@ -173,7 +184,7 @@ class RecurringTransactionWorker(
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "recurring_tx_${walletId}_$dayOfMonth",
+                "recurring_tx_user_${userId}_wallet_${walletId}_day_$dayOfMonth",
                 ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )

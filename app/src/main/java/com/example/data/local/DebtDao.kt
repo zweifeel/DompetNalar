@@ -11,8 +11,62 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DebtDao {
-    @Query("SELECT * FROM debts ORDER BY createdAt DESC")
-    fun getAllDebts(): Flow<List<DebtItem>>
+
+    // --- User-Scoped Operations (DEF-03 Stage 2) ---
+
+    @Query("SELECT * FROM debts WHERE userId = :userId ORDER BY createdAt DESC")
+    fun getAllDebts(userId: Long): Flow<List<DebtItem>>
+
+    @Query("SELECT * FROM debts WHERE id = :id AND userId = :userId LIMIT 1")
+    suspend fun getDebtById(id: String, userId: Long): DebtItem?
+
+    @Query("DELETE FROM debts WHERE id = :id AND userId = :userId")
+    suspend fun deleteDebtById(id: String, userId: Long): Int
+
+    suspend fun deleteDebt(id: String, userId: Long): Int =
+        deleteDebtById(id, userId)
+
+    suspend fun deleteDebt(debt: DebtItem, userId: Long): Int =
+        deleteDebtById(debt.id, userId)
+
+    @Query("""
+        UPDATE debts
+        SET name = :name,
+            amount = :amount,
+            interestRatePercent = :interestRatePercent,
+            minMonthlyPayment = :minMonthlyPayment,
+            category = :category,
+            dueDate = :dueDate
+        WHERE id = :id AND userId = :userId
+    """)
+    suspend fun updateDebtScoped(
+        id: String,
+        userId: Long,
+        name: String,
+        amount: Double,
+        interestRatePercent: Double,
+        minMonthlyPayment: Double,
+        category: String,
+        dueDate: String
+    ): Int
+
+    suspend fun updateDebt(debt: DebtItem, userId: Long): Int =
+        updateDebtScoped(
+            id = debt.id,
+            userId = userId,
+            name = debt.name,
+            amount = debt.amount,
+            interestRatePercent = debt.interestRatePercent,
+            minMonthlyPayment = debt.minMonthlyPayment,
+            category = debt.category,
+            dueDate = debt.dueDate
+        )
+
+    @Query("DELETE FROM debts WHERE userId = :userId")
+    suspend fun clearAllDebts(userId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM debts WHERE userId = :userId")
+    suspend fun getDebtCount(userId: Long): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebt(debt: DebtItem)
@@ -20,15 +74,4 @@ interface DebtDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDebts(debts: List<DebtItem>)
 
-    @Update
-    suspend fun updateDebt(debt: DebtItem)
-
-    @Delete
-    suspend fun deleteDebt(debt: DebtItem)
-
-    @Query("DELETE FROM debts")
-    suspend fun clearAllDebts()
-
-    @Query("SELECT COUNT(*) FROM debts")
-    suspend fun getDebtCount(): Int
 }

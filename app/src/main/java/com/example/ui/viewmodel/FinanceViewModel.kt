@@ -20,12 +20,14 @@ import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
 import com.example.data.model.BackupDataPayload
 import com.example.data.repository.FinanceRepository
+import com.example.data.session.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -103,100 +105,129 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         budgetLimitDao = database.budgetLimitDao()
         debtDao = database.debtDao()
         assetDao = database.assetDao()
+
+        // Cleanup ephemeral states on logout or user switch
+        viewModelScope.launch {
+            SessionManager.activeUserId.collect { id ->
+                if (id == null) {
+                    _editingWallet.value = null
+                    _deletingWallet.value = null
+                    _selectedReceiptTransaction.value = null
+                    _selectedCategoryFilter.value = null
+                    _selectedWalletFilter.value = null
+                    _searchQuery.value = ""
+                }
+            }
+        }
     }
 
-    val debts: StateFlow<List<DebtItem>> = debtDao.getAllDebts()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val debts: StateFlow<List<DebtItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) debtDao.getAllDebts(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveDebt(debt: DebtItem) {
         viewModelScope.launch {
-            debtDao.insertDebt(debt)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            debtDao.insertDebt(debt.copy(userId = userId))
         }
     }
 
     fun deleteDebt(debt: DebtItem) {
         viewModelScope.launch {
-            debtDao.deleteDebt(debt)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            debtDao.deleteDebt(debt, userId)
         }
     }
 
     fun deleteDebtsByCategory(category: String) {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
             debts.value.filter { it.category == category }.forEach {
-                debtDao.deleteDebt(it)
+                debtDao.deleteDebt(it, userId)
             }
         }
     }
 
     fun clearAllDebts() {
         viewModelScope.launch {
-            debtDao.clearAllDebts()
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            debtDao.clearAllDebts(userId)
         }
     }
 
-    val assets: StateFlow<List<AssetItem>> = assetDao.getAllAssets()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val assets: StateFlow<List<AssetItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) assetDao.getAllAssets(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveAsset(asset: AssetItem) {
         viewModelScope.launch {
-            assetDao.insertAsset(asset)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            assetDao.insertAsset(asset.copy(userId = userId))
         }
     }
 
     fun deleteAsset(asset: AssetItem) {
         viewModelScope.launch {
-            assetDao.deleteAsset(asset)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            assetDao.deleteAsset(asset, userId)
         }
     }
 
     fun deleteAssetsByCategory(category: AssetCategory) {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
             assets.value.filter { it.category == category }.forEach {
-                assetDao.deleteAsset(it)
+                assetDao.deleteAsset(it, userId)
             }
         }
     }
 
     fun clearAllAssets() {
         viewModelScope.launch {
-            assetDao.clearAllAssets()
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            assetDao.clearAllAssets(userId)
         }
     }
 
-    val budgetLimits: StateFlow<List<BudgetLimitItem>> = budgetLimitDao.getAllBudgetLimits()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val budgetLimits: StateFlow<List<BudgetLimitItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) budgetLimitDao.getAllBudgetLimits(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveBudgetLimit(id: String, amount: Double, isCategory: Boolean) {
         viewModelScope.launch {
-            budgetLimitDao.insertBudgetLimit(BudgetLimitItem(id, amount, isCategory))
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            budgetLimitDao.insertBudgetLimit(BudgetLimitItem(id = id, limitAmount = amount, isCategory = isCategory, userId = userId))
         }
     }
 
     fun deleteBudgetLimit(item: BudgetLimitItem) {
         viewModelScope.launch {
-            budgetLimitDao.deleteBudgetLimit(item)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            budgetLimitDao.deleteBudgetLimit(item, userId)
         }
     }
 
     fun resetAllBudgetLimits() {
         viewModelScope.launch {
-            budgetLimits.value.forEach { item ->
-                budgetLimitDao.deleteBudgetLimit(item)
-            }
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            budgetLimitDao.clearAllBudgetLimits(userId)
         }
     }
 
-    val splitBillHistory: StateFlow<List<SplitBillHistoryItem>> = splitBillHistoryDao.getAllSplitBillHistory()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val splitBillHistory: StateFlow<List<SplitBillHistoryItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) splitBillHistoryDao.getAllSplitBillHistory(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveSplitBillHistory(merchantName: String, date: String, totalAmount: Double, formattedText: String) {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
             splitBillHistoryDao.insertSplitBillHistory(
                 SplitBillHistoryItem(
                     merchantName = merchantName,
                     date = date,
                     totalAmount = totalAmount,
-                    formattedText = formattedText
+                    formattedText = formattedText,
+                    userId = userId
                 )
             )
         }
@@ -204,25 +235,32 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteSplitBillHistory(item: SplitBillHistoryItem) {
         viewModelScope.launch {
-            splitBillHistoryDao.deleteSplitBillHistory(item)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            splitBillHistoryDao.deleteSplitBillHistory(item, userId)
         }
     }
 
     fun clearAllSplitBillHistory() {
         viewModelScope.launch {
-            splitBillHistoryDao.clearAllHistory()
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            splitBillHistoryDao.clearAllHistory(userId)
         }
     }
 
-    val wallets: StateFlow<List<Wallet>> = _accountMode.flatMapLatest { mode ->
-        repository.getWallets(mode)
+    val wallets: StateFlow<List<Wallet>> = combine(SessionManager.activeUserId, _accountMode) { userId, mode ->
+        userId to mode
+    }.flatMapLatest { (userId, mode) ->
+        if (userId != null && userId > 0L) repository.getWallets(userId, mode) else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allWallets: StateFlow<List<Wallet>> = repository.getAllWallets()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allWallets: StateFlow<List<Wallet>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) repository.getAllWallets(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allTransactions: StateFlow<List<TransactionItem>> = _accountMode.flatMapLatest { mode ->
-        repository.getTransactions(mode)
+    val allTransactions: StateFlow<List<TransactionItem>> = combine(SessionManager.activeUserId, _accountMode) { userId, mode ->
+        userId to mode
+    }.flatMapLatest { (userId, mode) ->
+        if (userId != null && userId > 0L) repository.getTransactions(userId, mode) else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val currentMonthExpensesList: StateFlow<List<TransactionItem>> = allTransactions.map { txList ->
@@ -236,8 +274,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         txList.filter { it.timestamp >= startMonth && it.type == TransactionType.EXPENSE }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories: StateFlow<List<CategoryItem>> = repository.getAllCategories()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val categories: StateFlow<List<CategoryItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
+        if (userId != null && userId > 0L) repository.getAllCategories(userId) else flowOf(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val totalBalance: StateFlow<Double> = wallets.combine(_accountMode) { list, _ ->
         list.sumOf { it.balance }
@@ -416,6 +455,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         tags: String = ""
     ) {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
             val item = TransactionItem(
                 title = title,
                 amount = amount,
@@ -429,16 +469,18 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 timestamp = timestamp,
                 note = note,
                 tags = tags,
-                accountMode = _accountMode.value.name
+                accountMode = _accountMode.value.name,
+                userId = userId
             )
-            repository.insertTransaction(item)
+            repository.insertTransaction(userId, item)
             _isAddTransactionOpen.value = false
         }
     }
 
     fun deleteTransaction(transaction: TransactionItem) {
         viewModelScope.launch {
-            repository.deleteTransaction(transaction)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            repository.deleteTransaction(userId, transaction)
         }
     }
 
@@ -452,6 +494,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         existingId: Long? = null
     ) {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
             if (existingId == null || existingId == 0L) {
                 val newWallet = Wallet(
                     name = name,
@@ -461,11 +504,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     colorHex = colorHex,
                     iconName = iconName,
                     accountMode = _accountMode.value.name,
-                    isDefault = wallets.value.isEmpty()
+                    isDefault = wallets.value.isEmpty(),
+                    userId = userId
                 )
                 repository.insertWallet(newWallet)
             } else {
-                val current = repository.getWalletById(existingId)
+                val current = repository.getWalletById(userId, existingId)
                 if (current != null) {
                     val updated = current.copy(
                         name = name,
@@ -474,7 +518,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                         colorHex = colorHex,
                         iconName = iconName
                     )
-                    repository.updateWallet(updated)
+                    repository.updateWallet(userId, updated)
                 }
             }
             closeWalletDialog()
@@ -483,18 +527,22 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteWallet(wallet: Wallet) {
         viewModelScope.launch {
-            repository.deleteWallet(wallet)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            repository.deleteWallet(userId, wallet)
             closeDeleteWalletConfirm()
         }
     }
 
     fun insertCustomCategory(name: String, type: TransactionType, iconName: String = "category", colorHex: String = "#0B57D0") {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
             val cat = CategoryItem(
                 name = name,
                 type = type,
                 iconName = iconName,
-                colorHex = colorHex
+                colorHex = colorHex,
+                isSystem = false,
+                userId = userId
             )
             repository.insertCategory(cat)
         }
@@ -502,7 +550,8 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteCategory(category: CategoryItem) {
         viewModelScope.launch {
-            repository.deleteCategory(category)
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            repository.deleteCategory(userId, category)
         }
     }
 
@@ -621,9 +670,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         fun restoreDatabaseInTransaction(database: FinSmartDatabase, payload: BackupDataPayload) {
             database.clearAllTables()
             kotlinx.coroutines.runBlocking {
+                database.userDao().insertUsers(payload.users)
                 database.walletDao().insertWallets(payload.wallets)
                 database.categoryDao().insertCategories(payload.categories)
-                database.userDao().insertUsers(payload.users)
                 payload.transactions.forEach { database.transactionDao().insertTransaction(it) }
                 payload.splitBillHistory.forEach { database.splitBillHistoryDao().insertSplitBillHistory(it) }
                 payload.budgetLimits.forEach { database.budgetLimitDao().insertBudgetLimit(it) }

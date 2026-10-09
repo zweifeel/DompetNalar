@@ -123,6 +123,11 @@ abstract class FinSmartDatabase : RoomDatabase() {
         private class FinSmartDatabaseCallback(
             private val scope: CoroutineScope
         ) : RoomDatabase.Callback() {
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                super.onOpen(db)
+                db.setForeignKeyConstraintsEnabled(true)
+            }
+
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
                 INSTANCE?.let { database ->
@@ -155,14 +160,14 @@ abstract class FinSmartDatabase : RoomDatabase() {
         )
 
         /**
-         * Atomically wipes all user and financial records from all Room tables (FEAT-30 Right to Erasure)
-         * and reseeds ONLY the 13 generic default categories taxonomy.
-         * NO users, wallets, debts, assets, transactions, or budgets are recreated.
+         * Atomically deletes a user account and cascades deletion to all user-owned records (DEF-03 Stage 3).
+         * Room ON DELETE CASCADE removes all child financial records (wallets, transactions, budgets, debts, assets, etc.).
+         * Other users, their records, system categories, and legacy quarantined rows remain completely intact.
+         * Never invokes clearAllTables().
          */
-        suspend fun wipeAccountDataInTransaction(database: FinSmartDatabase) {
+        suspend fun deleteUserAccountInTransaction(database: FinSmartDatabase, user: User) {
             database.withTransaction {
-                database.clearAllTables()
-                database.categoryDao().insertCategories(DEFAULT_CATEGORIES)
+                database.userDao().deleteUser(user)
             }
         }
 
@@ -170,6 +175,25 @@ abstract class FinSmartDatabase : RoomDatabase() {
             val walletDao = database.walletDao()
             val categoryDao = database.categoryDao()
             val userDao = database.userDao()
+
+            if (userDao.getUserCount() == 0) {
+                val initialUsers = listOf(
+                    // Master Dev Lukas
+                    User(
+                        id = 1L,
+                        username = "Lukas",
+                        email = "lunachroc07@gmail.com",
+                        passwordHash = "",
+                        role = UserRole.MASTER_DEV,
+                        isApproved = true
+                    )
+                )
+                userDao.insertUsers(initialUsers)
+            }
+
+            if (categoryDao.getCategoryCount() == 0) {
+                categoryDao.insertCategories(DEFAULT_CATEGORIES)
+            }
 
             if (walletDao.getWalletCount() == 0) {
                 val initialWallets = listOf(
@@ -181,7 +205,8 @@ abstract class FinSmartDatabase : RoomDatabase() {
                         colorHex = "#0B57D0",
                         iconName = "bca",
                         accountMode = AccountMode.PERSONAL.name,
-                        isDefault = true
+                        isDefault = true,
+                        userId = 1L
                     ),
                     Wallet(
                         name = "GoPay",
@@ -191,7 +216,8 @@ abstract class FinSmartDatabase : RoomDatabase() {
                         colorHex = "#00897B",
                         iconName = "gopay",
                         accountMode = AccountMode.PERSONAL.name,
-                        isDefault = false
+                        isDefault = false,
+                        userId = 1L
                     ),
                     Wallet(
                         name = "Uang Tunai",
@@ -201,7 +227,8 @@ abstract class FinSmartDatabase : RoomDatabase() {
                         colorHex = "#10B981",
                         iconName = "cash",
                         accountMode = AccountMode.PERSONAL.name,
-                        isDefault = false
+                        isDefault = false,
+                        userId = 1L
                     ),
                     Wallet(
                         name = "Rekening Bisnis (Mandiri)",
@@ -211,46 +238,29 @@ abstract class FinSmartDatabase : RoomDatabase() {
                         colorHex = "#D97706",
                         iconName = "mandiri",
                         accountMode = AccountMode.BUSINESS.name,
-                        isDefault = true
+                        isDefault = true,
+                        userId = 1L
                     )
                 )
                 walletDao.insertWallets(initialWallets)
             }
 
-            if (categoryDao.getCategoryCount() == 0) {
-                categoryDao.insertCategories(DEFAULT_CATEGORIES)
-            }
-
-            if (userDao.getUserCount() == 0) {
-                val initialUsers = listOf(
-                    // Master Dev Lukas
-                    User(
-                        username = "Lukas",
-                        email = "lunachroc07@gmail.com",
-                        passwordHash = "",
-                        role = UserRole.MASTER_DEV,
-                        isApproved = true
-                    )
-                )
-                userDao.insertUsers(initialUsers)
-            }
-
             val debtDao = database.debtDao()
-            if (debtDao.getAllDebts().first().isEmpty()) {
+            if (debtDao.getDebtCount(1L) == 0) {
                 val initialDebts = listOf(
-                    DebtItem(name = "Kartu Kredit BCA", amount = 15000000.0, interestRatePercent = 21.0, minMonthlyPayment = 1500000.0, category = "Kartu Kredit", dueDate = "Tgl 15 tiap bulan"),
-                    DebtItem(name = "Pinjaman Online A", amount = 3000000.0, interestRatePercent = 18.0, minMonthlyPayment = 500000.0, category = "Pinjaman Online", dueDate = "Tgl 20 tiap bulan"),
-                    DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan")
+                    DebtItem(name = "Kartu Kredit BCA", amount = 15000000.0, interestRatePercent = 21.0, minMonthlyPayment = 1500000.0, category = "Kartu Kredit", dueDate = "Tgl 15 tiap bulan", userId = 1L),
+                    DebtItem(name = "Pinjaman Online A", amount = 3000000.0, interestRatePercent = 18.0, minMonthlyPayment = 500000.0, category = "Pinjaman Online", dueDate = "Tgl 20 tiap bulan", userId = 1L),
+                    DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan", userId = 1L)
                 )
                 debtDao.insertDebts(initialDebts)
             }
 
             val assetDao = database.assetDao()
-            if (assetDao.getAllAssets().first().isEmpty()) {
+            if (assetDao.getAssetCount(1L) == 0) {
                 val initialAssets = listOf(
-                    AssetItem(name = "MacBook Pro M2", initialValue = 24000000.0, purchaseYear = 2024, category = AssetCategory.ELECTRONICS),
-                    AssetItem(name = "Honda Vario 160", initialValue = 28000000.0, purchaseYear = 2023, category = AssetCategory.VEHICLE),
-                    AssetItem(name = "Logam Mulia Antam 10g", initialValue = 13000000.0, purchaseYear = 2022, category = AssetCategory.GOLD_INVESTMENT)
+                    AssetItem(name = "MacBook Pro M2", initialValue = 24000000.0, purchaseYear = 2024, category = AssetCategory.ELECTRONICS, userId = 1L),
+                    AssetItem(name = "Honda Vario 160", initialValue = 28000000.0, purchaseYear = 2023, category = AssetCategory.VEHICLE, userId = 1L),
+                    AssetItem(name = "Logam Mulia Antam 10g", initialValue = 13000000.0, purchaseYear = 2022, category = AssetCategory.GOLD_INVESTMENT, userId = 1L)
                 )
                 assetDao.insertAssets(initialAssets)
             }

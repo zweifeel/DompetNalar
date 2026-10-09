@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.data.session.SessionManager
 import java.io.File
 import java.util.Random
 
@@ -31,8 +32,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val userRepository: UserRepository
     private val database: FinSmartDatabase
 
-    private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+    val currentUser: StateFlow<User?> = SessionManager.currentUser
 
     private val _isMasterDevPanelOpen = MutableStateFlow(false)
     val isMasterDevPanelOpen: StateFlow<Boolean> = _isMasterDevPanelOpen.asStateFlow()
@@ -173,26 +173,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         _driveLastBackup.value = com.example.util.GoogleDriveService.getLastBackupTime(application)
         _driveAutoSync.value = com.example.util.GoogleDriveService.isAutoSyncEnabled(application)
 
-        // Load saved session or default to Guest Mode (Bab 1 & 2)
+        // Initialize canonical SessionManager and restore session or enter guest mode
+        SessionManager.initialize(application)
         viewModelScope.launch {
-            val savedUserId = prefs.getLong("saved_user_id", -1L)
-            if (savedUserId != -1L) {
-                val user = userRepository.getUserById(savedUserId)
-                if (user != null) {
-                    _currentUser.value = user
-                    return@launch
-                }
+            val restored = SessionManager.restoreSession(database.userDao())
+            if (!restored) {
+                SessionManager.startGuestSession(database.userDao())
             }
-
-            // Fresh install / guest user default (3-day free trial, non-MasterDev)
-            val guestUser = User(
-                username = "Tamu FinSmart",
-                email = "guest@finsmart.local",
-                role = UserRole.FREE_MEMBER,
-                isGuest = true,
-                trialStartDate = System.currentTimeMillis()
-            )
-            _currentUser.value = guestUser
         }
 
         // Silent startup migration of legacy plaintext passwords to PBKDF2
@@ -233,8 +220,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val updated = lukas.copy(passwordHash = secureHash)
             userRepository.updateUser(updated)
 
-            _currentUser.value = updated
-            prefs.edit().putLong("saved_user_id", updated.id).apply()
+            SessionManager.login(updated)
             _isInitialMasterSetupOpen.value = false
             _isAuthModalOpen.value = false
             _isSuccessToast.value = "Kata sandi Master Developer berhasil dibuat! 👑"
@@ -244,7 +230,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun changePassword(currentPass: String, newPass: String, confirmPass: String) {
         viewModelScope.launch {
             _changePasswordError.value = null
-            val user = _currentUser.value
+            val user = currentUser.value
             if (user == null || user.isGuest) {
                 _changePasswordError.value = "Pengguna tamu tidak dapat mengubah kata sandi."
                 return@launch
@@ -274,7 +260,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val updatedUser = user.copy(passwordHash = newHash)
             userRepository.updateUser(updatedUser)
 
-            _currentUser.value = updatedUser
+            SessionManager.login(updatedUser)
             _isChangePasswordOpen.value = false
             _isSuccessToast.value = "Kata sandi berhasil diperbarui! 🔒"
         }
@@ -308,8 +294,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 if (PasswordHasher.verifyPassword(trimmedPass, user.passwordHash) || user.isGuest) {
-                    _currentUser.value = user
-                    prefs.edit().putLong("saved_user_id", user.id).apply()
+                    SessionManager.login(user)
                     _isAuthModalOpen.value = false
                     if (user.role == UserRole.MASTER_DEV) {
                         _isSuccessToast.value = "Selamat Datang Master Developer ${com.example.config.AppConfig.APP_AUTHOR}! 👑"
@@ -354,8 +339,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val newId = userRepository.insertUser(newUser)
             val created = newUser.copy(id = newId)
 
-            _currentUser.value = created
-            prefs.edit().putLong("saved_user_id", newId).apply()
+            SessionManager.login(created)
             _pendingOtpCode.value = null
             _isAuthModalOpen.value = false
             _isSuccessToast.value = "Akun berhasil dibuat! Selamat datang di FinSmart."
@@ -376,42 +360,33 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val id = userRepository.insertUser(newUser)
                 user = newUser.copy(id = id)
             }
-            _currentUser.value = user
-            prefs.edit().putLong("saved_user_id", user.id).apply()
+            SessionManager.login(user)
             _isAuthModalOpen.value = false
             _isSuccessToast.value = "Berhasil masuk via Akun Google"
         }
     }
 
     fun loginAsGuest() {
-        val guest = User(
-            id = 9999L,
-            username = "Tamu (Guest)",
-            email = "guest@finsmart.local",
-            role = UserRole.FREE_MEMBER,
-            isGuest = true,
-            trialStartDate = System.currentTimeMillis()
-        )
-        _currentUser.value = guest
-        prefs.edit().putLong("saved_user_id", 9999L).apply()
-        _isAuthModalOpen.value = false
-        _isSuccessToast.value = "Mode Tamu aktif (Trial 3 Hari)"
+        viewModelScope.launch {
+            SessionManager.startGuestSession(database.userDao())
+            _isAuthModalOpen.value = false
+            _isSuccessToast.value = "Mode Tamu aktif (Trial 3 Hari)"
+        }
     }
 
     fun logout() {
-        _currentUser.value = null
-        prefs.edit().remove("saved_user_id").apply()
+        SessionManager.logout()
         _isAuthModalOpen.value = true
     }
 
     fun grantTemporaryRewardAccess(durationHours: Int = 1) {
-        val user = _currentUser.value ?: return
+        val user = currentUser.value ?: return
         val rewardExpiry = System.currentTimeMillis() + (durationHours * 3600000L) // Presisi 1 jam / 3,600,000 ms
         val updatedUser = user.copy(
             role = UserRole.SMART_MASTER,
             subscriptionExpiresAt = rewardExpiry
         )
-        _currentUser.value = updatedUser
+        SessionManager.login(updatedUser)
 
         // Juga menambahkan 1x Per-Action Pass Credit sebagai bonus cadangan
         addSingleFeaturePassCredit(1)
@@ -426,13 +401,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun grantStreakMilestoneReward(durationHours: Int = 24, actionPassCredits: Int = 3) {
-        val user = _currentUser.value ?: return
+        val user = currentUser.value ?: return
         val rewardExpiry = System.currentTimeMillis() + (durationHours * 3600000L) // 24 jam = 86,400,000 ms
         val updatedUser = user.copy(
             role = UserRole.SMART_MASTER,
             subscriptionExpiresAt = rewardExpiry
         )
-        _currentUser.value = updatedUser
+        SessionManager.login(updatedUser)
 
         addSingleFeaturePassCredit(actionPassCredits)
 
@@ -466,8 +441,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val oneYearLater = System.currentTimeMillis() + (365L * 86400000L)
             userRepository.updateUserRole(userId, UserRole.SMART_MASTER, oneYearLater)
-            if (_currentUser.value?.id == userId) {
-                _currentUser.value = _currentUser.value?.copy(role = UserRole.SMART_MASTER, subscriptionExpiresAt = oneYearLater)
+            val current = currentUser.value
+            if (current?.id == userId) {
+                SessionManager.login(current.copy(role = UserRole.SMART_MASTER, subscriptionExpiresAt = oneYearLater))
             }
             _isSuccessToast.value = "Status akun berhasil di-approve menjadi Smart Master 👑"
         }
@@ -476,8 +452,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun downgradeUserToMember(userId: Long) {
         viewModelScope.launch {
             userRepository.updateUserRole(userId, UserRole.FREE_MEMBER, null)
-            if (_currentUser.value?.id == userId) {
-                _currentUser.value = _currentUser.value?.copy(role = UserRole.FREE_MEMBER, subscriptionExpiresAt = null)
+            val current = currentUser.value
+            if (current?.id == userId) {
+                SessionManager.login(current.copy(role = UserRole.FREE_MEMBER, subscriptionExpiresAt = null))
             }
             _isSuccessToast.value = "Status akun dikembalikan ke FinSmart Member"
         }
@@ -485,7 +462,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     // Account Deletion (Bab 2 & Bab 13 Play Store Compliance)
     fun deleteAccountPermanently(passwordConfirmation: String, onDeleted: () -> Unit): Boolean {
-        val user = _currentUser.value ?: return false
+        val user = currentUser.value ?: return false
         val trimmedPass = passwordConfirmation.trim()
 
         // Check password matching (or permit if guest)
@@ -503,35 +480,35 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            // 1. Atomic Room database wipe & category reseed
-            FinSmartDatabase.wipeAccountDataInTransaction(database)
+            // 1. Atomic Room user account deletion & cascade (DEF-03 Stage 3)
+            FinSmartDatabase.deleteUserAccountInTransaction(database, user)
 
-            // 2. Cancel all scheduled background tasks (RecurringTransactionWorker, AutoSyncWorker)
+            // 2. Cancel scheduled background tasks for this user
             try {
-                androidx.work.WorkManager.getInstance(getApplication()).cancelAllWork()
+                androidx.work.WorkManager.getInstance(getApplication()).cancelAllWorkByTag("user_${user.id}")
             } catch (e: Exception) {
                 android.util.Log.e("AuthViewModel", "Gagal membatalkan WorkManager tasks", e)
             }
 
-            // 3. Disconnect Google Drive & clear drive preferences
+            // 3. Disconnect Google Drive & clear drive preferences for this user
             try {
                 com.example.util.GoogleDriveService.disconnect(getApplication())
             } catch (e: Exception) {
                 android.util.Log.e("AuthViewModel", "Gagal disconnect Google Drive", e)
             }
 
-            // 4. Clear SharedPreferences
-            prefs.edit().clear().apply()
+            // 4. Clear account-specific saved session preferences
+            prefs.edit().remove("saved_user_id").remove("last_logged_in_user").apply()
             try {
                 getApplication<Application>().getSharedPreferences("finsmart_prefs", Context.MODE_PRIVATE)
-                    .edit().clear().apply()
+                    .edit().remove("saved_user_id").apply()
             } catch (e: Exception) {
                 android.util.Log.e("AuthViewModel", "Gagal membersihkan finsmart_prefs", e)
             }
 
             // 5. Reset in-memory state flows on Main thread
             withContext(Dispatchers.Main) {
-                _currentUser.value = null
+                SessionManager.logout()
                 _singleFeaturePassCredits.value = 0
                 _shakeGestureAction.value = "OFF"
                 _isDriveConnected.value = false
@@ -574,7 +551,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun isFeatureUnlocked(): Boolean {
-        val user = _currentUser.value ?: return false
+        val user = currentUser.value ?: return false
         if (user.role == UserRole.MASTER_DEV) return true
 
         if (user.role == UserRole.SMART_MASTER) {
@@ -595,7 +572,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getTrialDaysRemaining(): Int {
-        val user = _currentUser.value ?: return 0
+        val user = currentUser.value ?: return 0
         if (user.role == UserRole.MASTER_DEV || user.role == UserRole.SMART_MASTER) {
             return 999
         }
@@ -677,7 +654,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun triggerManualBackup() {
         viewModelScope.launch {
             _isSuccessToast.value = "Memulai pencadangan data ke Google Drive..."
-            val result = com.example.util.GoogleDriveService.backupNow(getApplication(), database)
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                _isSuccessToast.value = "Gagal mencadangkan: Sesi pengguna tidak aktif."
+                return@launch
+            }
+            val result = com.example.util.GoogleDriveService.backupNow(getApplication(), database, userId)
             _driveLastBackup.value = com.example.util.GoogleDriveService.getLastBackupTime(getApplication())
             _isSuccessToast.value = result.second
         }
@@ -694,7 +676,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun triggerPortableBackup(password: String, onComplete: ((Boolean, String, File?) -> Unit)? = null) {
         viewModelScope.launch {
             _isSuccessToast.value = "Membuat cadangan portabel..."
-            val result = com.example.util.GoogleDriveService.backupPortableNow(getApplication(), database, password)
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                _isSuccessToast.value = "Gagal mencadangkan: Sesi pengguna tidak aktif."
+                onComplete?.invoke(false, "Sesi pengguna tidak aktif.", null)
+                return@launch
+            }
+            val result = com.example.util.GoogleDriveService.backupPortableNow(getApplication(), database, password, userId)
             _isSuccessToast.value = result.second
             onComplete?.invoke(result.first, result.second, result.third)
         }
@@ -744,7 +732,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             context = getApplication(),
             edition = icon,
             currentStreak = _gamificationState.value.dailyStreak,
-            isMasterDev = _currentUser.value?.role == UserRole.MASTER_DEV
+            isMasterDev = currentUser.value?.role == UserRole.MASTER_DEV
         )
         _isSuccessToast.value = "Dynamic App Icon diubah ke: ${icon.displayName}"
     }

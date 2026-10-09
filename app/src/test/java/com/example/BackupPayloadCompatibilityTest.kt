@@ -56,6 +56,9 @@ class BackupPayloadCompatibilityTest {
     }
 
     private suspend fun seedComprehensiveData(): Pair<DebtItem, AssetItem> {
+        val userId = 101L
+        db.userDao().insertUser(User(id = userId, username = "compatuser", email = "compat@example.com", role = UserRole.FREE_MEMBER))
+
         val wallet = Wallet(
             id = 101L,
             name = "Dompet BCA",
@@ -65,7 +68,8 @@ class BackupPayloadCompatibilityTest {
             colorHex = "#0B57D0",
             iconName = "account_balance",
             accountMode = AccountMode.PERSONAL.name,
-            isDefault = true
+            isDefault = true,
+            userId = userId
         )
         db.walletDao().insertWallet(wallet)
 
@@ -81,7 +85,8 @@ class BackupPayloadCompatibilityTest {
             timestamp = 1700000000000L,
             note = "Semester 5",
             tags = "#kuliah",
-            accountMode = AccountMode.PERSONAL.name
+            accountMode = AccountMode.PERSONAL.name,
+            userId = userId
         )
         db.transactionDao().insertTransaction(transaction)
 
@@ -93,7 +98,8 @@ class BackupPayloadCompatibilityTest {
             minMonthlyPayment = 3200000.0,
             category = "Pinjaman Bank",
             dueDate = "Tgl 5 tiap bulan",
-            createdAt = 1700000000000L
+            createdAt = 1700000000000L,
+            userId = userId
         )
         db.debtDao().insertDebt(debt)
 
@@ -103,7 +109,8 @@ class BackupPayloadCompatibilityTest {
             initialValue = 450000000.0,
             purchaseYear = 2021,
             category = AssetCategory.PROPERTY,
-            createdAt = 1700000000000L
+            createdAt = 1700000000000L,
+            userId = userId
         )
         db.assetDao().insertAsset(asset)
 
@@ -249,36 +256,37 @@ class BackupPayloadCompatibilityTest {
     @Test
     fun testFullDeviceLocalBackupAndRestoreRoundtripWithDebtsAndAssets() = runBlocking {
         val (seededDebt, seededAsset) = seedComprehensiveData()
+        val userId = 101L
 
         // 1. Eksekusi Device-Local Backup (Format v2)
-        val (backupSuccess, backupMsg) = GoogleDriveService.backupNow(context, db)
+        val (backupSuccess, backupMsg) = GoogleDriveService.backupNow(context, db, userId)
         assertTrue("Device-local backup harus berhasil: $backupMsg", backupSuccess)
 
         // 2. Modifikasi database untuk memverifikasi pemulihan
         db.clearAllTables()
-        assertEquals(0, db.debtDao().getDebtCount())
-        assertEquals(0, db.assetDao().getAssetCount())
-        assertEquals(0, db.walletDao().getAllWallets().first().size)
+        assertEquals(0, db.debtDao().getDebtCount(userId))
+        assertEquals(0, db.assetDao().getAssetCount(userId))
+        assertEquals(0, db.walletDao().getAllWallets(userId).first().size)
 
         // 3. Eksekusi Restore
         val (restoreSuccess, restoreMsg) = GoogleDriveService.restoreNow(context, db)
         assertTrue("Device-local restore harus berhasil: $restoreMsg", restoreSuccess)
 
         // 4. Verifikasi data Room pulih secara utuh
-        val restoredDebts = db.debtDao().getAllDebts().first()
+        val restoredDebts = db.debtDao().getAllDebts(userId).first()
         assertEquals(1, restoredDebts.size)
         assertEquals(seededDebt.id, restoredDebts[0].id)
         assertEquals(seededDebt.name, restoredDebts[0].name)
         assertEquals(seededDebt.amount, restoredDebts[0].amount, 0.01)
 
-        val restoredAssets = db.assetDao().getAllAssets().first()
+        val restoredAssets = db.assetDao().getAllAssets(userId).first()
         assertEquals(1, restoredAssets.size)
         assertEquals(seededAsset.id, restoredAssets[0].id)
         assertEquals(seededAsset.name, restoredAssets[0].name)
         assertEquals(seededAsset.initialValue, restoredAssets[0].initialValue, 0.01)
         assertEquals(seededAsset.category, restoredAssets[0].category)
 
-        val restoredWallets = db.walletDao().getAllWallets().first()
+        val restoredWallets = db.walletDao().getAllWallets(userId).first()
         assertEquals(1, restoredWallets.size)
         assertEquals("Dompet BCA", restoredWallets[0].name)
     }
@@ -286,10 +294,11 @@ class BackupPayloadCompatibilityTest {
     @Test
     fun testFullPortableBackupAndRestoreRoundtripWithDebtsAndAssets() = runBlocking {
         val (seededDebt, seededAsset) = seedComprehensiveData()
+        val userId = 101L
         val password = "StrongPassword#2026"
 
         // 1. Eksekusi Portable Backup
-        val (exportSuccess, exportMsg, exportFile) = GoogleDriveService.backupPortableNow(context, db, password)
+        val (exportSuccess, exportMsg, exportFile) = GoogleDriveService.backupPortableNow(context, db, password, userId)
         assertTrue("Portable backup harus berhasil: $exportMsg", exportSuccess)
         assertNotNull(exportFile)
 
@@ -303,15 +312,15 @@ class BackupPayloadCompatibilityTest {
         assertTrue("Portable restore harus berhasil: $restoreMsg", restoreSuccess)
 
         // 4. Verifikasi pemulihan
-        val restoredDebts = db.debtDao().getAllDebts().first()
+        val restoredDebts = db.debtDao().getAllDebts(userId).first()
         assertEquals(1, restoredDebts.size)
         assertEquals(seededDebt.name, restoredDebts[0].name)
 
-        val restoredAssets = db.assetDao().getAllAssets().first()
+        val restoredAssets = db.assetDao().getAllAssets(userId).first()
         assertEquals(1, restoredAssets.size)
         assertEquals(seededAsset.name, restoredAssets[0].name)
 
-        val restoredWallets = db.walletDao().getAllWallets().first()
+        val restoredWallets = db.walletDao().getAllWallets(userId).first()
         assertEquals(1, restoredWallets.size)
     }
 
@@ -319,8 +328,9 @@ class BackupPayloadCompatibilityTest {
     fun testRestoreLegacyBackupSemanticsClearsTablesAndLeavesDebtsAssetsEmpty() = runBlocking {
         // Seed initial debts and assets in DB
         seedComprehensiveData()
-        assertEquals(1, db.debtDao().getDebtCount())
-        assertEquals(1, db.assetDao().getAssetCount())
+        val userId = 101L
+        assertEquals(1, db.debtDao().getDebtCount(userId))
+        assertEquals(1, db.assetDao().getAssetCount(userId))
 
         // Create legacy payload without debts and assets
         val legacyPayload = BackupDataPayload(
@@ -334,7 +344,8 @@ class BackupPayloadCompatibilityTest {
                     colorHex = "#999999",
                     iconName = "cash",
                     accountMode = AccountMode.PERSONAL.name,
-                    isDefault = true
+                    isDefault = true,
+                    userId = userId
                 )
             ),
             transactions = emptyList(),
@@ -351,6 +362,7 @@ class BackupPayloadCompatibilityTest {
         // Simulate restore of this legacy payload
         // In existing system semantics: clearAllTables() is executed, then items present in payload are inserted.
         db.clearAllTables()
+        db.userDao().insertUser(User(id = userId, username = "compatuser", email = "compat@example.com", role = UserRole.FREE_MEMBER))
         db.walletDao().insertWallets(legacyPayload.wallets)
         if (legacyPayload.debts.isNotEmpty()) {
             db.debtDao().insertDebts(legacyPayload.debts)
@@ -360,12 +372,12 @@ class BackupPayloadCompatibilityTest {
         }
 
         // Verify: Legacy wallets are restored
-        val wallets = db.walletDao().getAllWallets().first()
+        val wallets = db.walletDao().getAllWallets(userId).first()
         assertEquals(1, wallets.size)
         assertEquals("Legacy Restore Only Wallet", wallets[0].name)
 
         // Verify: Debts and assets are empty because legacy backup contained no debts/assets
-        assertEquals(0, db.debtDao().getDebtCount())
-        assertEquals(0, db.assetDao().getAssetCount())
+        assertEquals(0, db.debtDao().getDebtCount(userId))
+        assertEquals(0, db.assetDao().getAssetCount(userId))
     }
 }

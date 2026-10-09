@@ -11,6 +11,8 @@ import com.example.data.model.AssetItem
 import com.example.data.model.BackupDataPayload
 import com.example.data.model.DebtItem
 import com.example.data.model.TransactionType
+import com.example.data.model.User
+import com.example.data.model.UserRole
 import com.example.data.model.Wallet
 import com.example.data.model.WalletType
 import com.example.ui.viewmodel.FinanceViewModel
@@ -58,6 +60,7 @@ import kotlin.math.abs
 @Config(sdk = [36])
 class NetWorthCalculationTest {
 
+    private val testUserId = 777L
     private lateinit var app: Application
     private lateinit var db: FinSmartDatabase
     private lateinit var viewModel: FinanceViewModel
@@ -70,12 +73,17 @@ class NetWorthCalculationTest {
             .allowMainThreadQueries()
             .build()
         setDatabaseSingleton(db)
+        runBlocking {
+            db.userDao().insertUser(User(id = testUserId, username = "networth_user", email = "nw@example.com", role = UserRole.FREE_MEMBER))
+        }
+        com.example.data.session.SessionManager.login(User(id = testUserId, username = "networth_user", email = "nw@example.com", role = UserRole.FREE_MEMBER))
         viewModel = FinanceViewModel(app)
     }
 
     @After
     fun tearDown() {
         viewModel.viewModelScope.cancel()
+        com.example.data.session.SessionManager.resetForTesting()
         setDatabaseSingleton(null)
         db.close()
         Dispatchers.resetMain()
@@ -123,16 +131,17 @@ class NetWorthCalculationTest {
                 name = "Wallet $id",
                 type = WalletType.BANK,
                 balance = balance,
-                accountMode = AccountMode.PERSONAL.name
+                accountMode = AccountMode.PERSONAL.name,
+                userId = testUserId
             )
         )
     }
 
     private fun asset(id: String, value: Double, year: Int = 2026, category: AssetCategory = AssetCategory.GOLD_INVESTMENT) =
-        AssetItem(id = id, name = "Asset $id", initialValue = value, purchaseYear = year, category = category)
+        AssetItem(id = id, name = "Asset $id", initialValue = value, purchaseYear = year, category = category, userId = testUserId)
 
     private fun debt(id: String, amount: Double) =
-        DebtItem(id = id, name = "Debt $id", amount = amount, interestRatePercent = 12.0, minMonthlyPayment = 100_000.0)
+        DebtItem(id = id, name = "Debt $id", amount = amount, interestRatePercent = 12.0, minMonthlyPayment = 100_000.0, userId = testUserId)
 
     // ==========================================
     // 1. FORMULA SCENARIOS (through FinanceViewModel.netWorth)
@@ -308,7 +317,8 @@ class NetWorthCalculationTest {
                 name = "Kas Toko",
                 type = WalletType.BANK,
                 balance = 20_000_000.0,
-                accountMode = AccountMode.BUSINESS.name
+                accountMode = AccountMode.BUSINESS.name,
+                userId = testUserId
             )
         )
         db.assetDao().insertAsset(asset("a1", 2_000_000.0))
@@ -343,11 +353,13 @@ class NetWorthCalculationTest {
                     name = "Dompet Pulih",
                     type = WalletType.BANK,
                     balance = 15_000_000.0,
-                    accountMode = AccountMode.PERSONAL.name
+                    accountMode = AccountMode.PERSONAL.name,
+                    userId = testUserId
                 )
             ),
             assets = listOf(asset("asset-pulih", 10_000_000.0)),
             debts = listOf(debt("debt-pulih", 5_000_000.0)),
+            users = listOf(User(id = testUserId, username = "networth_user", email = "nw@example.com", role = UserRole.FREE_MEMBER)),
             version = 2,
             exportedAt = System.currentTimeMillis()
         )

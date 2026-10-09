@@ -121,17 +121,17 @@ object GoogleDriveService {
      * Export all database contents, encrypt with Format v2 (AES-GCM-256 authenticated AEAD),
      * and persist to local fallback and Google Drive Public Root Sandbox.
      */
-    suspend fun backupNow(context: Context, database: FinSmartDatabase): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+    suspend fun backupNow(context: Context, database: FinSmartDatabase, userId: Long): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
-            // 1. Fetch all data from DAOs
-            val wallets = database.walletDao().getAllWallets().first()
-            val transactions = database.transactionDao().getAllTransactions().first()
-            val categories = database.categoryDao().getAllCategories().first()
-            val users = database.userDao().getAllUsers().first()
-            val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory().first()
-            val budgetLimits = database.budgetLimitDao().getAllBudgetLimits().first()
-            val debts = database.debtDao().getAllDebts().first()
-            val assets = database.assetDao().getAllAssets().first()
+            // 1. Fetch user-scoped data from DAOs
+            val wallets = database.walletDao().getAllWallets(userId).first()
+            val transactions = database.transactionDao().getAllTransactions(userId).first()
+            val categories = database.categoryDao().getAllCategories(userId).first()
+            val users = database.userDao().getUserById(userId)?.let { listOf(it) } ?: emptyList()
+            val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory(userId).first()
+            val budgetLimits = database.budgetLimitDao().getAllBudgetLimits(userId).first()
+            val debts = database.debtDao().getAllDebts(userId).first()
+            val assets = database.assetDao().getAllAssets(userId).first()
 
             // 2. Build payload
             val payload = BackupDataPayload(
@@ -254,21 +254,22 @@ object GoogleDriveService {
     suspend fun backupPortableNow(
         context: Context,
         database: FinSmartDatabase,
-        password: String
+        password: String,
+        userId: Long
     ): Triple<Boolean, String, File?> = withContext(Dispatchers.IO) {
         if (password.isBlank()) {
             return@withContext Triple(false, "Kata sandi cadangan tidak boleh kosong.", null)
         }
         try {
-            // 1. Fetch all data from DAOs
-            val wallets = database.walletDao().getAllWallets().first()
-            val transactions = database.transactionDao().getAllTransactions().first()
-            val categories = database.categoryDao().getAllCategories().first()
-            val users = database.userDao().getAllUsers().first()
-            val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory().first()
-            val budgetLimits = database.budgetLimitDao().getAllBudgetLimits().first()
-            val debts = database.debtDao().getAllDebts().first()
-            val assets = database.assetDao().getAllAssets().first()
+            // 1. Fetch user-scoped data from DAOs
+            val wallets = database.walletDao().getAllWallets(userId).first()
+            val transactions = database.transactionDao().getAllTransactions(userId).first()
+            val categories = database.categoryDao().getAllCategories(userId).first()
+            val users = database.userDao().getUserById(userId)?.let { listOf(it) } ?: emptyList()
+            val splitBillHistory = database.splitBillHistoryDao().getAllSplitBillHistory(userId).first()
+            val budgetLimits = database.budgetLimitDao().getAllBudgetLimits(userId).first()
+            val debts = database.debtDao().getAllDebts(userId).first()
+            val assets = database.assetDao().getAllAssets(userId).first()
 
             // 2. Build payload
             val payload = BackupDataPayload(
