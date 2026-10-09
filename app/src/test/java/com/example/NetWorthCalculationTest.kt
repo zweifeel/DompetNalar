@@ -364,7 +364,7 @@ class NetWorthCalculationTest {
             exportedAt = System.currentTimeMillis()
         )
 
-        FinanceViewModel.restoreDatabaseInTransaction(db, restoredPayload)
+        FinanceViewModel.restoreUserDataInTransaction(db, restoredPayload, testUserId)
 
         // Post-restore: 15jt + 10jt - 5jt = 20jt (old wallet/debt fully replaced)
         assertNetWorth(wallet = 15_000_000.0, assets = 10_000_000.0, debts = 5_000_000.0, expectedNetWorth = 20_000_000.0)

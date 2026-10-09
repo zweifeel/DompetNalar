@@ -291,7 +291,7 @@ class BackupEncryptionTest {
         db.walletDao().insertWallets(listOf(Wallet(id = 99L, name = "Temp Wallet", balance = 0.0, type = WalletType.BANK, accountMode = AccountMode.PERSONAL.name, userId = userId)))
 
         // Restore dengan kata sandi yang benar
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupContent, password)
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupContent, password, userId)
         assertTrue("Pemulihan dengan kata sandi benar harus berhasil: $restoreMsg", restoreSuccess)
 
         val wallets = db.walletDao().getAllWallets(userId).first()
@@ -309,7 +309,7 @@ class BackupEncryptionTest {
         val (_, _, exportFile) = GoogleDriveService.backupPortableNow(context, db, correctPassword, userId)
         val backupContent = exportFile!!.readText()
 
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupContent, wrongPassword)
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupContent, wrongPassword, userId)
         assertFalse("Pemulihan dengan kata sandi salah wajib ditolak", restoreSuccess)
         assertTrue("Pesan error harus informatif", restoreMsg.contains("salah") || restoreMsg.contains("Gagal"))
     }
@@ -331,7 +331,7 @@ class BackupEncryptionTest {
         assertEquals(initialWallet.balance, walletsBefore[0].balance, 0.001)
 
         // Coba restore dengan password salah
-        val (restoreSuccess, _) = GoogleDriveService.restorePortableNow(context, db, backupContent, wrongPassword)
+        val (restoreSuccess, _) = GoogleDriveService.restorePortableNow(context, db, backupContent, wrongPassword, userId)
         assertFalse(restoreSuccess)
 
         // Verifikasi CRITICAL: Database TIDAK boleh dimodifikasi/dihapus sama sekali!
@@ -356,7 +356,7 @@ class BackupEncryptionTest {
         val tamperedEnvelope = envelope.copy(ciphertext = tamperedCiphertext)
         val tamperedJson = moshi.adapter(BackupEnvelopeV2::class.java).toJson(tamperedEnvelope)
 
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, tamperedJson, password)
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, tamperedJson, password, userId)
         assertFalse("Cadangan yang diubah/tampered wajib gagal otentikasi", restoreSuccess)
         assertTrue(restoreMsg.contains("salah") || restoreMsg.contains("diubah") || restoreMsg.contains("rusak"))
     }
@@ -377,7 +377,7 @@ class BackupEncryptionTest {
         val tamperedJson = moshi.adapter(BackupEnvelopeV2::class.java).toJson(tamperedEnvelope)
 
         // Eksekusi restore dengan data tampered
-        val (restoreSuccess, _) = GoogleDriveService.restorePortableNow(context, db, tamperedJson, password)
+        val (restoreSuccess, _) = GoogleDriveService.restorePortableNow(context, db, tamperedJson, password, userId)
         assertFalse(restoreSuccess)
 
         // Verifikasi CRITICAL: Database TIDAK boleh dimodifikasi sama sekali
@@ -397,7 +397,7 @@ class BackupEncryptionTest {
         assertTrue(exportMsg.contains("kosong"))
 
         // 2. Pemulihan dengan password kosong
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, "{}", "")
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, "{}", "", userId)
         assertFalse("Pemulihan dengan kata sandi kosong wajib ditolak", restoreSuccess)
         assertTrue(restoreMsg.contains("kosong"))
     }
@@ -444,7 +444,7 @@ class BackupEncryptionTest {
         assertTrue("Device Local backupNow harus sukses: $backupMsg", backupSuccess)
 
         // 2. Device Local Restore
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restoreNow(context, db)
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restoreNow(context, db, userId)
         assertTrue("Device Local restoreNow harus sukses: $restoreMsg", restoreSuccess)
 
         val wallets = db.walletDao().getAllWallets(userId).first()

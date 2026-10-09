@@ -263,25 +263,25 @@ class BackupPayloadCompatibilityTest {
         assertTrue("Device-local backup harus berhasil: $backupMsg", backupSuccess)
 
         // 2. Modifikasi database untuk memverifikasi pemulihan
-        db.clearAllTables()
+        db.walletDao().clearAllWallets(userId)
+        db.debtDao().clearAllDebts(userId)
+        db.assetDao().clearAllAssets(userId)
         assertEquals(0, db.debtDao().getDebtCount(userId))
         assertEquals(0, db.assetDao().getAssetCount(userId))
         assertEquals(0, db.walletDao().getAllWallets(userId).first().size)
 
         // 3. Eksekusi Restore
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restoreNow(context, db)
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restoreNow(context, db, userId)
         assertTrue("Device-local restore harus berhasil: $restoreMsg", restoreSuccess)
 
         // 4. Verifikasi data Room pulih secara utuh
         val restoredDebts = db.debtDao().getAllDebts(userId).first()
         assertEquals(1, restoredDebts.size)
-        assertEquals(seededDebt.id, restoredDebts[0].id)
         assertEquals(seededDebt.name, restoredDebts[0].name)
         assertEquals(seededDebt.amount, restoredDebts[0].amount, 0.01)
 
         val restoredAssets = db.assetDao().getAllAssets(userId).first()
         assertEquals(1, restoredAssets.size)
-        assertEquals(seededAsset.id, restoredAssets[0].id)
         assertEquals(seededAsset.name, restoredAssets[0].name)
         assertEquals(seededAsset.initialValue, restoredAssets[0].initialValue, 0.01)
         assertEquals(seededAsset.category, restoredAssets[0].category)
@@ -304,11 +304,13 @@ class BackupPayloadCompatibilityTest {
 
         val backupJson = exportFile!!.readText()
 
-        // 2. Hapus data di Room
-        db.clearAllTables()
+        // 2. Modifikasi data di Room
+        db.walletDao().clearAllWallets(userId)
+        db.debtDao().clearAllDebts(userId)
+        db.assetDao().clearAllAssets(userId)
 
         // 3. Eksekusi Restore Portable
-        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupJson, password)
+        val (restoreSuccess, restoreMsg) = GoogleDriveService.restorePortableNow(context, db, backupJson, password, userId)
         assertTrue("Portable restore harus berhasil: $restoreMsg", restoreSuccess)
 
         // 4. Verifikasi pemulihan
@@ -359,17 +361,8 @@ class BackupPayloadCompatibilityTest {
             exportedAt = 1690000000000L
         )
 
-        // Simulate restore of this legacy payload
-        // In existing system semantics: clearAllTables() is executed, then items present in payload are inserted.
-        db.clearAllTables()
-        db.userDao().insertUser(User(id = userId, username = "compatuser", email = "compat@example.com", role = UserRole.FREE_MEMBER))
-        db.walletDao().insertWallets(legacyPayload.wallets)
-        if (legacyPayload.debts.isNotEmpty()) {
-            db.debtDao().insertDebts(legacyPayload.debts)
-        }
-        if (legacyPayload.assets.isNotEmpty()) {
-            db.assetDao().insertAssets(legacyPayload.assets)
-        }
+        // Simulate restore of this legacy payload using scoped restoreUserDataInTransaction (DEF-04)
+        com.example.ui.viewmodel.FinanceViewModel.restoreUserDataInTransaction(db, legacyPayload, userId)
 
         // Verify: Legacy wallets are restored
         val wallets = db.walletDao().getAllWallets(userId).first()

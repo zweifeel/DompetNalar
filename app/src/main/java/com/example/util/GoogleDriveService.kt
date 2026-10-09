@@ -177,8 +177,17 @@ object GoogleDriveService {
     /**
      * Restore from Root Google Drive Public Folder ("FinSmart_Backups/finsmart_backup.json").
      * Supports both Format v2 (AES-GCM) and Format v1 (Legacy AES-CBC) with seamless auto-dispatch.
+     * Scoped strictly to [userId] (DEF-04).
      */
-    suspend fun restoreNow(context: Context, database: FinSmartDatabase): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+    suspend fun restoreNow(context: Context, database: FinSmartDatabase, userId: Long): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        if (userId <= 0L) {
+            return@withContext Pair(false, "Gagal memulihkan: Sesi pengguna tidak aktif.")
+        }
+        val activeUser = database.userDao().getUserById(userId)
+        if (activeUser == null) {
+            return@withContext Pair(false, "Gagal memulihkan: Akun pengguna tidak ditemukan di database.")
+        }
+
         try {
             // Check Google Drive Public Root sandbox or local public backup folder
             val googleDrivePublicFile = File(context.filesDir, "Google_Drive_Root/$PUBLIC_FOLDER_NAME/$BACKUP_FILE_NAME")
@@ -214,12 +223,15 @@ object GoogleDriveService {
             val payload = adapter.fromJson(decryptedJson)
                 ?: return@withContext Pair(false, "Gagal mengurai isi data cadangan $BACKUP_FILE_NAME.")
 
-            // 5. Restore tables into Room Database atomically
-            database.runInTransaction {
-                com.example.ui.viewmodel.FinanceViewModel.restoreDatabaseInTransaction(database, payload)
+            // 5. Restore tables into Room Database atomically scoped to active user (DEF-04)
+            try {
+                com.example.ui.viewmodel.FinanceViewModel.restoreUserDataInTransaction(database, payload, userId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Gagal memulihkan data: ${e.message}")
+                return@withContext Pair(false, "Gagal memulihkan data: ${e.message}")
             }
 
-            // 6. Post-restore migration hook: sanitize and migrate legacy plaintext passwords in restored database
+            // 6. Post-restore migration hook: sanitize and migrate legacy plaintext passwords in database
             PasswordHasher.migrateLegacyPasswords(database.userDao())
 
             // 7. Non-destructive auto-upgrade: If restored from legacy v1, upgrade local backup to v2
@@ -332,8 +344,16 @@ object GoogleDriveService {
         context: Context,
         database: FinSmartDatabase,
         backupContent: String?,
-        password: String
+        password: String,
+        userId: Long
     ): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        if (userId <= 0L) {
+            return@withContext Pair(false, "Gagal memulihkan: Sesi pengguna tidak aktif.")
+        }
+        val activeUser = database.userDao().getUserById(userId)
+        if (activeUser == null) {
+            return@withContext Pair(false, "Gagal memulihkan: Akun pengguna tidak ditemukan di database.")
+        }
         if (password.isBlank()) {
             return@withContext Pair(false, "Kata sandi pemulihan tidak boleh kosong.")
         }
@@ -388,9 +408,12 @@ object GoogleDriveService {
                 return@withContext Pair(false, "Data cadangan tidak lengkap atau tidak valid.")
             }
 
-            // MUTATE ROOM DATABASE ONLY AFTER ALL CHECKS PASS
-            database.runInTransaction {
-                com.example.ui.viewmodel.FinanceViewModel.restoreDatabaseInTransaction(database, payload)
+            // MUTATE ROOM DATABASE ONLY AFTER ALL CHECKS PASS (DEF-04 scoped to active user)
+            try {
+                com.example.ui.viewmodel.FinanceViewModel.restoreUserDataInTransaction(database, payload, userId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Gagal memulihkan cadangan portabel: ${e.message}")
+                return@withContext Pair(false, "Gagal memulihkan cadangan portabel: ${e.message}")
             }
 
             // Sanitize legacy passwords

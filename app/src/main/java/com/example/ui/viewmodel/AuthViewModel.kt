@@ -667,8 +667,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun triggerManualRestore() {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                _isSuccessToast.value = "Gagal memulihkan: Sesi pengguna tidak aktif."
+                return@launch
+            }
             _isSuccessToast.value = "Memulai pemulihan data..."
-            val result = com.example.util.GoogleDriveService.restoreNow(getApplication(), database)
+            val result = com.example.util.GoogleDriveService.restoreNow(getApplication(), database, userId)
             _isSuccessToast.value = result.second
         }
     }
@@ -690,8 +695,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun triggerPortableRestore(backupJson: String?, password: String, onComplete: ((Boolean, String) -> Unit)? = null) {
         viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                _isSuccessToast.value = "Gagal memulihkan: Sesi pengguna tidak aktif."
+                onComplete?.invoke(false, "Sesi pengguna tidak aktif.")
+                return@launch
+            }
             _isSuccessToast.value = "Mendekripsi dan memulihkan cadangan portabel..."
-            val result = com.example.util.GoogleDriveService.restorePortableNow(getApplication(), database, backupJson, password)
+            val result = com.example.util.GoogleDriveService.restorePortableNow(getApplication(), database, backupJson, password, userId)
             _isSuccessToast.value = result.second
             onComplete?.invoke(result.first, result.second)
         }

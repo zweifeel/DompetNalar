@@ -3,6 +3,7 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
 import com.example.data.local.FinSmartDatabase
 import com.example.data.local.BudgetLimitDao
 import com.example.data.local.SplitBillHistoryDao
@@ -667,17 +668,198 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     }
 
     companion object {
-        fun restoreDatabaseInTransaction(database: FinSmartDatabase, payload: BackupDataPayload) {
-            database.clearAllTables()
+        /**
+         * DEF-04: Multi-User Scoped Restore.
+         * Replaces ONLY the financial records belonging to [targetUserId].
+         * Never invokes clearAllTables().
+         * Never touches other users' records, system categories (isSystem = 1, userId = NULL),
+         * or quarantined legacy rows (userId = NULL).
+         * Never overwrites or modifies the local User profile or password hash in users table.
+         * Remaps wallet IDs safely and ensures all transaction/transfer relations point
+         * strictly to restored user-scoped wallets.
+         */
+        suspend fun restoreUserDataInTransaction(
+            database: FinSmartDatabase,
+            payload: BackupDataPayload,
+            targetUserId: Long
+        ) {
+            require(targetUserId > 0L) { "ID pengguna tidak valid: $targetUserId" }
+
+            // 1. Validasi eksistensi akun pengguna aktif di basis data
+            val activeUser = database.userDao().getUserById(targetUserId)
+                ?: throw IllegalStateException("Akun pengguna (ID: $targetUserId) tidak ditemukan di database.")
+
+            // 2. Validasi integritas dan skema payload sebelum mutasi basis data
+            if (payload.version < 1) {
+                throw IllegalArgumentException("Versi data cadangan tidak didukung: ${payload.version}")
+            }
+
+            // Validasi keunikan ID wallet dalam payload
+            val rawWalletIds = payload.wallets.map { it.id }
+            if (rawWalletIds.size != rawWalletIds.distinct().size) {
+                throw IllegalArgumentException("Data cadangan memiliki dompet dengan ID duplikat.")
+            }
+            val payloadWalletIdSet = rawWalletIds.toSet()
+
+            // Validasi relasi transaksi terhadap dompet
+            for (tx in payload.transactions) {
+                if (tx.amount.isNaN() || tx.amount.isInfinite() || tx.amount < 0.0) {
+                    throw IllegalArgumentException("Jumlah transaksi '${tx.title}' tidak valid.")
+                }
+                if (tx.walletId !in payloadWalletIdSet) {
+                    throw IllegalArgumentException("Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan.")
+                }
+                if (tx.targetWalletId != null && tx.targetWalletId > 0L && tx.targetWalletId !in payloadWalletIdSet) {
+                    throw IllegalArgumentException("Transaksi transfer '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam data cadangan.")
+                }
+            }
+
+            // Validasi anggaran, hutang, dan aset
+            for (b in payload.budgetLimits) {
+                if (b.limitAmount.isNaN() || b.limitAmount.isInfinite() || b.limitAmount < 0.0) {
+                    throw IllegalArgumentException("Batas anggaran untuk '${b.id}' tidak valid.")
+                }
+            }
+            for (d in payload.debts) {
+                if (d.amount.isNaN() || d.amount.isInfinite() || d.amount < 0.0) {
+                    throw IllegalArgumentException("Jumlah hutang '${d.name}' tidak valid.")
+                }
+            }
+            for (a in payload.assets) {
+                if (a.initialValue.isNaN() || a.initialValue.isInfinite() || a.initialValue < 0.0) {
+                    throw IllegalArgumentException("Nilai aset '${a.name}' tidak valid.")
+                }
+            }
+
+            // 3. Eksekusi mutasi dalam satu transaksi atomik Room dengan dukungan rollback penuh
+            database.withTransaction {
+                // A. Scoped deletion: Hapus hanya data finansial milik akun aktif
+                database.transactionDao().clearAllTransactions(targetUserId)
+                database.splitBillHistoryDao().clearAllHistory(targetUserId)
+                database.budgetLimitDao().clearAllBudgetLimits(targetUserId)
+                database.debtDao().clearAllDebts(targetUserId)
+                database.assetDao().clearAllAssets(targetUserId)
+                database.categoryDao().clearCustomCategories(targetUserId)
+                database.walletDao().clearAllWallets(targetUserId)
+
+                // B. Insert Wallets & Susun Peta Remapping ID
+                val walletIdMap = mutableMapOf<Long, Long>()
+                val walletNameMap = mutableMapOf<Long, String>()
+                for (wallet in payload.wallets) {
+                    val oldId = wallet.id
+                    val insertedId = database.walletDao().insertWallet(
+                        wallet.copy(
+                            id = 0L, // Auto-generate primary key baru di SQLite
+                            userId = targetUserId
+                        )
+                    )
+                    walletIdMap[oldId] = insertedId
+                    walletNameMap[oldId] = wallet.name
+                }
+
+                // C. Insert Categories: Abaikan kategori sistem kanonik agar tidak terduplikasi
+                val canonicalCategoryNames = FinSmartDatabase.DEFAULT_CATEGORIES
+                    .map { it.name.trim().lowercase() }
+                    .toSet()
+
+                for (cat in payload.categories) {
+                    if (cat.isSystem || cat.name.trim().lowercase() in canonicalCategoryNames) {
+                        continue
+                    }
+                    database.categoryDao().insertCategory(
+                        cat.copy(
+                            id = 0L,
+                            userId = targetUserId,
+                            isSystem = false
+                        )
+                    )
+                }
+
+                // D. Insert Transactions dengan ID Dompet yang Terpetakan Secara Ketat
+                for (tx in payload.transactions) {
+                    val mappedWalletId = walletIdMap[tx.walletId]
+                        ?: throw IllegalStateException("Pemetaan dompet gagal untuk transaksi '${tx.title}'.")
+                    val mappedTargetWalletId = if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
+                        walletIdMap[tx.targetWalletId]
+                            ?: throw IllegalStateException("Pemetaan dompet tujuan transfer gagal untuk transaksi '${tx.title}'.")
+                    } else null
+
+                    val mappedWalletName = walletNameMap[tx.walletId] ?: tx.walletName
+                    val mappedTargetWalletName = if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
+                        walletNameMap[tx.targetWalletId] ?: tx.targetWalletName
+                    } else tx.targetWalletName
+
+                    database.transactionDao().insertTransaction(
+                        tx.copy(
+                            id = 0L,
+                            walletId = mappedWalletId,
+                            walletName = mappedWalletName,
+                            targetWalletId = mappedTargetWalletId,
+                            targetWalletName = mappedTargetWalletName,
+                            userId = targetUserId
+                        )
+                    )
+                }
+
+                // E. Insert Budget Limits
+                val seenBudgetKeys = mutableSetOf<String>()
+                for (budget in payload.budgetLimits) {
+                    if (budget.id.isBlank() || budget.id in seenBudgetKeys) continue
+                    seenBudgetKeys.add(budget.id)
+                    database.budgetLimitDao().insertBudgetLimit(
+                        budget.copy(
+                            localId = 0L,
+                            userId = targetUserId
+                        )
+                    )
+                }
+
+                // F. Insert Debts
+                for (debt in payload.debts) {
+                    val debtId = if (debt.id.isBlank()) java.util.UUID.randomUUID().toString() else debt.id
+                    database.debtDao().insertDebt(
+                        debt.copy(
+                            id = debtId,
+                            userId = targetUserId
+                        )
+                    )
+                }
+
+                // G. Insert Assets
+                for (asset in payload.assets) {
+                    val assetId = if (asset.id.isBlank()) java.util.UUID.randomUUID().toString() else asset.id
+                    database.assetDao().insertAsset(
+                        asset.copy(
+                            id = assetId,
+                            userId = targetUserId
+                        )
+                    )
+                }
+
+                // H. Insert Split Bill History
+                for (history in payload.splitBillHistory) {
+                    val historyId = if (history.id.isBlank()) java.util.UUID.randomUUID().toString() else history.id
+                    database.splitBillHistoryDao().insertSplitBillHistory(
+                        history.copy(
+                            id = historyId,
+                            userId = targetUserId
+                        )
+                    )
+                }
+            }
+        }
+
+        @Deprecated(
+            message = "Use restoreUserDataInTransaction with explicit targetUserId. clearAllTables() is permanently removed.",
+            replaceWith = ReplaceWith("restoreUserDataInTransaction(database, payload, targetUserId)")
+        )
+        fun restoreDatabaseInTransaction(
+            database: FinSmartDatabase,
+            payload: BackupDataPayload,
+            targetUserId: Long
+        ) {
             kotlinx.coroutines.runBlocking {
-                database.userDao().insertUsers(payload.users)
-                database.walletDao().insertWallets(payload.wallets)
-                database.categoryDao().insertCategories(payload.categories)
-                payload.transactions.forEach { database.transactionDao().insertTransaction(it) }
-                payload.splitBillHistory.forEach { database.splitBillHistoryDao().insertSplitBillHistory(it) }
-                payload.budgetLimits.forEach { database.budgetLimitDao().insertBudgetLimit(it) }
-                payload.debts.forEach { database.debtDao().insertDebt(it) }
-                payload.assets.forEach { database.assetDao().insertAsset(it) }
+                restoreUserDataInTransaction(database, payload, targetUserId)
             }
         }
     }

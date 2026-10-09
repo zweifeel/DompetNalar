@@ -96,6 +96,9 @@ interface TransactionDao {
     @Query("SELECT COUNT(*) FROM transactions WHERE userId = :userId")
     suspend fun getTransactionCount(userId: Long): Int
 
+    @Query("DELETE FROM transactions WHERE userId = :userId")
+    suspend fun clearAllTransactions(userId: Long): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionItem): Long
 

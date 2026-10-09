@@ -65,6 +65,9 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM categories WHERE userId = :userId")
     suspend fun getCustomCategoryCount(userId: Long): Int
 
+    @Query("DELETE FROM categories WHERE userId = :userId AND isSystem = 0")
+    suspend fun clearCustomCategories(userId: Long): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CategoryItem): Long
 

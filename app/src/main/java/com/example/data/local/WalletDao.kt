@@ -87,6 +87,9 @@ interface WalletDao {
     @Query("SELECT COUNT(*) FROM wallets WHERE userId = :userId")
     suspend fun getWalletCount(userId: Long): Int
 
+    @Query("DELETE FROM wallets WHERE userId = :userId")
+    suspend fun clearAllWallets(userId: Long): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWallet(wallet: Wallet): Long
 
