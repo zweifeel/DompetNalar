@@ -54,16 +54,22 @@ def print_banner(text, border="="):
     line = border * 75
     print(f"\n{line}\n{text}\n{line}")
 
-def run_git_cmd(args):
+def run_git_cmd(args, timeout=20):
     try:
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
         res = subprocess.run(
             ["git"] + args,
             capture_output=True,
             text=True,
             encoding="utf-8",
-            errors="replace"
+            errors="replace",
+            env=env,
+            timeout=timeout
         )
         return res.returncode == 0, res.stdout.strip(), res.stderr.strip()
+    except subprocess.TimeoutExpired:
+        return False, "", "Timeout: Perintah Git melebihi batas waktu (20 detik)"
     except Exception as e:
         return False, "", str(e)
 
