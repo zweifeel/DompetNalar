@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.net.Uri
+import com.example.data.model.User
 import java.util.Calendar
 
 enum class AppThemeMode(val title: String, val subtitle: String) {
@@ -112,6 +114,93 @@ object ThemeEngine {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_ACCENT_COLOR, accent.name).apply()
         Log.d(TAG, "Accent color set to: $accent")
+    }
+
+    fun getWallpaperUriKey(userId: Long?, isGuest: Boolean): String {
+        return when {
+            isGuest -> "wallpaper_uri_guest"
+            userId != null && userId > 0L -> "wallpaper_uri_user_$userId"
+            else -> KEY_WALLPAPER_URI
+        }
+    }
+
+    fun getWallpaperOpacityKey(userId: Long?, isGuest: Boolean): String {
+        return when {
+            isGuest -> "wallpaper_opacity_guest"
+            userId != null && userId > 0L -> "wallpaper_opacity_user_$userId"
+            else -> KEY_WALLPAPER_OPACITY
+        }
+    }
+
+    fun loadWallpaperForUser(context: Context, user: User?) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val isGuest = user?.isGuest ?: (user == null)
+        val userId = user?.id
+        val uriKey = getWallpaperUriKey(userId, isGuest)
+        val opacityKey = getWallpaperOpacityKey(userId, isGuest)
+
+        val rawUri = if (prefs.contains(uriKey)) {
+            prefs.getString(uriKey, null)
+        } else if (user != null && !user.isGuest && prefs.contains(KEY_WALLPAPER_URI)) {
+            // Migrasi lokal aman & idempotent dari legacy key untuk akun terotentikasi pertama
+            val legacyUri = prefs.getString(KEY_WALLPAPER_URI, null)
+            prefs.edit().putString(uriKey, legacyUri).apply()
+            legacyUri
+        } else {
+            null
+        }
+
+        // Validasi aksesibilitas URI (SAF Persistable URI check & File check)
+        val validUri = if (!rawUri.isNullOrBlank()) {
+            try {
+                val parsedUri = Uri.parse(rawUri)
+                if (parsedUri.scheme == "file") {
+                    val path = parsedUri.path
+                    if (path != null && java.io.File(path).exists()) rawUri else null
+                } else {
+                    val stream = context.contentResolver.openInputStream(parsedUri)
+                    if (stream != null) {
+                        stream.close()
+                        rawUri
+                    } else {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Wallpaper URI tidak dapat diakses lagi untuk akun $userId: $rawUri, fallback ke default", e)
+                null
+            }
+        } else {
+            null
+        }
+
+        val opacity = prefs.getFloat(opacityKey, prefs.getFloat(KEY_WALLPAPER_OPACITY, 0.35f))
+        _customWallpaperUri.value = validUri
+        _customWallpaperOpacity.value = opacity.coerceIn(0.05f, 0.95f)
+        Log.d(TAG, "Wallpaper dimuat untuk akun (id=$userId, isGuest=$isGuest): $validUri")
+    }
+
+    fun setCustomWallpaperForUser(
+        context: Context,
+        user: User?,
+        uriString: String?,
+        opacity: Float = 0.35f
+    ) {
+        val isGuest = user?.isGuest ?: (user == null)
+        val userId = user?.id
+        val uriKey = getWallpaperUriKey(userId, isGuest)
+        val opacityKey = getWallpaperOpacityKey(userId, isGuest)
+        val clampedOpacity = opacity.coerceIn(0.05f, 0.95f)
+
+        _customWallpaperUri.value = uriString
+        _customWallpaperOpacity.value = clampedOpacity
+
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString(uriKey, uriString)
+            .putFloat(opacityKey, clampedOpacity)
+            .apply()
+        Log.d(TAG, "Wallpaper akun diperbarui (id=$userId, isGuest=$isGuest): $uriString (opacity: $opacity)")
     }
 
     fun setCustomWallpaper(context: Context, uriString: String?, opacity: Float = 0.35f) {

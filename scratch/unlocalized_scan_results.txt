@@ -1,0 +1,1916 @@
+Total candidates found: 860
+
+=== app/src/main/java/com/example/data/ai/ExpenseAiParser.kt (5 items) ===
+  Line 39: "Pilih Dompet"
+    Source: suggestedWalletName = "Pilih Dompet",
+  Line 71: "Dompet Baru"
+    Source: category = "Dompet Baru",
+  Line 75: "Pembuatan Dompet Baru via Chatbot"
+    Source: note = "Pembuatan Dompet Baru via Chatbot",
+  Line 76: "#dompet"
+    Source: tags = "#dompet",
+  Line 108: "Pilih Dompet"
+    Source: val sourceWalletName = command.sourceWallet?.name ?: "Pilih Dompet"
+
+=== app/src/main/java/com/example/data/ai/PayLaterAiOcrScanner.kt (2 items) ===
+  Line 96: "Nominal tagihan belum terbaca. Harap periksa dan isi nominal secara manual."
+    Source: warnings.add("Nominal tagihan belum terbaca. Harap periksa dan isi nominal secara manual.")
+  Line 101: "Tanggal jatuh tempo memerlukan konfirmasi pengguna (format/tahun tidak pasti)."
+    Source: warnings.add("Tanggal jatuh tempo memerlukan konfirmasi pengguna (format/tahun tidak pasti).")
+
+=== app/src/main/java/com/example/data/chatbot/parser/FinancialQueryEngine.kt (21 items) ===
+  Line 96: "Anda belum memiliki dompet yang terdaftar. Silakan tambahkan dompet di menu Dompet atau katakan 'Buat dompet BCA'."
+    Source: else "Anda belum memiliki dompet yang terdaftar. Silakan tambahkan dompet di menu Dompet atau katakan 'Buat dompet BCA'."
+  Line 120: "Saldo dompet **${wallet.name}** Anda saat ini adalah **${formatMoney(wallet.balance)}**."
+    Source: else "Saldo dompet **${wallet.name}** Anda saat ini adalah **${formatMoney(wallet.balance)}**."
+  Line 124: "Dompet spesifik tidak ditemukan. Dompet yang tersedia: ${if (names.isBlank()) "
+    Source: else "Dompet spesifik tidak ditemukan. Dompet yang tersedia: ${if (names.isBlank()) "Belum ada" else names}."
+  Line 134: "Total pengeluaran Anda pada bulan ini adalah **${formatMoney(totalExpense)}** ($txCount transaksi tercatat)."
+    Source: else "Total pengeluaran Anda pada bulan ini adalah **${formatMoney(totalExpense)}** ($txCount transaksi tercatat)."
+  Line 144: "Total pemasukan Anda pada bulan ini adalah **${formatMoney(totalIncome)}** ($txCount pemasukan tercatat)."
+    Source: else "Total pemasukan Anda pada bulan ini adalah **${formatMoney(totalIncome)}** ($txCount pemasukan tercatat)."
+  Line 156: "Pengeluaran terbesar Anda bulan ini adalah **${largest.title}** sebesar **${formatMoney(largest.amount)}** (Kategori: ${largest.category}, Dompet: ${largest.walletName})."
+    Source: else "Pengeluaran terbesar Anda bulan ini adalah **${largest.title}** sebesar **${formatMoney(largest.amount)}** (Kategori: ${largest.category}, Dompet: ${largest.walletName})."
+  Line 159: "Belum ada catatan pengeluaran pada bulan ini."
+    Source: else "Belum ada catatan pengeluaran pada bulan ini."
+  Line 193: "Belum ada pengeluaran yang tercatat pada bulan ini untuk dianalisis."
+    Source: else "Belum ada pengeluaran yang tercatat pada bulan ini untuk dianalisis."
+  Line 223: "Belum ada riwayat transaksi yang tersimpan."
+    Source: else "Belum ada riwayat transaksi yang tersimpan."
+  Line 275: "⚠️ **Melebihi Anggaran**: Pengeluaran telah melampaui limit bulanan ${formatMoney(monthlyBudget)} (${String.format(Locale.ROOT, "
+    Source: else "⚠️ **Melebihi Anggaran**: Pengeluaran telah melampaui limit bulanan ${formatMoney(monthlyBudget)} (${String.format(Locale.ROOT, "%.0f", pct)}%)."
+  Line 278: "✅ **Anggaran Aman**: Terpakai ${formatMoney(expenseTotal)} dari limit ${formatMoney(monthlyBudget)} (${String.format(Locale.ROOT, "
+    Source: else "✅ **Anggaran Aman**: Terpakai ${formatMoney(expenseTotal)} dari limit ${formatMoney(monthlyBudget)} (${String.format(Locale.ROOT, "%.0f", pct)}%)."
+  Line 287: "Belum ada pemasukan bulan ini. Pertahankan pengeluaran hanya untuk kebutuhan esensial."
+    Source: else "Belum ada pemasukan bulan ini. Pertahankan pengeluaran hanya untuk kebutuhan esensial."
+  Line 293: ", savingsRatio)}% sedikit di bawah target ideal (20%). Coba kurangi pengeluaran di kategori $topCategoryStr."
+    Source: else "Rasio tabungan ${String.format(Locale.ROOT, "%.1f", savingsRatio)}% sedikit di bawah target ideal (20%). Coba kurangi pengeluaran di kategori $topCategoryStr."
+  Line 296: "Defisit arus kas: pengeluaran lebih besar dari pemasukan. Evaluasi kembali pos belanja Anda!"
+    Source: else "Defisit arus kas: pengeluaran lebih besar dari pemasukan. Evaluasi kembali pos belanja Anda!"
+  Line 343: "Anda belum mengatur target anggaran. Silakan tentukan anggaran di menu Anggaran."
+    Source: else "Anda belum mengatur target anggaran. Silakan tentukan anggaran di menu Anggaran."
+  Line 362: "✅ Anggaran Masih Aman"
+    Source: Status: ${if (remaining >= 0) "✅ Anggaran Masih Aman" else "⚠️ Melebihi Anggaran sebesar ${formatMoney(Math.abs(remaining))}"}
+  Line 362: "⚠️ Melebihi Anggaran sebesar ${formatMoney(Math.abs(remaining))}"
+    Source: Status: ${if (remaining >= 0) "✅ Anggaran Masih Aman" else "⚠️ Melebihi Anggaran sebesar ${formatMoney(Math.abs(remaining))}"}
+  Line 382: "Silakan atur target anggaran bulanan di menu Anggaran untuk menghitung batas belanja harian yang aman."
+    Source: else "Silakan atur target anggaran bulanan di menu Anggaran untuk menghitung batas belanja harian yang aman."
+  Line 493: "• **${plan.name}** (${plan.provider})\n  Angsuran: ${formatMoney(plan.installmentAmount)}/bulan\n  Status: Cicilan ke-$paid dari $total tenor (Sisa: $rem kali)\n  Jatuh tempo: ${plan.nextDueDate}"
+    Source: "• **${plan.name}** (${plan.provider})\n  Angsuran: ${formatMoney(plan.installmentAmount)}/bulan\n  Status: Cicilan ke-$paid dari $total tenor (Sisa: $rem kali)\n  Jatuh tempo: ${plan.nextDueDate}"
+  Line 518: "• [Cicilan] **${plan.name}**: ${formatMoney(plan.installmentAmount)} — Jatuh tempo: ${plan.nextDueDate} (Sisa ${plan.remainingTenor}x)"
+    Source: items.add("• [Cicilan] **${plan.name}**: ${formatMoney(plan.installmentAmount)} — Jatuh tempo: ${plan.nextDueDate} (Sisa ${plan.remainingTenor}x)")
+  Line 522: "• [Tagihan] **${debt.name}**: ${formatMoney(if (debt.minMonthlyPayment > 0) debt.minMonthlyPayment else debt.amount)} — Jatuh tempo: ${debt.dueDate}"
+    Source: items.add("• [Tagihan] **${debt.name}**: ${formatMoney(if (debt.minMonthlyPayment > 0) debt.minMonthlyPayment else debt.amount)} — Jatuh tempo: ${debt.dueDate}")
+
+=== app/src/main/java/com/example/data/chatbot/parser/LocalFinancialIntentParser.kt (73 items) ===
+  Line 127: "Silakan ketik atau sebutkan transaksi, perintah buat dompet, maupun pertanyaan keuangan Anda."
+    Source: "Silakan ketik atau sebutkan transaksi, perintah buat dompet, maupun pertanyaan keuangan Anda."
+  Line 170: "Membuka Katalog Perintah Pintar. Anda dapat mengetuk perintah apa saja untuk langsung dijalankan atau disalin."
+    Source: "Membuka Katalog Perintah Pintar. Anda dapat mengetuk perintah apa saja untuk langsung dijalankan atau disalin."
+  Line 246: "pindah saldo"
+    Source: lower.contains("kirim uang") || lower.contains("pindah saldo") ||
+  Line 250: "pemasukan"
+    Source: lower.contains("pemasukan") || lower.contains("uang masuk") ||
+  Line 250: "uang masuk"
+    Source: lower.contains("pemasukan") || lower.contains("uang masuk") ||
+  Line 258: "pengeluaran"
+    Source: lower.contains("pengeluaran") || lower.contains("beli") || lower.contains("bayar") ||
+  Line 260: "tagihan"
+    Source: lower.contains("bensin") || lower.contains("ongkir") || lower.contains("tagihan") ||
+  Line 284: "Format kalimat belum dikenali sebagai transaksi atau perintah finansial. Contoh format: 'Beli makan 25rb Tunai' atau 'Buat dompet Dana saldo awal 100rb'."
+    Source: "Format kalimat belum dikenali sebagai transaksi atau perintah finansial. Contoh format: 'Beli makan 25rb Tunai' atau 'Buat dompet Dana saldo awal 100rb'."
+  Line 344: "Pemasukan"
+    Source: val typeName = if (transactionType == TransactionType.INCOME) "Pemasukan" else "Pengeluaran"
+  Line 344: "Pengeluaran"
+    Source: val typeName = if (transactionType == TransactionType.INCOME) "Pemasukan" else "Pengeluaran"
+  Line 345: "Draft $typeName siap: $finalTitle sebesar $formattedAmt menggunakan dompet ${sourceWallet?.name}."
+    Source: "Draft $typeName siap: $finalTitle sebesar $formattedAmt menggunakan dompet ${sourceWallet?.name}."
+  Line 347: "Nominal uang belum terdeteksi. Silakan sertakan nominalnya."
+    Source: ParseStatus.MISSING_AMOUNT -> "Nominal uang belum terdeteksi. Silakan sertakan nominalnya."
+  Line 348: "Anda belum memiliki dompet. Buat dompet dengan perintah seperti: 'Buat dompet Dana'."
+    Source: ParseStatus.MISSING_WALLET -> "Anda belum memiliki dompet. Buat dompet dengan perintah seperti: 'Buat dompet Dana'."
+  Line 349: "Ditemukan beberapa dompet yang cocok. Silakan pilih dompet yang sesuai."
+    Source: ParseStatus.AMBIGUOUS_WALLET -> "Ditemukan beberapa dompet yang cocok. Silakan pilih dompet yang sesuai."
+  Line 350: "Draft transaksi siap dikonfirmasi."
+    Source: else -> "Draft transaksi siap dikonfirmasi."
+  Line 378: "buat dompet"
+    Source: val isWalletCreation = lower.startsWith("buat dompet") || lower.startsWith("tambah dompet") ||
+  Line 378: "tambah dompet"
+    Source: val isWalletCreation = lower.startsWith("buat dompet") || lower.startsWith("tambah dompet") ||
+  Line 379: "bikin dompet"
+    Source: lower.startsWith("bikin dompet") || lower.startsWith("buat wallet") ||
+  Line 380: "tambah wallet"
+    Source: lower.startsWith("tambah wallet") || lower.startsWith("bikin wallet") ||
+  Line 387: "saldo awal"
+    Source: val hasOpeningBalance = lower.contains("saldo awal") || lower.contains("isi awal") ||
+  Line 389: "saldo:"
+    Source: lower.contains("saldo:") || lower.contains("balance:")
+  Line 392: "catat pemasukan"
+    Source: lower.contains("catat pemasukan") || lower.contains("ada uang masuk") ||
+  Line 392: "ada uang masuk"
+    Source: lower.contains("catat pemasukan") || lower.contains("ada uang masuk") ||
+  Line 393: "dari pemasukan"
+    Source: lower.contains("dari pemasukan") || lower.contains("pemasukan") ||
+  Line 393: "pemasukan"
+    Source: lower.contains("dari pemasukan") || lower.contains("pemasukan") ||
+  Line 404: "(?i)^(?:buat|tambah|bikin|create|add|new|make)\\s+(?:dompet|wallet|akun|account)\\s+"
+    Source: .replace(Regex("(?i)^(?:buat|tambah|bikin|create|add|new|make)\\s+(?:dompet|wallet|akun|account)\\s+"), "")
+  Line 409: "saldo awal"
+    Source: "saldo awal", "isi awal", "opening balance", "initial balance",
+  Line 410: "catat pemasukan"
+    Source: "catat pemasukan", "ada uang masuk", "dari pemasukan", "pemasukan",
+  Line 410: "ada uang masuk"
+    Source: "catat pemasukan", "ada uang masuk", "dari pemasukan", "pemasukan",
+  Line 410: "dari pemasukan"
+    Source: "catat pemasukan", "ada uang masuk", "dari pemasukan", "pemasukan",
+  Line 410: "pemasukan"
+    Source: "catat pemasukan", "ada uang masuk", "dari pemasukan", "pemasukan",
+  Line 494: "Draft dompet siap: Buat dompet '$namePart' dengan saldo awal murni $amtStr (tidak dihitung sebagai pemasukan bulanan)."
+    Source: else "Draft dompet siap: Buat dompet '$namePart' dengan saldo awal murni $amtStr (tidak dihitung sebagai pemasukan bulanan)."
+  Line 499: "Draft dompet siap: Buat dompet '$namePart' sekaligus mencatat transaksi pemasukan sebesar $amtStr."
+    Source: else "Draft dompet siap: Buat dompet '$namePart' sekaligus mencatat transaksi pemasukan sebesar $amtStr."
+  Line 503: "Draft dompet siap: Buat dompet '$namePart' (saldo awal Rp 0)."
+    Source: else "Draft dompet siap: Buat dompet '$namePart' (saldo awal Rp 0)."
+  Line 513: "Dompet Baru"
+    Source: categoryName = "Dompet Baru",
+  Line 531: "tagihan minggu ini"
+    Source: if (lower.contains("tagihan minggu ini") || lower.contains("bills due this week") || lower.contains("jatuh tempo minggu ini")) {
+  Line 534: "tagihan terdekat"
+    Source: if (lower.contains("tagihan terdekat") || lower.contains("tagihan berikutnya") || lower.contains("upcoming bills") ||
+  Line 534: "tagihan berikutnya"
+    Source: if (lower.contains("tagihan terdekat") || lower.contains("tagihan berikutnya") || lower.contains("upcoming bills") ||
+  Line 535: "kapan tagihan"
+    Source: lower.contains("next bill") || lower.contains("kapan tagihan") || lower.contains("when is my next bill")
+  Line 539: "sisa cicilan"
+    Source: if (lower.contains("sisa cicilan") || lower.contains("berapa kali lagi cicilan") || lower.contains("installments left") || lower.contains("cicilan motor")) {
+  Line 539: "berapa kali lagi cicilan"
+    Source: if (lower.contains("sisa cicilan") || lower.contains("berapa kali lagi cicilan") || lower.contains("installments left") || lower.contains("cicilan motor")) {
+  Line 539: "cicilan motor"
+    Source: if (lower.contains("sisa cicilan") || lower.contains("berapa kali lagi cicilan") || lower.contains("installments left") || lower.contains("cicilan motor")) {
+  Line 542: "total utang"
+    Source: if (lower.contains("total utang") || lower.contains("total cicilan") || lower.contains("total debt") || lower.contains("beban utang") || lower.contains("debt to income")) {
+  Line 542: "total cicilan"
+    Source: if (lower.contains("total utang") || lower.contains("total cicilan") || lower.contains("total debt") || lower.contains("beban utang") || lower.contains("debt to income")) {
+  Line 542: "beban utang"
+    Source: if (lower.contains("total utang") || lower.contains("total cicilan") || lower.contains("total debt") || lower.contains("beban utang") || lower.contains("debt to income")) {
+  Line 559: "5 pengeluaran terbesar"
+    Source: if (lower.contains("5 pengeluaran terbesar") || lower.contains("top 5 expense") || lower.contains("top five")) {
+  Line 562: "pengeluaran terbesar"
+    Source: if (lower.contains("pengeluaran terbesar") || lower.contains("terboros") || lower.contains("terbanyak") || lower.contains("largest expense") || lower.contains("highest expense")) {
+  Line 565: "pengeluaran"
+    Source: if (lower.contains("pengeluaran") && (lower.contains("bulan ini") || lower.contains("total")) || lower.contains("expense this month") || lower.contains("total expense")) {
+  Line 568: "pemasukan"
+    Source: if (lower.contains("pemasukan") && (lower.contains("bulan ini") || lower.contains("total")) || lower.contains("income this month") || lower.contains("total income")) {
+  Line 573: "pengeluaran harian yang aman"
+    Source: if (lower.contains("pengeluaran harian yang aman") || lower.contains("daily safe spending") || lower.contains("sisa harian") || lower.contains("safe to spend")) {
+  Line 576: "anggaran aman"
+    Source: if (lower.contains("anggaran aman") || lower.contains("sisa budget") || lower.contains("anggaran terpakai") || lower.contains("budget progress") || lower.contains("is my budget safe")) {
+  Line 576: "anggaran terpakai"
+    Source: if (lower.contains("anggaran aman") || lower.contains("sisa budget") || lower.contains("anggaran terpakai") || lower.contains("budget progress") || lower.contains("is my budget safe")) {
+  Line 581: "persen yang tersisa"
+    Source: if (lower.contains("rasio tabungan") || lower.contains("persen yang tersisa") || lower.contains("savings ratio") || lower.contains("how much saved")) {
+  Line 589: "riwayat"
+    Source: if (lower.contains("riwayat") || lower.contains("transaksi terakhir") || lower.contains("mutasi") || lower.contains("recent transactions") || lower.contains("last transactions")) {
+  Line 589: "transaksi terakhir"
+    Source: if (lower.contains("riwayat") || lower.contains("transaksi terakhir") || lower.contains("mutasi") || lower.contains("recent transactions") || lower.contains("last transactions")) {
+  Line 595: "apakah bulan ini boros"
+    Source: lower.contains("financial health") || lower.contains("how is my financial") || lower.contains("apakah bulan ini boros")
+  Line 614: "batal"
+    Source: return lower == "batal" || lower == "batalkan" || lower == "cancel" ||
+  Line 615: "batal "
+    Source: lower.startsWith("batal ") || lower.contains("jangan simpan") ||
+  Line 615: "jangan simpan"
+    Source: lower.startsWith("batal ") || lower.contains("jangan simpan") ||
+  Line 616: "hapus draft"
+    Source: lower.contains("tidak jadi") || lower.contains("hapus draft") || lower.contains("abort")
+  Line 633: "Halo! Saya Asisten DompetNalar. Ada pengeluaran, pemasukan, buat dompet, atau pertanyaan keuangan yang ingin Anda tanyakan?"
+    Source: "Halo! Saya Asisten DompetNalar. Ada pengeluaran, pemasukan, buat dompet, atau pertanyaan keuangan yang ingin Anda tanyakan?"
+  Line 642: "Sama-sama! Senang bisa membantu Anda mengelola keuangan dengan bijak dan teratur."
+    Source: else "Sama-sama! Senang bisa membantu Anda mengelola keuangan dengan bijak dan teratur."
+  Line 650: "Anda dapat mengetik perintah seperti:\n• 'Makan siang 35.000 Tunai'\n• 'Buat dompet Dana saldo awal 100rb'\n• 'Bagaimana kondisi keuanganku bulan ini?'\n• 'Tagihan apa yang jatuh tempo minggu ini?'"
+    Source: "Anda dapat mengetik perintah seperti:\n• 'Makan siang 35.000 Tunai'\n• 'Buat dompet Dana saldo awal 100rb'\n• 'Bagaimana kondisi keuanganku bulan ini?'\n• 'Tagihan apa yang jatuh tempo minggu ini?'"
+  Line 707: "Nominal transfer belum disebutkan. Berapa yang ingin Anda transfer?"
+    Source: msg = "Nominal transfer belum disebutkan. Berapa yang ingin Anda transfer?"
+  Line 710: "Dompet sumber transfer belum tersedia. Silakan tambahkan dompet terlebih dahulu."
+    Source: msg = "Dompet sumber transfer belum tersedia. Silakan tambahkan dompet terlebih dahulu."
+  Line 713: "Dompet tujuan transfer belum ditentukan. Ingin dipindahkan ke dompet apa?"
+    Source: msg = "Dompet tujuan transfer belum ditentukan. Ingin dipindahkan ke dompet apa?"
+  Line 716: "Dompet sumber dan dompet tujuan tidak boleh sama (${sourceWallet.name})."
+    Source: msg = "Dompet sumber dan dompet tujuan tidak boleh sama (${sourceWallet.name})."
+  Line 727: "Transfer Saldo"
+    Source: title = "Transfer Saldo",
+  Line 728: "Transfer Saldo"
+    Source: categoryName = "Transfer Saldo",
+  Line 753: "Transfer Saldo"
+    Source: type == TransactionType.TRANSFER -> Pair("Transfer Saldo", "swap_horiz")
+  Line 768: "Tagihan & Utilitas"
+    Source: lower.contains("bill") -> Pair("Tagihan & Utilitas", "receipt")
+  Line 776: "Pemasukan Lain"
+    Source: else -> if (type == TransactionType.INCOME) Pair("Pemasukan Lain", "payments") else Pair("Lain-lain", "category")
+  Line 792: "(?i)\\b(?:beli|bayar|makan|minum|catat|pengeluaran|pemasukan|pakai|menggunakan|dari|via|in|at|for)\\b"
+    Source: clean = clean.replace(Regex("(?i)\\b(?:beli|bayar|makan|minum|catat|pengeluaran|pemasukan|pakai|menggunakan|dari|via|in|at|for)\\b"), " ")
+
+=== app/src/main/java/com/example/data/chatbot/parser/TransactionDraftManager.kt (8 items) ===
+  Line 76: "Pemasukan Lain"
+    Source: category = command.categoryName.ifBlank { if (type == TransactionType.INCOME) "Pemasukan Lain" else "Lain-lain" },
+  Line 145: "Akses ditolak: Fitur SmartMaster diperlukan untuk menyimpan transaksi melalui AI."
+    Source: return Result.failure(SecurityException("Akses ditolak: Fitur SmartMaster diperlukan untuk menyimpan transaksi melalui AI."))
+  Line 149: "Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI."
+    Source: return Result.failure(SecurityException("Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI."))
+  Line 153: "Draft transaksi tidak ditemukan."
+    Source: ?: return Result.failure(IllegalStateException("Draft transaksi tidak ditemukan."))
+  Line 157: "Akses ditolak: Draft transaksi tidak memiliki pemilik sah atau bukan milik pengguna aktif."
+    Source: return Result.failure(SecurityException("Akses ditolak: Draft transaksi tidak memiliki pemilik sah atau bukan milik pengguna aktif."))
+  Line 161: "Transaksi ini sudah berhasil disimpan sebelumnya."
+    Source: return Result.failure(IllegalStateException("Transaksi ini sudah berhasil disimpan sebelumnya."))
+  Line 165: "Draft transaksi ini telah dibatalkan."
+    Source: return Result.failure(IllegalStateException("Draft transaksi ini telah dibatalkan."))
+  Line 169: "Draft transaksi telah kedaluwarsa. Silakan masukkan kembali transaksi Anda."
+    Source: return Result.failure(IllegalStateException("Draft transaksi telah kedaluwarsa. Silakan masukkan kembali transaksi Anda."))
+
+=== app/src/main/java/com/example/data/chatbot/parser/WalletDraftManager.kt (9 items) ===
+  Line 103: "Akses ditolak: Fitur SmartMaster diperlukan untuk membuat dompet melalui AI."
+    Source: return Result.failure(SecurityException("Akses ditolak: Fitur SmartMaster diperlukan untuk membuat dompet melalui AI."))
+  Line 106: "Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI."
+    Source: return Result.failure(SecurityException("Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI."))
+  Line 109: "Draft dompet tidak ditemukan."
+    Source: ?: return Result.failure(IllegalStateException("Draft dompet tidak ditemukan."))
+  Line 113: "Akses ditolak: Draft dompet tidak memiliki pemilik sah atau bukan milik pengguna aktif."
+    Source: return Result.failure(SecurityException("Akses ditolak: Draft dompet tidak memiliki pemilik sah atau bukan milik pengguna aktif."))
+  Line 117: "Dompet ini sudah berhasil dibuat sebelumnya."
+    Source: return Result.failure(IllegalStateException("Dompet ini sudah berhasil dibuat sebelumnya."))
+  Line 121: "Draft dompet ini telah dibatalkan."
+    Source: return Result.failure(IllegalStateException("Draft dompet ini telah dibatalkan."))
+  Line 155: "Pemasukan Awal ${draft.name}"
+    Source: title = "Pemasukan Awal ${draft.name}",
+  Line 163: "Dicatat otomatis saat pembuatan dompet via Chatbot"
+    Source: note = "Dicatat otomatis saat pembuatan dompet via Chatbot",
+  Line 164: "#pemasukan"
+    Source: tags = "#pemasukan",
+
+=== app/src/main/java/com/example/data/chatbot/parser/WalletResolver.kt (1 items) ===
+  Line 29: "dompet fisik"
+    Source: "tunai" to listOf("cash", "tunai", "dompet fisik"),
+
+=== app/src/main/java/com/example/data/local/AssetDao.kt (1 items) ===
+  Line 21: "SELECT * FROM assets WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM assets WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/BudgetLimitDao.kt (2 items) ===
+  Line 19: "SELECT * FROM budget_limits WHERE userId = :userId AND categoryOrTotalId = :categoryOrTotalId LIMIT 1"
+    Source: @Query("SELECT * FROM budget_limits WHERE userId = :userId AND categoryOrTotalId = :categoryOrTotalId LIMIT 1")
+  Line 22: "SELECT * FROM budget_limits WHERE localId = :localId AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM budget_limits WHERE localId = :localId AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/CategoryDao.kt (1 items) ===
+  Line 26: "SELECT * FROM categories WHERE id = :id AND (isSystem = 1 OR userId = :userId) LIMIT 1"
+    Source: @Query("SELECT * FROM categories WHERE id = :id AND (isSystem = 1 OR userId = :userId) LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/DatabaseWriteCoordinator.kt (2 items) ===
+  Line 253: "WAL Checkpoint gagal karena database sedang sibuk (busy=1) setelah percobaan bertahap. Backup dibatalkan demi keamanan data."
+    Source: "WAL Checkpoint gagal karena database sedang sibuk (busy=1) setelah percobaan bertahap. Backup dibatalkan demi keamanan data."
+  Line 258: "WAL Checkpoint gagal: ${checkpointRes.exception.message}"
+    Source: "WAL Checkpoint gagal: ${checkpointRes.exception.message}",
+
+=== app/src/main/java/com/example/data/local/DebtDao.kt (1 items) ===
+  Line 20: "SELECT * FROM debts WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM debts WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/FeedbackDao.kt (1 items) ===
+  Line 18: "SELECT * FROM feedbacks WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM feedbacks WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/FinSmartDatabase.kt (4 items) ===
+  Line 181: "Tagihan & Utilitas"
+    Source: CategoryItem(name = "Tagihan & Utilitas", type = TransactionType.EXPENSE, iconName = "receipt", colorHex = "#8B5CF6", isSystem = true),
+  Line 191: "Pemasukan Lain"
+    Source: CategoryItem(name = "Pemasukan Lain", type = TransactionType.INCOME, iconName = "account_balance_wallet", colorHex = "#0284C7", isSystem = true)
+  Line 389: "Dompet Utama (BCA)"
+    Source: name = "Dompet Utama (BCA)",
+  Line 443: "Dompet Utama (BCA)"
+    Source: val walletName = primaryWallet?.name ?: "Dompet Utama (BCA)"
+
+=== app/src/main/java/com/example/data/local/InstallmentPaymentDao.kt (2 items) ===
+  Line 17: "SELECT * FROM installment_payments WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM installment_payments WHERE id = :id AND userId = :userId LIMIT 1")
+  Line 20: "SELECT * FROM installment_payments WHERE transactionId = :txId AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM installment_payments WHERE transactionId = :txId AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/InstallmentPeriodDao.kt (1 items) ===
+  Line 17: "SELECT * FROM installment_periods WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM installment_periods WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/InstallmentPlanDao.kt (1 items) ===
+  Line 17: "SELECT * FROM installment_plans WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM installment_plans WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/Migration6To7.kt (2 items) ===
+  Line 301: "Tagihan & Utilitas"
+    Source: Triple("Tagihan & Utilitas", "EXPENSE", Pair("receipt", "#8B5CF6")),
+  Line 310: "Pemasukan Lain"
+    Source: Triple("Pemasukan Lain", "INCOME", Pair("account_balance_wallet", "#0284C7"))
+
+=== app/src/main/java/com/example/data/local/RecurringScheduleDao.kt (1 items) ===
+  Line 20: "SELECT * FROM recurring_schedules WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM recurring_schedules WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/SplitBillHistoryDao.kt (1 items) ===
+  Line 19: "SELECT * FROM split_bill_history WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM split_bill_history WHERE id = :id AND userId = :userId LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/TransactionDao.kt (2 items) ===
+  Line 30: "SELECT * FROM transactions WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId LIMIT 1")
+  Line 96: "SELECT * FROM transactions WHERE idempotencyKey = :idempotencyKey LIMIT 1"
+    Source: @Query("SELECT * FROM transactions WHERE idempotencyKey = :idempotencyKey LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/UserDao.kt (3 items) ===
+  Line 18: "SELECT * FROM users WHERE LOWER(username) = LOWER(:identifier) OR LOWER(email) = LOWER(:identifier) LIMIT 1"
+    Source: @Query("SELECT * FROM users WHERE LOWER(username) = LOWER(:identifier) OR LOWER(email) = LOWER(:identifier) LIMIT 1")
+  Line 21: "SELECT * FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1"
+    Source: @Query("SELECT * FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1")
+  Line 24: "SELECT * FROM users WHERE id = :id LIMIT 1"
+    Source: @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+
+=== app/src/main/java/com/example/data/local/WalletDao.kt (2 items) ===
+  Line 24: "SELECT * FROM wallets WHERE id = :id AND userId = :userId LIMIT 1"
+    Source: @Query("SELECT * FROM wallets WHERE id = :id AND userId = :userId LIMIT 1")
+  Line 160: "SELECT * FROM wallets WHERE id = :walletId LIMIT 1"
+    Source: @Query("SELECT * FROM wallets WHERE id = :walletId LIMIT 1")
+
+=== app/src/main/java/com/example/data/model/ExportFormatConfig.kt (2 items) ===
+  Line 20: "Sumber Dompet"
+    Source: "Sumber Dompet",
+  Line 21: "Tujuan Dompet"
+    Source: "Tujuan Dompet",
+
+=== app/src/main/java/com/example/data/model/GamificationModels.kt (5 items) ===
+  Line 4: "Fokus pada keamanan finansial & menekan pengeluaran."
+    Source: SAVER("The Saver (Penyimpan Hemat)", "Fokus pada keamanan finansial & menekan pengeluaran.", "Berikan saran yang mengapresiasi penghematan dan sarankan instrumen investasi berisiko rendah."),
+  Line 4: "Berikan saran yang mengapresiasi penghematan dan sarankan instrumen investasi berisiko rendah."
+    Source: SAVER("The Saver (Penyimpan Hemat)", "Fokus pada keamanan finansial & menekan pengeluaran.", "Berikan saran yang mengapresiasi penghematan dan sarankan instrumen investasi berisiko rendah."),
+  Line 6: "Gunakan gaya bicara yang tegas, ramah, serta ingatkan Cooldown Buying Guard."
+    Source: IMPULSE_SHOPPER("Impulse Guard (Pembeli Impulsif)", "Rentan terhadap belanja emosional/hobi.", "Gunakan gaya bicara yang tegas, ramah, serta ingatkan Cooldown Buying Guard."),
+  Line 7: "Keseimbangan yang baik antara konsumsi & tabungan."
+    Source: BALANCED("Balanced Planner (Perencana Seimbang)", "Keseimbangan yang baik antara konsumsi & tabungan.", "Berikan saran finansial yang seimbang dan fleksibel.")
+  Line 7: "Berikan saran finansial yang seimbang dan fleksibel."
+    Source: BALANCED("Balanced Planner (Perencana Seimbang)", "Keseimbangan yang baik antara konsumsi & tabungan.", "Berikan saran finansial yang seimbang dan fleksibel.")
+
+=== app/src/main/java/com/example/data/model/Money.kt (1 items) ===
+  Line 103: "Double value $normalized exceeds IEEE-754 exact integer limit (2^53 = $DOUBLE_PRECISION_LIMIT)"
+    Source: "Double value $normalized exceeds IEEE-754 exact integer limit (2^53 = $DOUBLE_PRECISION_LIMIT)"
+
+=== app/src/main/java/com/example/data/model/PayLaterImportModels.kt (4 items) ===
+  Line 13: "Belum Bayar"
+    Source: val status: String = "Belum Bayar",
+  Line 60: "Cicilan PayLater"
+    Source: "Cicilan PayLater"
+  Line 162: "Tagihan PayLater / Pinjaman"
+    Source: "Tagihan PayLater / Pinjaman"
+  Line 166: " - Cicilan $installmentCurrent/$installmentTotal"
+    Source: " - Cicilan $installmentCurrent/$installmentTotal"
+
+=== app/src/main/java/com/example/data/model/ReceiptModels.kt (1 items) ===
+  Line 59: "Rekening / Dompet Penyelenggara"
+    Source: val paymentTargetInfo: String = "Rekening / Dompet Penyelenggara"
+
+=== app/src/main/java/com/example/data/ocr/DeterministicPayLaterParser.kt (23 items) ===
+  Line 100: "tagihan"
+    Source: val isTagihanHeader = (lower.contains("tagihan") || lower.contains("pinjaman") || lower.contains("kontrak")) &&
+  Line 163: "Tanggal jatuh tempo periode ${idx + 1} memerlukan konfirmasi pengguna."
+    Source: confidenceWarnings = if (isAmbiguous) listOf("Tanggal jatuh tempo periode ${idx + 1} memerlukan konfirmasi pengguna.") else emptyList(),
+  Line 180: "Teks tagihan tidak terdeteksi pada tangkapan layar. Pastikan gambar memuat informasi tagihan yang jelas."
+    Source: throw IllegalStateException("Teks tagihan tidak terdeteksi pada tangkapan layar. Pastikan gambar memuat informasi tagihan yang jelas.")
+  Line 190: "Nama penyedia pinjaman tidak terdeteksi jelas pada gambar. Harap periksa dan pilih penyedia."
+    Source: warnings.add("Nama penyedia pinjaman tidak terdeteksi jelas pada gambar. Harap periksa dan pilih penyedia.")
+  Line 199: "cicilan barang"
+    Source: lowerText.contains("cicilan barang") || lowerText.contains("cicilan") -> "Cicilan Barang"
+  Line 199: "cicilan"
+    Source: lowerText.contains("cicilan barang") || lowerText.contains("cicilan") -> "Cicilan Barang"
+  Line 199: "Cicilan Barang"
+    Source: lowerText.contains("cicilan barang") || lowerText.contains("cicilan") -> "Cicilan Barang"
+  Line 217: "tagihan bulan"
+    Source: if (lower.contains("tagihan bulan") || lower.contains("tagihan berjalan") ||
+  Line 217: "tagihan berjalan"
+    Source: if (lower.contains("tagihan bulan") || lower.contains("tagihan berjalan") ||
+  Line 218: "tagihan 30 hari"
+    Source: lower.contains("tagihan 30 hari") || lower.contains("bayar sekarang") ||
+  Line 219: "tagihan saat ini"
+    Source: lower.contains("jumlah pembayaran") || lower.contains("tagihan saat ini") ||
+  Line 221: "tagihan"
+    Source: (lower.contains("tagihan") && !lower.contains("limit") && !lower.contains("sisa"))
+  Line 221: "limit"
+    Source: (lower.contains("tagihan") && !lower.contains("limit") && !lower.contains("sisa"))
+  Line 229: "sisa utang"
+    Source: if (lower.contains("total sisa") || lower.contains("sisa utang") ||
+  Line 231: "sisa tagihan"
+    Source: lower.contains("sisa tagihan") || lower.contains("limit terpakai")
+  Line 231: "limit terpakai"
+    Source: lower.contains("sisa tagihan") || lower.contains("limit terpakai")
+  Line 261: "Nominal tagihan tidak terdeteksi otomatis. Silakan masukkan nominal secara manual."
+    Source: warnings.add("Nominal tagihan tidak terdeteksi otomatis. Silakan masukkan nominal secara manual.")
+  Line 268: "(?i)(?:cicilan\\s+(\\d+)\\s*(?:dari|/)\\s*(\\d+)|\\b(\\d+)\\s+dari\\s+(\\d+)\\b)"
+    Source: val tenorRegex = Pattern.compile("(?i)(?:cicilan\\s+(\\d+)\\s*(?:dari|/)\\s*(\\d+)|\\b(\\d+)\\s+dari\\s+(\\d+)\\b)")
+  Line 314: "Tanggal jatuh tempo memerlukan konfirmasi pengguna (format/tahun tidak pasti)."
+    Source: warnings.add("Tanggal jatuh tempo memerlukan konfirmasi pengguna (format/tahun tidak pasti).")
+  Line 320: "belum bayar"
+    Source: lowerText.contains("belum bayar") -> "Belum Bayar"
+  Line 320: "Belum Bayar"
+    Source: lowerText.contains("belum bayar") -> "Belum Bayar"
+  Line 322: "Belum Bayar"
+    Source: else -> "Belum Bayar"
+  Line 434: "Belum Bayar"
+    Source: val status = if (line.contains("lunas", true) || line.contains("selesai", true)) "Lunas" else "Belum Bayar"
+
+=== app/src/main/java/com/example/data/ocr/DeterministicReceiptParser.kt (6 items) ===
+  Line 35: "no.transaksi"
+    Source: "no.transaksi", "no transaksi", "no. order", "no order", "faktur",
+  Line 35: "no transaksi"
+    Source: "no.transaksi", "no transaksi", "no. order", "no order", "faktur",
+  Line 39: "kembali"
+    Source: "kembalian", "kembali", "tunai", "cash", "debit", "qris", "edc", "visa", "mastercard",
+  Line 99: "kembali"
+    Source: !lower.contains("subtotal") && !lower.contains("sub total") && !lower.contains("kembali")
+  Line 243: ".*\\bno\\.?\\s*(?:bon|struk|transaksi).*"
+    Source: lower.matches(Regex(".*\\bno\\.?\\s*(?:bon|struk|transaksi).*")) ||
+  Line 252: "kembali"
+    Source: lower.startsWith("cash") || lower.startsWith("kembali") || lower.startsWith("kembalian")) &&
+
+=== app/src/main/java/com/example/data/ocr/LocalPayLaterOcrScanner.kt (15 items) ===
+  Line 55: "Gagal memproses gambar tagihan secara lokal: ${e.localizedMessage ?: "
+    Source: throw IllegalStateException("Gagal memproses gambar tagihan secara lokal: ${e.localizedMessage ?: "Format gambar tidak didukung"}")
+  Line 60: "Teks tagihan tidak terdeteksi pada tangkapan layar. Pastikan gambar memuat informasi tagihan yang jelas."
+    Source: throw IllegalStateException("Teks tagihan tidak terdeteksi pada tangkapan layar. Pastikan gambar memuat informasi tagihan yang jelas.")
+  Line 132: "Belum Bayar"
+    Source: billStatus = "Belum Bayar",
+  Line 134: "Cicilan SPayLater periode berjalan"
+    Source: rawNotes = "Cicilan SPayLater periode berjalan",
+  Line 136: "Contoh Tagihan SPayLater: Jatuh tempo 5 tiap bulan, Rp354.000"
+    Source: rawText = "Contoh Tagihan SPayLater: Jatuh tempo 5 tiap bulan, Rp354.000",
+  Line 141: "Cicilan 4x"
+    Source: productName = "Cicilan 4x",
+  Line 148: "Belum Bayar"
+    Source: billStatus = "Belum Bayar",
+  Line 150: "Tagihan DANA Cicil 4x per 2 minggu"
+    Source: rawNotes = "Tagihan DANA Cicil 4x per 2 minggu",
+  Line 152: "Contoh Tagihan DANA Cicil: Rp125.000 cicilan ke-3"
+    Source: rawText = "Contoh Tagihan DANA Cicil: Rp125.000 cicilan ke-3",
+  Line 157: "Limit Cicilan"
+    Source: productName = "Limit Cicilan",
+  Line 164: "Belum Bayar"
+    Source: billStatus = "Belum Bayar",
+  Line 166: "Tagihan GoPayLater akhir bulan"
+    Source: rawNotes = "Tagihan GoPayLater akhir bulan",
+  Line 168: "Contoh Tagihan GoPayLater: Rp450.000 tempo tgl 1"
+    Source: rawText = "Contoh Tagihan GoPayLater: Rp450.000 tempo tgl 1",
+  Line 172: "Tagihan Lain"
+    Source: providerName = "Tagihan Lain",
+  Line 177: "Belum Bayar"
+    Source: billStatus = "Belum Bayar",
+
+=== app/src/main/java/com/example/data/ocr/LocalReceiptOcrScanner.kt (1 items) ===
+  Line 61: "Gagal memproses gambar nota secara lokal: ${e.localizedMessage ?: "
+    Source: throw IllegalStateException("Gagal memproses gambar nota secara lokal: ${e.localizedMessage ?: "Format gambar tidak didukung"}")
+
+=== app/src/main/java/com/example/data/repository/FinanceRepository.kt (130 items) ===
+  Line 75: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 78: "Dompet #${wallet.id} tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Dompet #${wallet.id} tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 82: "Modifikasi saldo langsung melalui updateWallet dilarang. Seluruh perubahan saldo wajib melalui mutasi transaksi resmi."
+    Source: throw IllegalArgumentException("Modifikasi saldo langsung melalui updateWallet dilarang. Seluruh perubahan saldo wajib melalui mutasi transaksi resmi.")
+  Line 96: "Gagal memperbarui metadata dompet: baris terdampak $rows"
+    Source: check(rows == 1) { "Gagal memperbarui metadata dompet: baris terdampak $rows" }
+  Line 107: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 113: "Dompet '${wallet.name}' memiliki riwayat data ($txCount transaksi, $scheduleCount jadwal berulang) "
+    Source: "Dompet '${wallet.name}' memiliki riwayat data ($txCount transaksi, $scheduleCount jadwal berulang) " +
+  Line 114: "dan tidak dapat dihapus permanen demi integritas pembukuan. Silakan gunakan fitur Arsipkan Dompet."
+    Source: "dan tidak dapat dihapus permanen demi integritas pembukuan. Silakan gunakan fitur Arsipkan Dompet."
+  Line 122: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 128: "Dompet #$walletId tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Dompet #$walletId tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 133: "Gagal mengarsipkan dompet #$walletId"
+    Source: check(rows == 1) { "Gagal mengarsipkan dompet #$walletId" }
+  Line 141: "$disabledCount transaksi rutin dinonaktifkan otomatis karena dompet '${currentWallet.name}' telah diarsipkan."
+    Source: message = "$disabledCount transaksi rutin dinonaktifkan otomatis karena dompet '${currentWallet.name}' telah diarsipkan."
+  Line 156: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 162: "Dompet #$walletId tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Dompet #$walletId tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 164: "Gagal mengaktifkan kembali dompet #$walletId"
+    Source: check(rows == 1) { "Gagal mengaktifkan kembali dompet #$walletId" }
+  Line 181: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 182: "Dompet tujuan harus berbeda dari dompet sumber."
+    Source: require(sourceWalletId != targetWalletId) { "Dompet tujuan harus berbeda dari dompet sumber." }
+  Line 191: "Dompet sumber #$sourceWalletId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet sumber #$sourceWalletId tidak ditemukan.")
+  Line 192: "Metode ini khusus untuk memindahkan saldo dari dompet yang diarsipkan."
+    Source: require(sourceWallet.isArchived) { "Metode ini khusus untuk memindahkan saldo dari dompet yang diarsipkan." }
+  Line 193: "Dompet sumber '${sourceWallet.name}' tidak memiliki saldo tersisa untuk dipindahkan."
+    Source: require(sourceWallet.balance > 0.0) { "Dompet sumber '${sourceWallet.name}' tidak memiliki saldo tersisa untuk dipindahkan." }
+  Line 194: "Dompet sumber belum memiliki mata uang yang ditetapkan."
+    Source: requireNotNull(sourceWallet.currencyCode) { "Dompet sumber belum memiliki mata uang yang ditetapkan." }
+  Line 197: "Dompet tujuan #$targetWalletId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan #$targetWalletId tidak ditemukan.")
+  Line 198: "Dompet tujuan '${targetWallet.name}' tidak boleh dalam status diarsipkan."
+    Source: require(!targetWallet.isArchived) { "Dompet tujuan '${targetWallet.name}' tidak boleh dalam status diarsipkan." }
+  Line 199: "Dompet tujuan belum memiliki mata uang yang ditetapkan."
+    Source: requireNotNull(targetWallet.currencyCode) { "Dompet tujuan belum memiliki mata uang yang ditetapkan." }
+  Line 201: "Transfer saldo dompet terarsip lintas mata uang (${sourceWallet.currencyCode} -> ${targetWallet.currencyCode}) dilarang (DEC-PROD-02 Guard)."
+    Source: "Transfer saldo dompet terarsip lintas mata uang (${sourceWallet.currencyCode} -> ${targetWallet.currencyCode}) dilarang (DEC-PROD-02 Guard)."
+  Line 207: "Gagal mengosongkan saldo dompet terarsip"
+    Source: check(debitRows == 1) { "Gagal mengosongkan saldo dompet terarsip" }
+  Line 209: "Gagal memindahkan saldo ke dompet tujuan"
+    Source: check(creditRows == 1) { "Gagal memindahkan saldo ke dompet tujuan" }
+  Line 212: "Pemindahan Sisa Saldo: ${sourceWallet.name} -> ${targetWallet.name}"
+    Source: title = "Pemindahan Sisa Saldo: ${sourceWallet.name} -> ${targetWallet.name}",
+  Line 222: "Pemindahan sisa saldo penutupan/arsip dompet (POL-ARCH-01)"
+    Source: note = "Pemindahan sisa saldo penutupan/arsip dompet (POL-ARCH-01)",
+  Line 228: "Gagal mencatat transaksi pemindahan saldo"
+    Source: check(insertedId > 0L) { "Gagal mencatat transaksi pemindahan saldo" }
+  Line 262: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 264: "Nominal transaksi harus berupa angka positif yang sah."
+    Source: "Nominal transaksi harus berupa angka positif yang sah."
+  Line 269: "Dompet sumber #${transaction.walletId} tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Dompet sumber #${transaction.walletId} tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 271: "Dompet sumber '${sourceWallet.name}' dalam status diarsipkan. Transaksi finansial baru ditolak (POL-ARCH-01 Freeze)."
+    Source: "Dompet sumber '${sourceWallet.name}' dalam status diarsipkan. Transaksi finansial baru ditolak (POL-ARCH-01 Freeze)."
+  Line 274: "Dompet sumber #${transaction.walletId} belum memiliki mata uang yang ditetapkan (State 2). Transaksi finansial ditolak."
+    Source: "Dompet sumber #${transaction.walletId} belum memiliki mata uang yang ditetapkan (State 2). Transaksi finansial ditolak."
+  Line 279: "Dompet tujuan harus ditentukan untuk transaksi transfer."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan harus ditentukan untuk transaksi transfer.")
+  Line 281: "Dompet sumber dan dompet tujuan transfer tidak boleh sama."
+    Source: throw IllegalArgumentException("Dompet sumber dan dompet tujuan transfer tidak boleh sama.")
+  Line 284: "Dompet tujuan #$targetId tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan #$targetId tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 286: "Transfer masuk ke dompet tujuan '${targetWallet.name}' ditolak karena dompet dalam status diarsipkan (POL-ARCH-01 Freeze)."
+    Source: "Transfer masuk ke dompet tujuan '${targetWallet.name}' ditolak karena dompet dalam status diarsipkan (POL-ARCH-01 Freeze)."
+  Line 289: "Dompet tujuan #$targetId belum memiliki mata uang yang ditetapkan (State 2). Transaksi finansial ditolak."
+    Source: "Dompet tujuan #$targetId belum memiliki mata uang yang ditetapkan (State 2). Transaksi finansial ditolak."
+  Line 296: "Gagal mendebit saldo dompet sumber transfer"
+    Source: check(debitRows == 1) { "Gagal mendebit saldo dompet sumber transfer" }
+  Line 298: "Gagal mengkredit saldo dompet tujuan transfer"
+    Source: check(creditRows == 1) { "Gagal mengkredit saldo dompet tujuan transfer" }
+  Line 301: "Transaksi non-transfer tidak boleh memiliki dompet tujuan."
+    Source: "Transaksi non-transfer tidak boleh memiliki dompet tujuan."
+  Line 306: "Gagal mengkredit saldo dompet pendapatan"
+    Source: check(rows == 1) { "Gagal mengkredit saldo dompet pendapatan" }
+  Line 310: "Gagal mendebit saldo dompet pengeluaran"
+    Source: check(rows == 1) { "Gagal mendebit saldo dompet pengeluaran" }
+  Line 318: "Gagal mencatat transaksi ke database"
+    Source: check(id > 0L) { "Gagal mencatat transaksi ke database" }
+  Line 330: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 334: "Transaksi #${transaction.id} tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Transaksi #${transaction.id} tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 337: "Dompet sumber #${liveTx.walletId} tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet sumber #${liveTx.walletId} tidak ditemukan.")
+  Line 339: "Transaksi #${liveTx.id} tidak dapat dihapus karena dompet sumber '${sourceWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze)."
+    Source: throw IllegalStateException("Transaksi #${liveTx.id} tidak dapat dihapus karena dompet sumber '${sourceWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze).")
+  Line 342: "Dompet sumber #${liveTx.walletId} belum memiliki mata uang (State 2)."
+    Source: "Dompet sumber #${liveTx.walletId} belum memiliki mata uang (State 2)."
+  Line 348: "Gagal membalikkan saldo pendapatan"
+    Source: check(rows == 1) { "Gagal membalikkan saldo pendapatan" }
+  Line 353: "Gagal membalikkan saldo pengeluaran"
+    Source: check(rows == 1) { "Gagal membalikkan saldo pengeluaran" }
+  Line 357: "Transaksi transfer #${liveTx.id} tidak memiliki targetWalletId yang sah."
+    Source: ?: throw IllegalStateException("Transaksi transfer #${liveTx.id} tidak memiliki targetWalletId yang sah.")
+  Line 359: "Dompet tujuan #$targetId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan #$targetId tidak ditemukan.")
+  Line 361: "Transaksi transfer #${liveTx.id} tidak dapat dihapus karena dompet tujuan '${targetWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze)."
+    Source: throw IllegalStateException("Transaksi transfer #${liveTx.id} tidak dapat dihapus karena dompet tujuan '${targetWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze).")
+  Line 364: "Dompet tujuan #$targetId belum memiliki mata uang (State 2)."
+    Source: "Dompet tujuan #$targetId belum memiliki mata uang (State 2)."
+  Line 369: "Gagal membalikkan debit transfer dompet sumber"
+    Source: check(debitRevRows == 1) { "Gagal membalikkan debit transfer dompet sumber" }
+  Line 373: "Gagal membalikkan kredit transfer dompet tujuan"
+    Source: check(creditRevRows == 1) { "Gagal membalikkan kredit transfer dompet tujuan" }
+  Line 377: "Gagal menghapus catatan transaksi"
+    Source: check(deletedRows == 1) { "Gagal menghapus catatan transaksi" }
+  Line 389: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 391: "Nominal transaksi harus berupa angka positif yang sah."
+    Source: "Nominal transaksi harus berupa angka positif yang sah."
+  Line 396: "Transaksi #${oldTransaction.id} tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Transaksi #${oldTransaction.id} tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 399: "Dompet sumber lama #${liveOldTx.walletId} tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet sumber lama #${liveOldTx.walletId} tidak ditemukan.")
+  Line 401: "Transaksi #${liveOldTx.id} tidak dapat diubah karena dompet sumber '${oldSourceWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze)."
+    Source: throw IllegalStateException("Transaksi #${liveOldTx.id} tidak dapat diubah karena dompet sumber '${oldSourceWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze).")
+  Line 404: "Dompet sumber lama belum memiliki mata uang (State 2)."
+    Source: "Dompet sumber lama belum memiliki mata uang (State 2)."
+  Line 411: "Gagal membalikkan saldo pendapatan lama"
+    Source: check(r == 1) { "Gagal membalikkan saldo pendapatan lama" }
+  Line 415: "Gagal membalikkan saldo pengeluaran lama"
+    Source: check(r == 1) { "Gagal membalikkan saldo pengeluaran lama" }
+  Line 419: "Transaksi transfer lama tidak memiliki targetWalletId."
+    Source: ?: throw IllegalStateException("Transaksi transfer lama tidak memiliki targetWalletId.")
+  Line 421: "Dompet tujuan lama tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan lama tidak ditemukan.")
+  Line 423: "Transaksi transfer #${liveOldTx.id} tidak dapat diubah karena dompet tujuan lama '${oldTargetWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze)."
+    Source: throw IllegalStateException("Transaksi transfer #${liveOldTx.id} tidak dapat diubah karena dompet tujuan lama '${oldTargetWallet.name}' dalam status diarsipkan (POL-ARCH-01 Historical Freeze).")
+  Line 426: "Dompet tujuan lama belum memiliki mata uang (State 2)."
+    Source: "Dompet tujuan lama belum memiliki mata uang (State 2)."
+  Line 430: "Gagal membalikkan debit transfer lama"
+    Source: check(r1 == 1) { "Gagal membalikkan debit transfer lama" }
+  Line 432: "Gagal membalikkan kredit transfer lama"
+    Source: check(r2 == 1) { "Gagal membalikkan kredit transfer lama" }
+  Line 438: "Dompet sumber baru #${newTransaction.walletId} tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet sumber baru #${newTransaction.walletId} tidak ditemukan.")
+  Line 440: "Transaksi tidak dapat dialihkan ke dompet sumber '${newSourceWallet.name}' yang dalam status diarsipkan (POL-ARCH-01 Freeze)."
+    Source: throw IllegalStateException("Transaksi tidak dapat dialihkan ke dompet sumber '${newSourceWallet.name}' yang dalam status diarsipkan (POL-ARCH-01 Freeze).")
+  Line 443: "Dompet sumber baru belum memiliki mata uang (State 2)."
+    Source: "Dompet sumber baru belum memiliki mata uang (State 2)."
+  Line 448: "Dompet tujuan harus ditentukan untuk transfer."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan harus ditentukan untuk transfer.")
+  Line 450: "Dompet sumber dan tujuan transfer tidak boleh sama."
+    Source: throw IllegalArgumentException("Dompet sumber dan tujuan transfer tidak boleh sama.")
+  Line 453: "Dompet tujuan baru #$newTargetId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan baru #$newTargetId tidak ditemukan.")
+  Line 455: "Transaksi transfer tidak dapat dialihkan ke dompet tujuan '${newTargetWallet.name}' yang dalam status diarsipkan (POL-ARCH-01 Freeze)."
+    Source: throw IllegalStateException("Transaksi transfer tidak dapat dialihkan ke dompet tujuan '${newTargetWallet.name}' yang dalam status diarsipkan (POL-ARCH-01 Freeze).")
+  Line 458: "Dompet tujuan baru belum memiliki mata uang (State 2)."
+    Source: "Dompet tujuan baru belum memiliki mata uang (State 2)."
+  Line 465: "Gagal mendebit transfer baru"
+    Source: check(r1 == 1) { "Gagal mendebit transfer baru" }
+  Line 467: "Gagal mengkredit transfer baru"
+    Source: check(r2 == 1) { "Gagal mengkredit transfer baru" }
+  Line 470: "Transaksi non-transfer tidak boleh memiliki targetWalletId."
+    Source: "Transaksi non-transfer tidak boleh memiliki targetWalletId."
+  Line 475: "Gagal mengkredit pendapatan baru"
+    Source: check(r == 1) { "Gagal mengkredit pendapatan baru" }
+  Line 479: "Gagal mendebit pengeluaran baru"
+    Source: check(r == 1) { "Gagal mendebit pengeluaran baru" }
+  Line 488: "Gagal memperbarui catatan transaksi di database"
+    Source: check(rows == 1) { "Gagal memperbarui catatan transaksi di database" }
+  Line 504: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 505: "ID transaksi original harus valid."
+    Source: require(originalTransactionId > 0L) { "ID transaksi original harus valid." }
+  Line 509: "Transaksi #$originalTransactionId tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: ?: throw IllegalArgumentException("Transaksi #$originalTransactionId tidak ditemukan atau bukan milik pengguna #$userId.")
+  Line 511: "Transaksi #${origTx.id} merupakan transaksi reversal; tidak dapat membalik transaksi reversal."
+    Source: check(!origTx.isReversal) { "Transaksi #${origTx.id} merupakan transaksi reversal; tidak dapat membalik transaksi reversal." }
+  Line 512: "Transaksi #${origTx.id} sudah merupakan reversal."
+    Source: check(origTx.reversedTransactionId == null) { "Transaksi #${origTx.id} sudah merupakan reversal." }
+  Line 515: "Dompet sumber #${origTx.walletId} tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet sumber #${origTx.walletId} tidak ditemukan.")
+  Line 517: "Transaksi tidak dapat dibalik karena dompet '${sourceWallet.name}' dalam status diarsipkan (POL-ARCH-01 Freeze)."
+    Source: throw IllegalStateException("Transaksi tidak dapat dibalik karena dompet '${sourceWallet.name}' dalam status diarsipkan (POL-ARCH-01 Freeze).")
+  Line 519: "Dompet sumber belum memiliki mata uang yang ditetapkan."
+    Source: requireNotNull(sourceWallet.currencyCode) { "Dompet sumber belum memiliki mata uang yang ditetapkan." }
+  Line 521: "Mata uang transaksi (${origTx.currencyCode}) tidak cocok dengan dompet sumber (${sourceWallet.currencyCode})."
+    Source: "Mata uang transaksi (${origTx.currencyCode}) tidak cocok dengan dompet sumber (${sourceWallet.currencyCode})."
+  Line 528: "Gagal membalikkan saldo pengeluaran pada dompet #${origTx.walletId}."
+    Source: check(rows == 1) { "Gagal membalikkan saldo pengeluaran pada dompet #${origTx.walletId}." }
+  Line 543: "Pembalikan otomatis transaksi #${origTx.id}. $reason"
+    Source: note = "Pembalikan otomatis transaksi #${origTx.id}. $reason".trim(),
+  Line 554: "Gagal membalikkan saldo pemasukan pada dompet #${origTx.walletId}."
+    Source: check(rows == 1) { "Gagal membalikkan saldo pemasukan pada dompet #${origTx.walletId}." }
+  Line 569: "Pembalikan otomatis transaksi #${origTx.id}. $reason"
+    Source: note = "Pembalikan otomatis transaksi #${origTx.id}. $reason".trim(),
+  Line 579: "Transaksi transfer #${origTx.id} tidak memiliki targetWalletId yang sah."
+    Source: ?: throw IllegalStateException("Transaksi transfer #${origTx.id} tidak memiliki targetWalletId yang sah.")
+  Line 581: "Dompet tujuan #$origTargetId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet tujuan #$origTargetId tidak ditemukan.")
+  Line 583: "Transaksi transfer #${origTx.id} tidak dapat dibalik karena dompet tujuan '${targetWallet.name}' dalam status diarsipkan (POL-ARCH-01 Freeze)."
+    Source: throw IllegalStateException("Transaksi transfer #${origTx.id} tidak dapat dibalik karena dompet tujuan '${targetWallet.name}' dalam status diarsipkan (POL-ARCH-01 Freeze).")
+  Line 585: "Dompet tujuan belum memiliki mata uang yang ditetapkan."
+    Source: requireNotNull(targetWallet.currencyCode) { "Dompet tujuan belum memiliki mata uang yang ditetapkan." }
+  Line 587: "Transfer lintas mata uang (${sourceWallet.currencyCode} -> ${targetWallet.currencyCode}) tidak didukung untuk pembalikan otomatis."
+    Source: "Transfer lintas mata uang (${sourceWallet.currencyCode} -> ${targetWallet.currencyCode}) tidak didukung untuk pembalikan otomatis."
+  Line 593: "Gagal membalikkan kredit pada dompet tujuan transfer #$origTargetId."
+    Source: check(debitRows == 1) { "Gagal membalikkan kredit pada dompet tujuan transfer #$origTargetId." }
+  Line 596: "Gagal membalikkan debit pada dompet sumber transfer #${origTx.walletId}."
+    Source: check(creditRows == 1) { "Gagal membalikkan debit pada dompet sumber transfer #${origTx.walletId}." }
+  Line 611: "Pembalikan transfer #${origTx.id} dari ${targetWallet.name} kembali ke ${sourceWallet.name}. $reason"
+    Source: note = "Pembalikan transfer #${origTx.id} dari ${targetWallet.name} kembali ke ${sourceWallet.name}. $reason".trim(),
+  Line 622: "Gagal mencatat transaksi pembalikan."
+    Source: check(insertedId > 0L) { "Gagal mencatat transaksi pembalikan." }
+  Line 645: "Operasi memerlukan user ID aktif yang valid."
+    Source: require(userId > 0L) { "Operasi memerlukan user ID aktif yang valid." }
+  Line 651: "Rencana cicilan #$planId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Rencana cicilan #$planId tidak ditemukan.")
+  Line 653: "Rencana cicilan sudah selesai atau tidak memiliki sisa tenor."
+    Source: throw IllegalStateException("Rencana cicilan sudah selesai atau tidak memiliki sisa tenor.")
+  Line 658: "Dompet #$walletId tidak ditemukan."
+    Source: ?: throw IllegalArgumentException("Dompet #$walletId tidak ditemukan.")
+  Line 660: "Dompet #${wallet.id} belum memiliki mata uang yang ditetapkan (State 2)."
+    Source: "Dompet #${wallet.id} belum memiliki mata uang yang ditetapkan (State 2)."
+  Line 663: "Saldo dompet '${wallet.name}' tidak mencukupi untuk pembayaran cicilan."
+    Source: throw IllegalStateException("Saldo dompet '${wallet.name}' tidak mencukupi untuk pembayaran cicilan.")
+  Line 667: "Gagal mendebit saldo dompet untuk cicilan"
+    Source: check(debitRows == 1) { "Gagal mendebit saldo dompet untuk cicilan" }
+  Line 674: "Cicilan & Hutang"
+    Source: category = "Cicilan & Hutang",
+  Line 684: "Gagal mencatat transaksi pembayaran cicilan"
+    Source: check(txId > 0L) { "Gagal mencatat transaksi pembayaran cicilan" }
+  Line 848: "Dompet tidak ditemukan."
+    Source: ?: throw IllegalStateException("Dompet tidak ditemukan.")
+  Line 851: "Dompet tidak ditemukan atau sudah diklaim oleh proses lain."
+    Source: throw IllegalStateException("Dompet tidak ditemukan atau sudah diklaim oleh proses lain.")
+  Line 859: "Dompet ini memiliki riwayat transaksi yang terhubung dengan akun lain. Klaim dibatalkan."
+    Source: throw IllegalStateException("Dompet ini memiliki riwayat transaksi yang terhubung dengan akun lain. Klaim dibatalkan.")
+  Line 864: "Struktur kepemilikan transaksi warisan tidak konsisten. Klaim dibatalkan."
+    Source: throw IllegalStateException("Struktur kepemilikan transaksi warisan tidak konsisten. Klaim dibatalkan.")
+  Line 870: "Gagal memperbarui kepemilikan dompet (baris terpengaruh: $walletUpdated)."
+    Source: throw IllegalStateException("Gagal memperbarui kepemilikan dompet (baris terpengaruh: $walletUpdated).")
+  Line 876: "Jumlah transaksi yang diperbarui ($txUpdated) tidak sesuai dengan data terverifikasi (${preflight.nullOwnerTx})."
+    Source: throw IllegalStateException("Jumlah transaksi yang diperbarui ($txUpdated) tidak sesuai dengan data terverifikasi (${preflight.nullOwnerTx}).")
+  Line 907: "Dompet #$walletId tidak ditemukan atau bukan milik pengguna #$userId."
+    Source: } ?: return@withContext Result.failure(IllegalArgumentException("Dompet #$walletId tidak ditemukan atau bukan milik pengguna #$userId."))
+  Line 910: "Mata uang dompet #${walletId} sudah ditetapkan (${existing.currencyCode}) dan bersifat permanen (DEC-PROD-01 Immutability)."
+    Source: return@withContext Result.failure(IllegalStateException("Mata uang dompet #${walletId} sudah ditetapkan (${existing.currencyCode}) dan bersifat permanen (DEC-PROD-01 Immutability)."))
+  Line 918: "Gagal menetapkan mata uang untuk dompet $walletId"
+    Source: if (rows > 0) Result.success(Unit) else Result.failure(IllegalStateException("Gagal menetapkan mata uang untuk dompet $walletId"))
+  Line 1178: "Database instance required for budget limit operations"
+    Source: val budgetDao = database?.budgetLimitDao() ?: throw IllegalStateException("Database instance required for budget limit operations")
+  Line 1183: "Database instance required for budget limit operations"
+    Source: val budgetDao = database?.budgetLimitDao() ?: throw IllegalStateException("Database instance required for budget limit operations")
+  Line 1188: "Database instance required for budget limit operations"
+    Source: val budgetDao = database?.budgetLimitDao() ?: throw IllegalStateException("Database instance required for budget limit operations")
+
+=== app/src/main/java/com/example/data/repository/PayLaterLedgerService.kt (4 items) ===
+  Line 73: "Pembayaran Cicilan: ${plan.name}"
+    Source: title = "Pembayaran Cicilan: ${plan.name}",
+  Line 78: "Cicilan & Hutang"
+    Source: category = "Cicilan & Hutang",
+  Line 83: "Pembayaran cicilan rencana ${plan.name}"
+    Source: note = notes ?: "Pembayaran cicilan rencana ${plan.name}",
+  Line 208: "Pembatalan pembayaran cicilan #$paymentId"
+    Source: note = reason ?: "Pembatalan pembayaran cicilan #$paymentId",
+
+=== app/src/main/java/com/example/ui/FinSmartApp.kt (3 items) ===
+  Line 112: "Anggaran"
+    Source: BUDGET("Anggaran", "Budget", Icons.Default.AccountBalanceWallet, false),
+  Line 207: "Foto profil berhasil diperbarui!"
+    Source: Toast.makeText(context, "Foto profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+  Line 362: "Catat Transaksi Cepat"
+    Source: contentDescription = "Catat Transaksi Cepat",
+
+=== app/src/main/java/com/example/ui/components/AddTransactionSheet.kt (18 items) ===
+  Line 289: "Catat Transaksi"
+    Source: text = "Catat Transaksi",
+  Line 301: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 411: "Pengeluaran"
+    Source: TransactionType.EXPENSE -> "Pengeluaran"
+  Line 413: "Pemasukan"
+    Source: TransactionType.INCOME -> "Pemasukan"
+  Line 483: "Nominal Transaksi"
+    Source: text = "Nominal Transaksi",
+  Line 623: "Sumber Dana (Dompet / Bank):"
+    Source: text = if (currentType == TransactionType.EXPENSE) "Sumber Dana (Dompet / Bank):" else "Disimpan ke Dompet:",
+  Line 623: "Disimpan ke Dompet:"
+    Source: text = if (currentType == TransactionType.EXPENSE) "Sumber Dana (Dompet / Bank):" else "Disimpan ke Dompet:",
+  Line 647: "Pilih Dompet"
+    Source: value = selectedWallet?.let { "${it.name} (${CurrencyFormatter.formatRupiah(it.balance)})" } ?: "Pilih Dompet",
+  Line 751: "Pilih"
+    Source: value = selectedWallet?.name ?: "Pilih",
+  Line 829: "Pilih"
+    Source: value = selectedTargetWallet?.name ?: "Pilih",
+  Line 893: "Kategori Transaksi:"
+    Source: text = "Kategori Transaksi:",
+  Line 1101: "Masukkan nominal transaksi yang valid (> 0)."
+    Source: errorMessage = "Masukkan nominal transaksi yang valid (> 0)."
+  Line 1109: "Pilih dompet terlebih dahulu."
+    Source: errorMessage = "Pilih dompet terlebih dahulu."
+  Line 1117: "Pilih dompet tujuan transfer yang berbeda."
+    Source: errorMessage = "Pilih dompet tujuan transfer yang berbeda."
+  Line 1125: "Transfer Saldo"
+    Source: val catName = if (currentType == TransactionType.TRANSFER) "Transfer Saldo" else (selectedCategory?.name ?: "Lain-lain")
+  Line 1197: "Catat Pengeluaran"
+    Source: TransactionType.EXPENSE -> "Catat Pengeluaran"
+  Line 1199: "Catat Pemasukan"
+    Source: TransactionType.INCOME -> "Catat Pemasukan"
+  Line 1201: "Simpan Transfer Saldo"
+    Source: TransactionType.TRANSFER -> "Simpan Transfer Saldo"
+
+=== app/src/main/java/com/example/ui/components/AssetTrackerModalDialog.kt (12 items) ===
+  Line 158: "Hapus Kategori Aset"
+    Source: Icon(Icons.Default.DeleteSweep, contentDescription = "Hapus Kategori Aset", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+  Line 162: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 242: "Belum ada aset fisik yang dicatat. Tambahkan melalui form di bawah."
+    Source: text = "Belum ada aset fisik yang dicatat. Tambahkan melalui form di bawah.",
+  Line 333: "Hapus Aset"
+    Source: Icon(Icons.Default.Delete, contentDescription = "Hapus Aset", tint = ExpenseRed, modifier = Modifier.size(16.dp))
+  Line 351: "Tambah Aset Fisik Baru:"
+    Source: text = if (editingAssetId != null) "Edit Data Aset Fisik" else "Tambah Aset Fisik Baru:",
+  Line 428: "Isi nama aset dan harga beli yang valid!"
+    Source: Toast.makeText(context, "Isi nama aset dan harga beli yang valid!", Toast.LENGTH_SHORT).show()
+  Line 443: "Data aset berhasil diperbarui!"
+    Source: Toast.makeText(context, "Data aset berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+  Line 455: "Aset berhasil ditambahkan!"
+    Source: Toast.makeText(context, "Aset berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+  Line 469: "Simpan Aset"
+    Source: text = if (editingAssetId != null) "Perbarui Aset" else "Simpan Aset",
+  Line 499: "Seluruh daftar aset telah di-reset (Fresh Start)! 🧹"
+    Source: Toast.makeText(context, "Seluruh daftar aset telah di-reset (Fresh Start)! 🧹", Toast.LENGTH_SHORT).show()
+  Line 548: "Seluruh aset kategori '${cat.displayName}' berhasil dihapus!"
+    Source: Toast.makeText(context, "Seluruh aset kategori '${cat.displayName}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+  Line 587: "Aset '${asset.name}' berhasil dihapus!"
+    Source: Toast.makeText(context, "Aset '${asset.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+
+=== app/src/main/java/com/example/ui/components/AuthModalDialog.kt (4 items) ===
+  Line 137: "Kelola finansial cerdas dengan sinkronisasi & AI"
+    Source: text = "Kelola finansial cerdas dengan sinkronisasi & AI",
+  Line 170: "Masuk (Login)"
+    Source: "Masuk (Login)",
+  Line 319: "Kode OTP telah dikirim ke:"
+    Source: text = "Kode OTP telah dikirim ke:",
+  Line 460: "Tutup pesan"
+    Source: contentDescription = "Tutup pesan",
+
+=== app/src/main/java/com/example/ui/components/CashflowChart.kt (7 items) ===
+  Line 117: "Grafik Pemasukan vs Pengeluaran"
+    Source: text = "Grafik Pemasukan vs Pengeluaran",
+  Line 241: "Masuk: ${CurrencyFormatter.formatRupiah(point.income)}"
+    Source: text = "Masuk: ${CurrencyFormatter.formatRupiah(point.income)}",
+  Line 247: "Keluar: ${CurrencyFormatter.formatRupiah(point.expense)}"
+    Source: text = "Keluar: ${CurrencyFormatter.formatRupiah(point.expense)}",
+  Line 299: "Belum ada transaksi di periode ini.\nTekan + Pemasukan / + Pengeluaran untuk memulai."
+    Source: text = "Belum ada transaksi di periode ini.\nTekan + Pemasukan / + Pengeluaran untuk memulai.",
+  Line 318: "Belum ada nilai arus kas pada periode ini."
+    Source: text = "Belum ada nilai arus kas pada periode ini.",
+  Line 385: "Pemasukan ($incomePercent%)"
+    Source: Text(text = "Pemasukan ($incomePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = IncomeGreen)
+  Line 394: "Pengeluaran ($expensePercent%)"
+    Source: Text(text = "Pengeluaran ($expensePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ExpenseRed)
+
+=== app/src/main/java/com/example/ui/components/ChangePasswordDialog.kt (4 items) ===
+  Line 76: "Ubah Kata Sandi"
+    Source: text = "Ubah Kata Sandi",
+  Line 105: "Masukkan kata sandi saat ini untuk verifikasi kepemilikan, lalu buat kata sandi baru minimal 6 karakter. Kata sandi di-hash menggunakan algoritma PBKDF2."
+    Source: text = "Masukkan kata sandi saat ini untuk verifikasi kepemilikan, lalu buat kata sandi baru minimal 6 karakter. Kata sandi di-hash menggunakan algoritma PBKDF2.",
+  Line 222: "Konfirmasi kata sandi baru tidak cocok."
+    Source: localError = "Konfirmasi kata sandi baru tidak cocok."
+  Line 226: "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+    Source: localError = "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+
+=== app/src/main/java/com/example/ui/components/ChangelogBottomSheet.kt (8 items) ===
+  Line 92: "Catatan Rilis (Changelog)"
+    Source: text = "Catatan Rilis (Changelog)",
+  Line 107: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 156: "Chatbot kini mampu mengenali konteks tanggal relatif ('kemarin', 'lusa', '3 hari lalu', 'tadi pagi', 'minggu lalu') dan tanggal spesifik ('tanggal 15 September', '12/09/2026') lalu otomatis menetapkan tanggal transaksi secara akurat."
+    Source: description = "Chatbot kini mampu mengenali konteks tanggal relatif ('kemarin', 'lusa', '3 hari lalu', 'tadi pagi', 'minggu lalu') dan tanggal spesifik ('tanggal 15 September', '12/09/2026') lalu otomatis menetapkan tanggal transaksi secara akurat."
+  Line 162: "Dukungan bahasa aplikasi mengikuti sistem HP (Locale default), serta pemilih mata uang global (IDR Rp, USD $, EUR €, SGD S$, MYR RM) yang memperbarui format angka secara real-time di seluruh layar."
+    Source: description = "Dukungan bahasa aplikasi mengikuti sistem HP (Locale default), serta pemilih mata uang global (IDR Rp, USD $, EUR €, SGD S$, MYR RM) yang memperbarui format angka secara real-time di seluruh layar."
+  Line 168: "Tambah ikon edit & hapus per-item hutang, opsi hapus seluruh kategori hutang, pemilihan tanggal jatuh tempo (due date), serta tombol Reset Semua Hutang (Fresh Start)."
+    Source: description = "Tambah ikon edit & hapus per-item hutang, opsi hapus seluruh kategori hutang, pemilihan tanggal jatuh tempo (due date), serta tombol Reset Semua Hutang (Fresh Start)."
+  Line 174: "Kontrol edit & hapus item aset fisik, hapus kategori aset sekaligus, kalkulasi depresiasi nilai otomatis, dan tombol Reset Semua Aset."
+    Source: description = "Kontrol edit & hapus item aset fisik, hapus kategori aset sekaligus, kalkulasi depresiasi nilai otomatis, dan tombol Reset Semua Aset."
+  Line 180: "Daftar item pada kalkulator utama dibatasi 2-3 item dengan tombol 'Lihat Selengkapnya / Riwayat' agar tombol 'Kirim WA' terlihat langsung tanpa perlu scroll panjang."
+    Source: description = "Daftar item pada kalkulator utama dibatasi 2-3 item dengan tombol 'Lihat Selengkapnya / Riwayat' agar tombol 'Kirim WA' terlihat langsung tanpa perlu scroll panjang."
+  Line 186: "Tambahan mode grafik lingkaran (Donut/Pie Chart) pada Analisis Arus Kas untuk memvisualisasikan proporsi pengeluaran per kategori secara interaktif."
+    Source: description = "Tambahan mode grafik lingkaran (Donut/Pie Chart) pada Analisis Arus Kas untuk memvisualisasikan proporsi pengeluaran per kategori secara interaktif."
+
+=== app/src/main/java/com/example/ui/components/DebtPlannerModalDialog.kt (53 items) ===
+  Line 97: "Mengurutkan hutang berdasarkan tanggal jatuh tempo paling dekat ke yang paling jauh."
+    Source: DUE_DATE("Tenggat Terdekat ⏰", "Mengurutkan hutang berdasarkan tanggal jatuh tempo paling dekat ke yang paling jauh."),
+  Line 98: "Mengurutkan berdasarkan persentase bunga tertinggi untuk efisiensi finansial."
+    Source: AVALANCHE("Bunga Tertinggi ⚡", "Mengurutkan berdasarkan persentase bunga tertinggi untuk efisiensi finansial."),
+  Line 99: "Mengurutkan berdasarkan sisa pokok hutang terkecil untuk motivasi psikologis."
+    Source: SNOWBALL("Nominal Terkecil ⛄", "Mengurutkan berdasarkan sisa pokok hutang terkecil untuk motivasi psikologis.")
+  Line 128: "Cicilan Kendaraan"
+    Source: val debtCategories = listOf("Kartu Kredit", "Pinjaman Online", "Cicilan Kendaraan", "Pinjaman Bank", "Lain-lain")
+  Line 172: "Teks tagihan tidak terdeteksi dari screenshot yang dipilih."
+    Source: payLaterScanError = "Teks tagihan tidak terdeteksi dari screenshot yang dipilih."
+  Line 176: "Gagal memproses screenshot tagihan."
+    Source: payLaterScanError = e.message ?: "Gagal memproses screenshot tagihan."
+  Line 183: "Tagihan & Utilitas"
+    Source: budgetLimits.firstOrNull { it.id == "Tagihan & Utilitas" }?.limitAmount
+  Line 314: "Hapus Kategori Hutang"
+    Source: Icon(Icons.Default.DeleteSweep, contentDescription = "Hapus Kategori Hutang", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+  Line 318: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 409: "Batas Anggaran Cicilan / Tagihan:"
+    Source: text = "Batas Anggaran Cicilan / Tagihan:",
+  Line 417: "Belum diatur"
+    Source: "Belum diatur"
+  Line 432: "Status Terhadap Anggaran:"
+    Source: text = "Status Terhadap Anggaran:",
+  Line 440: "${com.example.util.CurrencyFormatter.formatRupiah(diff)} di atas limit (Defisit) ⚠️"
+    Source: text = "${com.example.util.CurrencyFormatter.formatRupiah(diff)} di atas limit (Defisit) ⚠️",
+  Line 447: "${com.example.util.CurrencyFormatter.formatRupiah(Math.abs(diff))} di bawah limit (Aman) ✅"
+    Source: text = "${com.example.util.CurrencyFormatter.formatRupiah(Math.abs(diff))} di bawah limit (Aman) ✅",
+  Line 455: "Sesuaikan di menu Anggaran"
+    Source: text = "Sesuaikan di menu Anggaran",
+  Line 481: "Perhatian: Defisit Anggaran Bulanan ⚠️"
+    Source: if (priorityPlan.isDeficit) "Perhatian: Defisit Anggaran Bulanan ⚠️" else "Estimasi Bebas Hutang: $debtFreeDateString"
+  Line 482: "Selamat! Anda Bebas Hutang 🎉"
+    Source: } else "Selamat! Anda Bebas Hutang 🎉",
+  Line 490: "Alokasi bulanan (${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}) belum menutup cicilan minimum (Defisit: ${com.example.util.CurrencyFormatter.formatRupiah(priorityPlan.monthlyShortfall)}/bln)."
+    Source: "Alokasi bulanan (${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}) belum menutup cicilan minimum (Defisit: ${com.example.util.CurrencyFormatter.formatRupiah(priorityPlan.monthlyShortfall)}/bln)."
+  Line 492: "Dengan simulasi alokasi ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/bulan (Metode Avalanche: $estimatedMonths bulan)."
+    Source: "Dengan simulasi alokasi ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/bulan (Metode Avalanche: $estimatedMonths bulan)."
+  Line 563: "Belum ada jadwal pembayaran bulan ini."
+    Source: text = "Belum ada jadwal pembayaran bulan ini.",
+  Line 572: "Impor Tagihan AI"
+    Source: val dataSource = if (plan.notes.contains("Shopee", ignoreCase = true) || plan.notes.contains("DANA", ignoreCase = true) || plan.notes.contains("GoPay", ignoreCase = true) || plan.notes.contains("impor", ignoreCase = true)) "Impor Tagihan AI" else "Catatan Manual"
+  Line 572: "Catatan Manual"
+    Source: val dataSource = if (plan.notes.contains("Shopee", ignoreCase = true) || plan.notes.contains("DANA", ignoreCase = true) || plan.notes.contains("GoPay", ignoreCase = true) || plan.notes.contains("impor", ignoreCase = true)) "Impor Tagihan AI" else "Catatan Manual"
+  Line 609: "Belum Bayar"
+    Source: text = if (isOverdue) "Terlambat ⚠️" else "Belum Bayar",
+  Line 679: "Belum Bayar"
+    Source: text = if (isOverdue) "Terlambat ⚠️" else "Belum Bayar",
+  Line 699: "Sumber: Catatan Manual"
+    Source: text = "Sumber: Catatan Manual",
+  Line 757: "Tidak ada tagihan yang dijadwalkan untuk bulan berikutnya."
+    Source: text = "Tidak ada tagihan yang dijadwalkan untuk bulan berikutnya.",
+  Line 846: "Impor Tagihan dari Screenshot"
+    Source: text = "Impor Tagihan dari Screenshot",
+  Line 950: "Belum ada catatan pinjaman/hutang. Gunakan form di bawah untuk menambah."
+    Source: text = "Belum ada catatan pinjaman/hutang. Gunakan form di bawah untuk menambah.",
+  Line 992: "Priority #1 (Mendesak) 🚨 • Rekomendasi AI: Prioritaskan tagihan ini untuk cegah denda!"
+    Source: text = "Priority #1 (Mendesak) 🚨 • Rekomendasi AI: Prioritaskan tagihan ini untuk cegah denda!",
+  Line 1079: "Hapus Hutang"
+    Source: Icon(Icons.Default.Delete, contentDescription = "Hapus Hutang", tint = ExpenseRed, modifier = Modifier.size(16.dp))
+  Line 1098: "Tambah Pinjaman / Hutang Baru:"
+    Source: text = if (editingDebtId != null) "Edit Data Pinjaman / Hutang" else "Tambah Pinjaman / Hutang Baru:",
+  Line 1107: "Kategori Pinjaman:"
+    Source: Text(text = "Kategori Pinjaman:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+  Line 1224: "Isi nama dan nominal hutang yang valid!"
+    Source: Toast.makeText(context, "Isi nama dan nominal hutang yang valid!", Toast.LENGTH_SHORT).show()
+  Line 1242: "Data hutang berhasil diperbarui!"
+    Source: Toast.makeText(context, "Data hutang berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+  Line 1271: "Simpan ke Planner"
+    Source: text = if (editingDebtId != null) "Perbarui Hutang" else "Simpan ke Planner",
+  Line 1375: "Belum Ada Rencana Cicilan Berjangka"
+    Source: text = "Belum Ada Rencana Cicilan Berjangka",
+  Line 1381: "Catat cicilan motor, mobil, barang elektronik, atau pinjaman dengan tenor tetap agar progres pembayaran dan tanggal jatuh tempo bulanan terpantau rapi tanpa membuat tagihan manual tiap bulan."
+    Source: text = "Catat cicilan motor, mobil, barang elektronik, atau pinjaman dengan tenor tetap agar progres pembayaran dan tanggal jatuh tempo bulanan terpantau rapi tanpa membuat tagihan manual tiap bulan.",
+  Line 1509: "Sisa Pokok: Belum ditentukan (tidak diestimasi sembarangan)"
+    Source: text = "Sisa Pokok: Belum ditentukan (tidak diestimasi sembarangan)",
+  Line 1528: "Cicilan & Hutang"
+    Source: (it.title.startsWith("Angsuran ${plan.name}") && it.category == "Cicilan & Hutang")
+  Line 1539: "Histori Transaksi Terkait (${linkedPayments.size}):"
+    Source: text = "Histori Transaksi Terkait (${linkedPayments.size}):",
+  Line 1587: "Hapus"
+    Source: Icon(Icons.Default.Delete, contentDescription = "Hapus", modifier = Modifier.size(18.dp), tint = ExpenseRed)
+  Line 1636: "Seluruh daftar hutang & cicilan ($totalAffectedCount item) telah di-reset! 🧹"
+    Source: Toast.makeText(context, "Seluruh daftar hutang & cicilan ($totalAffectedCount item) telah di-reset! 🧹", Toast.LENGTH_SHORT).show()
+  Line 1685: "Seluruh hutang dalam kategori '$cat' berhasil dihapus!"
+    Source: Toast.makeText(context, "Seluruh hutang dalam kategori '$cat' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+  Line 1724: "Pinjaman '${debt.name}' berhasil dihapus!"
+    Source: Toast.makeText(context, "Pinjaman '${debt.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+  Line 1834: "Pilih contoh tagihan untuk mencoba fitur tanpa screenshot fisik:"
+    Source: text = "Pilih contoh tagihan untuk mencoba fitur tanpa screenshot fisik:",
+  Line 1884: "Edit Rencana Cicilan"
+    Source: text = if (editingPlan != null) "Edit Rencana Cicilan" else "Tambah Rencana Cicilan",
+  Line 1884: "Tambah Rencana Cicilan"
+    Source: text = if (editingPlan != null) "Edit Rencana Cicilan" else "Tambah Rencana Cicilan",
+  Line 1984: "Nama cicilan wajib diisi."
+    Source: Toast.makeText(context, "Nama cicilan wajib diisi.", Toast.LENGTH_SHORT).show()
+  Line 2020: "Rencana cicilan '${planItem.name}' berhasil disimpan!"
+    Source: Toast.makeText(context, "Rencana cicilan '${planItem.name}' berhasil disimpan!", Toast.LENGTH_SHORT).show()
+  Line 2025: "Simpan"
+    Source: Text(if (editingPlan != null) "Perbarui" else "Simpan")
+  Line 2075: "Pilih Dompet Sumber (Opsional):"
+    Source: text = "Pilih Dompet Sumber (Opsional):",
+  Line 2108: "Angsuran ke-${currentPlan.currentPeriod} dari ${currentPlan.totalTenor} berhasil dikonfirmasi lunas!"
+    Source: "Angsuran ke-${currentPlan.currentPeriod} dari ${currentPlan.totalTenor} berhasil dikonfirmasi lunas!",
+  Line 2146: "Rencana cicilan '${plan.name}' berhasil dihapus!"
+    Source: Toast.makeText(context, "Rencana cicilan '${plan.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+
+=== app/src/main/java/com/example/ui/components/DeleteAccountDialog.kt (8 items) ===
+  Line 68: "Hapus Akun & Data Permanen"
+    Source: text = "Hapus Akun & Data Permanen",
+  Line 97: "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, dan data lokal sesi tamu akan dihapus secara permanen dari perangkat dan database."
+    Source: "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, dan data lokal sesi tamu akan dihapus secara permanen dari perangkat dan database."
+  Line 99: "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username ?: currentUser?.email}' akan dihapus secara permanen dari perangkat, database lokal, dan server cloud."
+    Source: "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username ?: currentUser?.email}' akan dihapus secara permanen dari perangkat, database lokal, dan server cloud."
+  Line 111: "Sesi Mode Tamu tidak memerlukan kata sandi. Mengonfirmasi tindakan ini akan langsung menghapus seluruh riwayat mutasi, dompet, dan data lokal secara permanen dari perangkat."
+    Source: text = "Sesi Mode Tamu tidak memerlukan kata sandi. Mengonfirmasi tindakan ini akan langsung menghapus seluruh riwayat mutasi, dompet, dan data lokal secara permanen dari perangkat.",
+  Line 119: "Akun Anda terhubung melalui Google Sign-In (${currentUser.email}). Tidak ada kata sandi lokal yang diperlukan. Mengonfirmasi tindakan ini akan menghapus akun Google Anda dari DompetNalar dan server cloud secara permanen beserta seluruh data keuangan lokal Anda."
+    Source: text = "Akun Anda terhubung melalui Google Sign-In (${currentUser.email}). Tidak ada kata sandi lokal yang diperlukan. Mengonfirmasi tindakan ini akan menghapus akun Google Anda dari DompetNalar dan server cloud secara permanen beserta seluruh data keuangan lokal Anda.",
+  Line 126: "Konfirmasi Kata Sandi Akun:"
+    Source: text = "Konfirmasi Kata Sandi Akun:",
+  Line 161: "Kata sandi wajib diisi untuk konfirmasi keamanan."
+    Source: localErrorMessage = "Kata sandi wajib diisi untuk konfirmasi keamanan."
+  Line 166: "Gagal menghapus akun. Silakan coba beberapa saat lagi."
+    Source: localErrorMessage = if (requiresPassword) "Kata sandi salah. Penghapusan akun dibatalkan." else "Gagal menghapus akun. Silakan coba beberapa saat lagi."
+
+=== app/src/main/java/com/example/ui/components/DuressPinModalDialog.kt (2 items) ===
+  Line 122: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 143: "• PIN Utama (6-Digit): Membuka data keuangan asli Anda.\n• Duress PIN (PIN Penyamaran): Membuka aplikasi dalam 'Mode Stealth' (Data Palsu) untuk perlindungan dari paksaan."
+    Source: text = "• PIN Utama (6-Digit): Membuka data keuangan asli Anda.\n• Duress PIN (PIN Penyamaran): Membuka aplikasi dalam 'Mode Stealth' (Data Palsu) untuk perlindungan dari paksaan.",
+
+=== app/src/main/java/com/example/ui/components/ExportFormatManagementDialog.kt (4 items) ===
+  Line 123: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 244: "Hapus"
+    Source: Icon(Icons.Default.Delete, contentDescription = "Hapus", modifier = Modifier.size(16.dp), tint = Color(0xFFDC2626))
+  Line 281: "Format berhasil disimpan"
+    Source: Toast.makeText(context, "Format berhasil disimpan", Toast.LENGTH_SHORT).show()
+  Line 321: "Tambah Format Kustom"
+    Source: text = if (initialFormat == null) "Tambah Format Kustom" else "Edit Format Ekspor",
+
+=== app/src/main/java/com/example/ui/components/FinSmartIcons.kt (2 items) ===
+  Line 36: "tagihan & utilitas"
+    Source: "receipt", "bills", "tagihan & utilitas", "tagihan" -> Icons.Default.Receipt
+  Line 36: "tagihan"
+    Source: "receipt", "bills", "tagihan & utilitas", "tagihan" -> Icons.Default.Receipt
+
+=== app/src/main/java/com/example/ui/components/GamificationHubDialog.kt (7 items) ===
+  Line 136: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 248: "Sudah Diklaim"
+    Source: !canClaimStreakReward -> if (streakRewardRemainingHours > 0) "Klaim (${streakRewardRemainingHours}j)" else "Sudah Diklaim"
+  Line 257: "Reward streak 7 hari belum dapat diklaim saat ini."
+    Source: Toast.makeText(context, "Reward streak 7 hari belum dapat diklaim saat ini.", Toast.LENGTH_SHORT).show()
+  Line 303: "Sudah Diklaim"
+    Source: !canClaim30DayStreakReward -> if (streak30RewardRemainingHours > 0) "Klaim (${streak30RewardRemainingHours}j)" else "Sudah Diklaim"
+  Line 312: "Reward streak 30 hari belum dapat diklaim saat ini."
+    Source: Toast.makeText(context, "Reward streak 30 hari belum dapat diklaim saat ini.", Toast.LENGTH_SHORT).show()
+  Line 345: "Profil Finansial Anda:"
+    Source: text = "Profil Finansial Anda:",
+  Line 517: "Tantangan 24 jam tanpa transaksi keluar. Dapatkan Streak Multiplier 2x!"
+    Source: text = "Tantangan 24 jam tanpa transaksi keluar. Dapatkan Streak Multiplier 2x!",
+
+=== app/src/main/java/com/example/ui/components/GuestReminderBanner.kt (1 items) ===
+  Line 116: "Masuk dengan Akun Google untuk mengamankan data dan sinkronisasi cloud Google Drive. Catatan finansial lokal Anda tetap aman."
+    Source: "Masuk dengan Akun Google untuk mengamankan data dan sinkronisasi cloud Google Drive. Catatan finansial lokal Anda tetap aman.",
+
+=== app/src/main/java/com/example/ui/components/InitialMasterSetupDialog.kt (2 items) ===
+  Line 103: "Aplikasi mendeteksi instalasi baru. Demi keamanan, silakan buat kata sandi utama untuk akun Master Developer Anda. Kata sandi ini akan di-hash secara aman menggunakan PBKDF2."
+    Source: text = "Aplikasi mendeteksi instalasi baru. Demi keamanan, silakan buat kata sandi utama untuk akun Master Developer Anda. Kata sandi ini akan di-hash secara aman menggunakan PBKDF2.",
+  Line 191: "Konfirmasi kata sandi tidak cocok."
+    Source: localError = "Konfirmasi kata sandi tidak cocok."
+
+=== app/src/main/java/com/example/ui/components/MasterDevPanelSheet.kt (5 items) ===
+  Line 174: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 189: "Hapus pencarian"
+    Source: Icon(Icons.Default.Close, contentDescription = "Hapus pencarian")
+  Line 251: "Tidak ada pengguna yang cocok dengan \"$searchQuery\""
+    Source: text = if (searchQuery.isNotBlank()) "Tidak ada pengguna yang cocok dengan \"$searchQuery\"" else "Tidak ada pengguna pada kategori ini",
+  Line 251: "Tidak ada pengguna pada kategori ini"
+    Source: text = if (searchQuery.isNotBlank()) "Tidak ada pengguna yang cocok dengan \"$searchQuery\"" else "Tidak ada pengguna pada kategori ini",
+  Line 448: "Apakah Anda yakin ingin mencabut status Smart Master dari pengguna [ID #${targetUser.id}] ${targetUser.username} (${targetUser.email})? Akun ini akan dikembalikan ke status Free Member."
+    Source: text = "Apakah Anda yakin ingin mencabut status Smart Master dari pengguna [ID #${targetUser.id}] ${targetUser.username} (${targetUser.email})? Akun ini akan dikembalikan ke status Free Member.",
+
+=== app/src/main/java/com/example/ui/components/NotificationCenterBottomSheet.kt (2 items) ===
+  Line 211: "Riwayat peringatan & pengingat otomatis"
+    Source: text = "Riwayat peringatan & pengingat otomatis",
+  Line 227: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+
+=== app/src/main/java/com/example/ui/components/PayLaterBillReviewDialog.kt (22 items) ===
+  Line 200: "Cicilan Kendaraan"
+    Source: val availableCategories = listOf("Pinjaman Online", "Kartu Kredit", "Cicilan Kendaraan", "Lain-lain")
+  Line 301: "Review Tagihan (${activeIndex + 1} dari ${itemsList.size})"
+    Source: text = if (itemsList.size > 1) "Review Tagihan (${activeIndex + 1} dari ${itemsList.size})" else "Review Hasil Scan Tagihan",
+  Line 301: "Review Hasil Scan Tagihan"
+    Source: text = if (itemsList.size > 1) "Review Tagihan (${activeIndex + 1} dari ${itemsList.size})" else "Review Hasil Scan Tagihan",
+  Line 320: "Hapus item ini"
+    Source: Icon(Icons.Default.Delete, contentDescription = "Hapus item ini", tint = ExpenseRed)
+  Line 324: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 477: "Tanggal Terkonfirmasi oleh Anda"
+    Source: text = if (isDateConfirmed) "Tanggal Terkonfirmasi oleh Anda" else "Konfirmasi Tanggal Wajib Diperlukan",
+  Line 477: "Konfirmasi Tanggal Wajib Diperlukan"
+    Source: text = if (isDateConfirmed) "Tanggal Terkonfirmasi oleh Anda" else "Konfirmasi Tanggal Wajib Diperlukan",
+  Line 513: "Saya sudah memeriksa dan mengonfirmasi bahwa hari, bulan, dan tahun jatuh tempo di atas sudah benar."
+    Source: text = "Saya sudah memeriksa dan mengonfirmasi bahwa hari, bulan, dan tahun jatuh tempo di atas sudah benar.",
+  Line 534: "Peringatan: Tagihan serupa sudah tersimpan."
+    Source: text = duplicateCheck.reason ?: "Peringatan: Tagihan serupa sudah tersimpan.",
+  Line 581: "Tagihan Berjalan"
+    Source: text = "Tagihan Berjalan",
+  Line 737: "Kategori Tagihan:"
+    Source: text = "Kategori Tagihan:",
+  Line 790: "Periksa kembali tanggal jatuh tempo yang valid."
+    Source: Toast.makeText(context, "Periksa kembali tanggal jatuh tempo yang valid.", Toast.LENGTH_SHORT).show()
+  Line 792: "Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan."
+    Source: Toast.makeText(context, "Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan.", Toast.LENGTH_SHORT).show()
+  Line 805: "Kontrak cicilan '${planToSave.name}' disimpan!"
+    Source: Toast.makeText(context, "Kontrak cicilan '${planToSave.name}' disimpan!", Toast.LENGTH_SHORT).show()
+  Line 838: "Periksa kembali tanggal jatuh tempo yang valid."
+    Source: Toast.makeText(context, "Periksa kembali tanggal jatuh tempo yang valid.", Toast.LENGTH_SHORT).show()
+  Line 840: "Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan."
+    Source: Toast.makeText(context, "Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan.", Toast.LENGTH_SHORT).show()
+  Line 849: "Tagihan '${debtToSave.name}' disimpan."
+    Source: Toast.makeText(context, "Tagihan '${debtToSave.name}' disimpan.", Toast.LENGTH_SHORT).show()
+  Line 862: "Simpan Item Ini"
+    Source: Text(if (itemsList.size > 1) "Simpan Item Ini" else "Simpan Tagihan")
+  Line 862: "Simpan Tagihan"
+    Source: Text(if (itemsList.size > 1) "Simpan Item Ini" else "Simpan Tagihan")
+  Line 902: " }}' memerlukan konfirmasi tanggal jatuh tempo."
+    Source: Toast.makeText(context, "Item '${unconfirmed.providerName.ifBlank { "Tagihan" }}' memerlukan konfirmasi tanggal jatuh tempo.", Toast.LENGTH_LONG).show()
+  Line 907: "Penyedia layanan untuk salah satu tagihan belum diisi."
+    Source: Toast.makeText(context, "Penyedia layanan untuk salah satu tagihan belum diisi.", Toast.LENGTH_LONG).show()
+  Line 936: "Semua ${itemsList.size} tagihan berhasil disimpan!"
+    Source: Toast.makeText(context, "Semua ${itemsList.size} tagihan berhasil disimpan!", Toast.LENGTH_SHORT).show()
+
+=== app/src/main/java/com/example/ui/components/PersonalityQuizModalDialog.kt (2 items) ===
+  Line 117: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 247: "Tipe Finansial Anda:"
+    Source: text = "Tipe Finansial Anda:",
+
+=== app/src/main/java/com/example/ui/components/ProminentDisclosureDialog.kt (11 items) ===
+  Line 125: "Tutup"
+    Source: contentDescription = if (isEnglish) "Close" else "Tutup"
+  Line 151: "${AppConfig.APP_NAME} dikembangkan oleh ${AppConfig.APP_AUTHOR}. Seluruh catatan keuangan dan transaksi Anda secara bawaan tersimpan secara lokal dan privat pada basis data perangkat Anda (Room SQLite). ${AppConfig.APP_NAME} tidak menjual data pribadi Anda. Akses cloud bersifat opsional: Google Drive hanya digunakan untuk mencadangkan data terenkripsi (AES-256-GCM) atas instruksi Anda, pemrosesan OCR dilakukan secara lokal di perangkat Anda saat memindai nota, dan masukan pengguna dikirimkan secara aman ke server Firestore resmi tanpa menyertakan riwayat keuangan."
+    Source: "${AppConfig.APP_NAME} dikembangkan oleh ${AppConfig.APP_AUTHOR}. Seluruh catatan keuangan dan transaksi Anda secara bawaan tersimpan secara lokal dan privat pada basis data perangkat Anda (Room SQLite). ${AppConfig.APP_NAME} tidak menjual data pribadi Anda. Akses cloud bersifat opsional: Google Drive hanya digunakan untuk mencadangkan data terenkripsi (AES-256-GCM) atas instruksi Anda, pemrosesan OCR dilakukan secara lokal di perangkat Anda saat memindai nota, dan masukan pengguna dikirimkan secara aman ke server Firestore resmi tanpa menyertakan riwayat keuangan."
+  Line 177: "Digunakan untuk menampilkan pemberitahuan pengingat jatuh tempo transaksi, jadwal pembayaran rutin, dan peringatan batas anggaran secara lokal di perangkat Anda."
+    Source: "Digunakan untuk menampilkan pemberitahuan pengingat jatuh tempo transaksi, jadwal pembayaran rutin, dan peringatan batas anggaran secara lokal di perangkat Anda."
+  Line 187: "Digunakan HANYA saat pengguna menekan tombol mikrofon untuk fitur Voice-to-Text Expense Logging, mengubah ucapan menjadi pencatatan transaksi cepat melalui antarmuka pengenalan suara sistem."
+    Source: "Digunakan HANYA saat pengguna menekan tombol mikrofon untuk fitur Voice-to-Text Expense Logging, mengubah ucapan menjadi pencatatan transaksi cepat melalui antarmuka pengenalan suara sistem."
+  Line 197: "Digunakan HANYA saat pengguna mengambil foto nota/struk belanja fisik untuk diekstrak secara otomatis oleh mesin OCR lokal di perangkat Anda."
+    Source: "Digunakan HANYA saat pengguna mengambil foto nota/struk belanja fisik untuk diekstrak secara otomatis oleh mesin OCR lokal di perangkat Anda."
+  Line 207: "Digunakan HANYA untuk menyimpan dan mengunduh berkas cadangan data terenkripsi (AES-256-GCM) milik pengguna di folder 'DompetNalar_Backups' pada akun Google Drive pribadi pengguna."
+    Source: "Digunakan HANYA untuk menyimpan dan mengunduh berkas cadangan data terenkripsi (AES-256-GCM) milik pengguna di folder 'DompetNalar_Backups' pada akun Google Drive pribadi pengguna."
+  Line 213: "5. Hak Pengguna & Hapus Akun"
+    Source: title = if (isEnglish) "5. User Rights & Account Deletion" else "5. Hak Pengguna & Hapus Akun",
+  Line 217: "Pengguna berhak menghapus seluruh akun dan data riwayat transaksi secara permanen kapan saja melalui menu 'Hapus Akun & Data Permanen' di menu Pengaturan."
+    Source: "Pengguna berhak menghapus seluruh akun dan data riwayat transaksi secara permanen kapan saja melalui menu 'Hapus Akun & Data Permanen' di menu Pengaturan."
+  Line 262: "Saya Telah Membaca & Memahami"
+    Source: text = if (isEnglish) "I Have Read & Understood" else "Saya Telah Membaca & Memahami",
+  Line 282: "Tolak & Keluar Aplikasi"
+    Source: text = if (isEnglish) "Decline & Exit Application" else "Tolak & Keluar Aplikasi",
+  Line 297: "Tutup"
+    Source: text = if (isEnglish) "Close" else "Tutup",
+
+=== app/src/main/java/com/example/ui/components/PublishUpdateBottomSheet.kt (2 items) ===
+  Line 141: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 248: "Pilih File APK Release (.apk dari memori HP)"
+    Source: "Pilih File APK Release (.apk dari memori HP)"
+
+=== app/src/main/java/com/example/ui/components/ReceiptGeneratorModalDialog.kt (10 items) ===
+  Line 121: "BUKTI TRANSAKSI DIGITAL"
+    Source: text = "BUKTI TRANSAKSI DIGITAL",
+  Line 130: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 191: "BUKTI TRANSAKSI DIGITAL"
+    Source: text = "BUKTI TRANSAKSI DIGITAL",
+  Line 262: "Kategori:"
+    Source: Text(text = "Kategori:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+  Line 279: "Dompet Tujuan"
+    Source: Text(text = transaction.targetWalletName ?: "Dompet Tujuan", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
+  Line 296: "Catatan:"
+    Source: Text(text = "Catatan:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+  Line 310: "TOTAL PENGELUARAN:"
+    Source: TransactionType.EXPENSE -> "TOTAL PENGELUARAN:"
+  Line 311: "TOTAL PEMASUKAN:"
+    Source: TransactionType.INCOME -> "TOTAL PEMASUKAN:"
+  Line 343: "Simpan bukti ini sebagai referensi\npencatatan keuangan pribadi Anda.\n--- DompetNalar Personal Finance ---"
+    Source: text = "Simpan bukti ini sebagai referensi\npencatatan keuangan pribadi Anda.\n--- DompetNalar Personal Finance ---",
+  Line 365: "Teks bukti transaksi berhasil disalin!"
+    Source: Toast.makeText(context, "Teks bukti transaksi berhasil disalin!", Toast.LENGTH_SHORT).show()
+
+=== app/src/main/java/com/example/ui/components/SmartMasterPaywallDialog.kt (9 items) ===
+  Line 164: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 200: "Upgrade ke Smart Master untuk menikmati seluruh fitur eksklusif AI, pemindaian nota otomatis, dan analitik finansial tanpa batas."
+    Source: text = "Upgrade ke Smart Master untuk menikmati seluruh fitur eksklusif AI, pemindaian nota otomatis, dan analitik finansial tanpa batas.",
+  Line 217: "Input Transaksi via Chat AI & Voice Logging Tanpa Batas"
+    Source: PaywallFeatureRow("Input Transaksi via Chat AI & Voice Logging Tanpa Batas")
+  Line 227: "Pilih Paket Berlangganan:"
+    Source: text = "Pilih Paket Berlangganan:",
+  Line 300: "💡 Hanya ~Rp12.400/bln. Paling hemat untuk kelola finansial setahun penuh!"
+    Source: text = "💡 Hanya ~Rp12.400/bln. Paling hemat untuk kelola finansial setahun penuh!",
+  Line 384: "Layanan Google Play belum siap (Kode: ${result.responseCode})."
+    Source: "Layanan Google Play belum siap (Kode: ${result.responseCode})."
+  Line 390: "Konteks aktivitas tidak valid untuk peluncuran billing."
+    Source: Toast.makeText(context, "Konteks aktivitas tidak valid untuk peluncuran billing.", Toast.LENGTH_SHORT).show()
+  Line 490: "Hadiah SmartMaster hari ini sudah digunakan. Anda masih dapat menonton iklan, tetapi tidak memperoleh hadiah tambahan."
+    Source: "Hadiah SmartMaster hari ini sudah digunakan. Anda masih dapat menonton iklan, tetapi tidak memperoleh hadiah tambahan.",
+  Line 545: "Iklan selesai ditonton. Hadiah hari ini sudah digunakan sebelumnya."
+    Source: "Iklan selesai ditonton. Hadiah hari ini sudah digunakan sebelumnya.",
+
+=== app/src/main/java/com/example/ui/components/TransactionItemRow.kt (1 items) ===
+  Line 187: "Hapus Transaksi"
+    Source: contentDescription = "Hapus Transaksi",
+
+=== app/src/main/java/com/example/ui/components/UpdateAvailableBottomSheet.kt (2 items) ===
+  Line 115: "Tutup"
+    Source: Icon(Icons.Default.Close, contentDescription = "Tutup")
+  Line 149: "Catatan Rilis / Pembaruan Fitur:"
+    Source: text = "Catatan Rilis / Pembaruan Fitur:",
+
+=== app/src/main/java/com/example/ui/components/WalletComponents.kt (4 items) ===
+  Line 203: "Menu Dompet"
+    Source: contentDescription = "Menu Dompet",
+  Line 592: "Apakah Anda yakin ingin menghapus dompet '${wallet.name}'?\n"
+    Source: "Apakah Anda yakin ingin menghapus dompet '${wallet.name}'?\n" +
+  Line 593: "Saldo saat ini: ${CurrencyFormatter.formatRupiah(wallet.balance)}.\n\n"
+    Source: "Saldo saat ini: ${CurrencyFormatter.formatRupiah(wallet.balance)}.\n\n" +
+  Line 594: "Catatan: Dompet dengan riwayat data tidak dapat dihapus permanen demi integritas finansial. Silakan gunakan opsi Arsipkan jika dompet tidak lagi digunakan."
+    Source: "Catatan: Dompet dengan riwayat data tidak dapat dihapus permanen demi integritas finansial. Silakan gunakan opsi Arsipkan jika dompet tidak lagi digunakan."
+
+=== app/src/main/java/com/example/ui/screens/AiChatScreen.kt (5 items) ===
+  Line 631: "🔒 Perlu Smart Master untuk Input AI (Buka Akses)"
+    Source: else "🔒 Perlu Smart Master untuk Input AI (Buka Akses)"
+  Line 634: "Ketik transaksi / buat dompet / pertanyaan..."
+    Source: else "Ketik transaksi / buat dompet / pertanyaan..."
+  Line 1059: "Pemasukan Baru: ${CurrencyFormatter.formatCurrency(parsed.incomeAmount)}"
+    Source: "Pemasukan Baru: ${CurrencyFormatter.formatCurrency(parsed.incomeAmount)}"
+  Line 1061: "Saldo Awal Murni: ${CurrencyFormatter.formatCurrency(parsed.openingBalance)}"
+    Source: "Saldo Awal Murni: ${CurrencyFormatter.formatCurrency(parsed.openingBalance)}"
+  Line 1063: "Saldo Awal: ${CurrencyFormatter.formatCurrency(0.0)}"
+    Source: "Saldo Awal: ${CurrencyFormatter.formatCurrency(0.0)}"
+
+=== app/src/main/java/com/example/ui/screens/AnalyticsScreen.kt (4 items) ===
+  Line 187: "Perlu Perhatian pada Pengeluaran"
+    Source: else -> "Perlu Perhatian pada Pengeluaran"
+  Line 195: "Rasio tabungan: ${savingsRate.roundToInt()}% dari total pemasukan."
+    Source: text = "Rasio tabungan: ${savingsRate.roundToInt()}% dari total pemasukan.",
+  Line 254: "Proporsi Pengeluaran"
+    Source: text = "Proporsi Pengeluaran",
+  Line 326: "Belum ada data pengeluaran untuk dianalisis."
+    Source: text = "Belum ada data pengeluaran untuk dianalisis.",
+
+=== app/src/main/java/com/example/ui/screens/BudgetScreen.kt (6 items) ===
+  Line 132: "🔴 Anggaran bulanan gabungan telah melampaui 85%! Pengeluaran saat ini: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}."
+    Source: alertsList.add("🔴 Anggaran bulanan gabungan telah melampaui 85%! Pengeluaran saat ini: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}.")
+  Line 134: "⚠️ Waspada! Pengeluaran bulanan gabungan telah melampaui 70%: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}."
+    Source: alertsList.add("⚠️ Waspada! Pengeluaran bulanan gabungan telah melampaui 70%: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}.")
+  Line 144: "🔴 Overbudget di Kategori [$catName]! Anda telah menghabiskan ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}."
+    Source: alertsList.add("🔴 Overbudget di Kategori [$catName]! Anda telah menghabiskan ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.")
+  Line 146: "🔴 Limit Kategori [$catName] kritis (melampaui 85%)! Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}."
+    Source: alertsList.add("🔴 Limit Kategori [$catName] kritis (melampaui 85%)! Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.")
+  Line 148: "⚠️ Waspada! Kategori [$catName] telah melampaui 70%: Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}."
+    Source: alertsList.add("⚠️ Waspada! Kategori [$catName] telah melampaui 70%: Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.")
+  Line 360: "+ Klik untuk Atur Limit Anggaran Bulanan"
+    Source: text = "+ Klik untuk Atur Limit Anggaran Bulanan",
+
+=== app/src/main/java/com/example/ui/screens/DashboardScreen.kt (2 items) ===
+  Line 382: "Total pengeluaran bulanan melampaui limit anggaran!"
+    Source: overbudgetAlerts.add("Total pengeluaran bulanan melampaui limit anggaran!")
+  Line 635: "LIMIT"
+    Source: text = "LIMIT",
+
+=== app/src/main/java/com/example/ui/screens/DevFeedbackViewerScreen.kt (11 items) ===
+  Line 117: "Kembali"
+    Source: Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+  Line 143: "Layar ini adalah alat internal pengembang. Anda harus masuk dengan kredensial Master Developer yang terotorisasi untuk melihat umpan balik pengguna."
+    Source: text = "Layar ini adalah alat internal pengembang. Anda harus masuk dengan kredensial Master Developer yang terotorisasi untuk melihat umpan balik pengguna.",
+  Line 207: "Kembali"
+    Source: Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+  Line 276: "Sesi Cloud: Belum Terautentikasi (Offline / Hanya Cache Lokal Room)"
+    Source: "Sesi Cloud: Belum Terautentikasi (Offline / Hanya Cache Lokal Room)"
+  Line 356: "Gagal"
+    Source: cloudFetchStatus?.contains("Gagal", ignoreCase = true) == true
+  Line 378: "ℹ️ Status Penyimpanan: Backend Firebase Cloud Firestore aktif. Masukan disimpan secara offline-first di database Room lokal dan disinkronisasikan saat daring dengan sesi Google terotorisasi."
+    Source: ?: "ℹ️ Status Penyimpanan: Backend Firebase Cloud Firestore aktif. Masukan disimpan secara offline-first di database Room lokal dan disinkronisasikan saat daring dengan sesi Google terotorisasi.",
+  Line 439: "Sinkronisasi: $synced berhasil dikirim, $failed gagal."
+    Source: val msg = "Sinkronisasi: $synced berhasil dikirim, $failed gagal."
+  Line 498: "Belum ada masukan dari pengguna."
+    Source: text = if (selectedCategoryFilter == null) "Belum ada masukan dari pengguna." else "Tidak ada masukan pada kategori \"$selectedCategoryFilter\".",
+  Line 498: "Tidak ada masukan pada kategori \"$selectedCategoryFilter\"."
+    Source: text = if (selectedCategoryFilter == null) "Belum ada masukan dari pengguna." else "Tidak ada masukan pada kategori \"$selectedCategoryFilter\".",
+  Line 595: "Masukan berhasil dihapus."
+    Source: Toast.makeText(context, "Masukan berhasil dihapus.", Toast.LENGTH_SHORT).show()
+  Line 745: "Hapus"
+    Source: contentDescription = "Hapus",
+
+=== app/src/main/java/com/example/ui/screens/FeedbackScreen.kt (6 items) ===
+  Line 105: "Kembali"
+    Source: contentDescription = if (isEnglish) "Back" else "Kembali"
+  Line 159: "Kritik, saran, maupun laporan kendala Anda dibaca langsung oleh developer."
+    Source: text = if (isEnglish) "Critiques, suggestions, and bug reports are reviewed directly by developers." else "Kritik, saran, maupun laporan kendala Anda dibaca langsung oleh developer.",
+  Line 312: "Tuliskan kritik, saran, atau kendala yang Anda alami secara detail di sini..."
+    Source: "Tuliskan kritik, saran, atau kendala yang Anda alami secara detail di sini..."
+  Line 347: "Feedback berhasil dikirim dan tersinkronisasi."
+    Source: if (isEnglish) "Feedback sent and synchronized successfully." else "Feedback berhasil dikirim dan tersinkronisasi.",
+  Line 353: "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+    Source: if (isEnglish) "Feedback saved locally. Will be synchronized once network is available." else "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali.",
+  Line 362: "Feedback gagal disimpan. Silakan coba lagi."
+    Source: if (isEnglish) "Failed to save feedback. Please try again." else "Feedback gagal disimpan. Silakan coba lagi.",
+
+=== app/src/main/java/com/example/ui/screens/ReceiptScanScreen.kt (9 items) ===
+  Line 243: "Receipt scan timed out (60-second limit). Please ensure the receipt is well-lit, clearly readable, and try again."
+    Source: "Receipt scan timed out (60-second limit). Please ensure the receipt is well-lit, clearly readable, and try again."
+  Line 251: "Gagal mentranskripsi nota. Pastikan gambar nota jelas dan pencahayaan cukup."
+    Source: scanErrorMessage = e.message ?: "Gagal mentranskripsi nota. Pastikan gambar nota jelas dan pencahayaan cukup."
+  Line 381: "Kembali"
+    Source: Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+  Line 753: "Nota yang di-scan"
+    Source: contentDescription = "Nota yang di-scan",
+  Line 766: "Nota yang di-scan"
+    Source: contentDescription = "Nota yang di-scan",
+  Line 811: "Teks nota berhasil disalin ke clipboard!"
+    Source: Toast.makeText(context, "Teks nota berhasil disalin ke clipboard!", Toast.LENGTH_SHORT).show()
+  Line 958: "Hapus"
+    Source: Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+  Line 985: "Pajak / PPN (Sudah Termasuk):"
+    Source: TaxTreatment.INCLUSIVE -> "Pajak / PPN (Sudah Termasuk):"
+  Line 1232: "Tambah Item Baru"
+    Source: title = { Text(if (editingItemIndex >= 0) "Edit Item" else "Tambah Item Baru", fontWeight = FontWeight.Bold) },
+
+=== app/src/main/java/com/example/ui/screens/SettingsScreen.kt (25 items) ===
+  Line 254: "Gagal membaca file: ${e.message}"
+    Source: portableRestoreError = "Gagal membaca file: ${e.message}"
+  Line 359: "Masa aktif telah berakhir. Perpanjang untuk membuka kembali fitur."
+    Source: val detail = "Masa aktif telah berakhir. Perpanjang untuk membuka kembali fitur."
+  Line 617: "Mode Samarkan Saldo (Incognito)"
+    Source: title = "Mode Samarkan Saldo (Incognito)",
+  Line 618: "Sembunyikan angka saldo di tempat umum"
+    Source: subtitle = "Sembunyikan angka saldo di tempat umum",
+  Line 712: "Catat Cepat (Buka Lembar Transaksi)"
+    Source: "TRANSACTION" -> "Catat Cepat (Buka Lembar Transaksi)"
+  Line 772: "Silakan mendaftar atau masuk dengan Akun Google resmi untuk menggunakan fitur Backup & Restore Google Drive."
+    Source: text = "Silakan mendaftar atau masuk dengan Akun Google resmi untuk menggunakan fitur Backup & Restore Google Drive.",
+  Line 928: "Belum ada cadangan"
+    Source: text = if (driveLastBackup.isBlank()) "Belum ada cadangan" else driveLastBackup,
+  Line 1166: "Pilih aksi pintas saat perangkat digoyangkan secara mantap (> 2.5g):"
+    Source: text = "Pilih aksi pintas saat perangkat digoyangkan secara mantap (> 2.5g):",
+  Line 1174: "Buka lembar input transaksi baru"
+    Source: Triple("TRANSACTION", "Catat Cepat", "Buka lembar input transaksi baru"),
+  Line 1245: "Sesuaikan tampilan aplikasi dengan preferensi kenyamanan mata Anda:"
+    Source: text = "Sesuaikan tampilan aplikasi dengan preferensi kenyamanan mata Anda:",
+  Line 1317: "Pilih skema warna utama untuk tombol, highlight, dan indikator tab:"
+    Source: text = "Pilih skema warna utama untuk tombol, highlight, dan indikator tab:",
+  Line 1395: "Pasang foto dari galeri HP sebagai latar belakang layar dasbor Anda:"
+    Source: text = "Pasang foto dari galeri HP sebagai latar belakang layar dasbor Anda:",
+  Line 1428: "Pilih Gambar dari Galeri"
+    Source: Text(if (isWallpaperUnlocked) "Pilih Gambar dari Galeri" else "Terkunci (Butuh Streak 30 Hari)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+  Line 1487: "Apakah Anda yakin ingin keluar dari akun ini? Seluruh riwayat transaksi dan data finansial Anda tetap tersimpan dengan aman."
+    Source: "Apakah Anda yakin ingin keluar dari akun ini? Seluruh riwayat transaksi dan data finansial Anda tetap tersimpan dengan aman."
+  Line 1531: "Ubah ikon aplikasi di homescreen HP secara dinamis. Streak harian saat ini: $dailyStreak Hari"
+    Source: text = "Ubah ikon aplikasi di homescreen HP secara dinamis. Streak harian saat ini: $dailyStreak Hari",
+  Line 1555: "Ikon berhasil diubah ke ${edition.displayName}"
+    Source: Toast.makeText(context, "Ikon berhasil diubah ke ${edition.displayName}", Toast.LENGTH_SHORT).show()
+  Line 1860: "Pilih metode pencadangan yang sesuai dengan kebutuhan Anda:"
+    Source: text = "Pilih metode pencadangan yang sesuai dengan kebutuhan Anda:",
+  Line 1958: "Terenkripsi AES-256-GCM dengan kata sandi khusus. Dapat dipindahkan ke perangkat lain."
+    Source: "Terenkripsi AES-256-GCM dengan kata sandi khusus. Dapat dipindahkan ke perangkat lain.",
+  Line 1997: "Tentukan kata sandi untuk melindungi cadangan Anda. Data dienkripsi secara independen tanpa bergantung pada kunci hardware perangkat ini."
+    Source: text = "Tentukan kata sandi untuk melindungi cadangan Anda. Data dienkripsi secara independen tanpa bergantung pada kunci hardware perangkat ini.",
+  Line 2069: "Catatan: Jangan lupakan kata sandi ini. DompetNalar tidak menyimpannya di server demi keamanan privasi Anda."
+    Source: text = "Catatan: Jangan lupakan kata sandi ini. DompetNalar tidak menyimpannya di server demi keamanan privasi Anda.",
+  Line 2090: "Konfirmasi kata sandi tidak cocok."
+    Source: portableBackupError = "Konfirmasi kata sandi tidak cocok."
+  Line 2114: "Bagikan / Simpan File Cadangan Portabel"
+    Source: context.startActivity(Intent.createChooser(shareIntent, "Bagikan / Simpan File Cadangan Portabel"))
+  Line 2164: "Pilih sumber data cadangan yang ingin dipulihkan ke aplikasi ini:"
+    Source: text = "Pilih sumber data cadangan yang ingin dipulihkan ke aplikasi ini:",
+  Line 2263: "Pilih file cadangan (.json) dan dekripsi menggunakan kata sandi Anda."
+    Source: "Pilih file cadangan (.json) dan dekripsi menggunakan kata sandi Anda.",
+  Line 2303: "Pilih file cadangan dan masukkan kata sandi yang digunakan saat pencadangan:"
+    Source: text = "Pilih file cadangan dan masukkan kata sandi yang digunakan saat pencadangan:",
+
+=== app/src/main/java/com/example/ui/screens/SplitBillScreen.kt (4 items) ===
+  Line 861: "Kalkulasi patungan berhasil disimpan ke riwayat!"
+    Source: Toast.makeText(context, "Kalkulasi patungan berhasil disimpan ke riwayat!", Toast.LENGTH_SHORT).show()
+  Line 903: "Belum ada riwayat patungan"
+    Source: text = "Belum ada riwayat patungan",
+  Line 908: "Gunakan kalkulator untuk membagi bill & simpan ke sini."
+    Source: text = "Gunakan kalkulator untuk membagi bill & simpan ke sini.",
+  Line 1014: "Hapus Riwayat"
+    Source: contentDescription = "Hapus Riwayat",
+
+=== app/src/main/java/com/example/ui/viewmodel/AuthViewModel.kt (49 items) ===
+  Line 386: "Konfirmasi kata sandi tidak cocok."
+    Source: _authError.value = "Konfirmasi kata sandi tidak cocok."
+  Line 409: "Kata sandi Master Developer berhasil dibuat! 👑"
+    Source: _isSuccessToast.value = "Kata sandi Master Developer berhasil dibuat! 👑"
+  Line 434: "Konfirmasi kata sandi baru tidak cocok."
+    Source: _changePasswordError.value = "Konfirmasi kata sandi baru tidak cocok."
+  Line 438: "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+    Source: _changePasswordError.value = "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+  Line 448: "Kata sandi berhasil diperbarui! 🔒"
+    Source: _isSuccessToast.value = "Kata sandi berhasil diperbarui! 🔒"
+  Line 485: "Akun Master Developer belum memiliki kata sandi. Silakan buat kata sandi utama."
+    Source: _authError.value = "Akun Master Developer belum memiliki kata sandi. Silakan buat kata sandi utama."
+  Line 514: "Berhasil masuk sebagai ${user.username}"
+    Source: _isSuccessToast.value = "Berhasil masuk sebagai ${user.username}"
+  Line 545: "Identitas akun ini telah dicadangkan untuk peninjauan atau administrasi sistem."
+    Source: _authError.value = "Identitas akun ini telah dicadangkan untuk peninjauan atau administrasi sistem."
+  Line 551: "Email sudah terdaftar. Silakan login."
+    Source: _authError.value = "Email sudah terdaftar. Silakan login."
+  Line 558: "Nama pengguna '$trimmedUsername' sudah terdaftar. Silakan gunakan nama pengguna lain."
+    Source: _authError.value = "Nama pengguna '$trimmedUsername' sudah terdaftar. Silakan gunakan nama pengguna lain."
+  Line 678: "Gagal memproses kredensial ID Token dari respon akun Google."
+    Source: val err = "Gagal memproses kredensial ID Token dari respon akun Google."
+  Line 785: "Pertukaran kredensial Firebase Auth gagal"
+    Source: firebaseAuthErrorMessage = e.localizedMessage ?: e.message ?: "Pertukaran kredensial Firebase Auth gagal"
+  Line 802: "Sesi lokal aktif, namun autentikasi Firebase Cloud gagal: ${firebaseAuthErrorMessage ?: "
+    Source: val safeErrorMsg = "Sesi lokal aktif, namun autentikasi Firebase Cloud gagal: ${firebaseAuthErrorMessage ?: "Layanan Firebase tidak dapat memvalidasi token"}"
+  Line 804: "Masuk lokal berhasil (Cloud belum terhubung)"
+    Source: _isSuccessToast.value = "Masuk lokal berhasil (Cloud belum terhubung)"
+  Line 814: "Berhasil masuk sebagai $displayName ($email)"
+    Source: "Berhasil masuk sebagai $displayName ($email)"
+  Line 824: "Tidak ada akun Google yang dipilih atau aktif di perangkat ini. Silakan pastikan akun Google sudah login di pengaturan HP Anda."
+    Source: val msg = "Tidak ada akun Google yang dipilih atau aktif di perangkat ini. Silakan pastikan akun Google sudah login di pengaturan HP Anda."
+  Line 850: "Google Sign-In belum terhubung di Google Cloud Console.\n"
+    Source: "Google Sign-In belum terhubung di Google Cloud Console.\n" +
+  Line 851: "Penyebab utama: Sidik jari sertifikat APK (SHA-1) atau Nama Paket (com.aistudio.finsmart.kptxvw) belum didaftarkan pada Android OAuth Client di Google Cloud Console, atau akun penguji belum ditambahkan ke Test Users.\n"
+    Source: "Penyebab utama: Sidik jari sertifikat APK (SHA-1) atau Nama Paket (com.aistudio.finsmart.kptxvw) belum didaftarkan pada Android OAuth Client di Google Cloud Console, atau akun penguji belum ditambahkan ke Test Users.\n" +
+  Line 855: "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda.\n"
+    Source: "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda.\n" +
+  Line 859: "Gagal autentikasi Google: ${rawMsg.ifBlank { "
+    Source: "Gagal autentikasi Google: ${rawMsg.ifBlank { "Layanan Google Play Services menolak otorisasi." }}\n" +
+  Line 877: "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda."
+    Source: "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda."
+  Line 880: "Gagal masuk dengan Google: ${rawMsg.ifBlank { "
+    Source: "Gagal masuk dengan Google: ${rawMsg.ifBlank { "Otorisasi akun ditolak atau tidak tersedia" }}"
+  Line 934: "Berhasil masuk via Akun Google (Mock)"
+    Source: _isSuccessToast.value = "Berhasil masuk via Akun Google (Mock)"
+  Line 1000: "Anda berhasil keluar dari akun."
+    Source: _isSuccessToast.value = "Anda berhasil keluar dari akun."
+  Line 1278: "Streak harian Anda belum mencapai 7 hari (saat ini: $streak hari)."
+    Source: "Streak harian Anda belum mencapai 7 hari (saat ini: $streak hari)."
+  Line 1280: "Reward streak 7 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam."
+    Source: "Reward streak 7 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam."
+  Line 1360: "Mode Tamu tidak berhak mengklaim reward Smart Member. Silakan masuk dengan Akun Google."
+    Source: _authError.value = "Mode Tamu tidak berhak mengklaim reward Smart Member. Silakan masuk dengan Akun Google."
+  Line 1368: "Streak harian Anda belum mencapai 30 hari (saat ini: $streak hari)."
+    Source: "Streak harian Anda belum mencapai 30 hari (saat ini: $streak hari)."
+  Line 1370: "Reward streak 30 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam."
+    Source: "Reward streak 30 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam."
+  Line 1451: "Status langganan Google Play untuk akun ini telah kedaluwarsa."
+    Source: _authError.value = "Status langganan Google Play untuk akun ini telah kedaluwarsa."
+  Line 1479: "Pembelian Google Play Berhasil! Status Smart Master 👑 Aktif."
+    Source: _isSuccessToast.value = "Pembelian Google Play Berhasil! Status Smart Master 👑 Aktif."
+  Line 1783: "Berhasil: User #$userId di-upgrade ke Smart Master 👑 ($durationDays hari)"
+    Source: _isSuccessToast.value = "Berhasil: User #$userId di-upgrade ke Smart Master 👑 ($durationDays hari)"
+  Line 1826: "Kata sandi wajib diisi untuk konfirmasi keamanan."
+    Source: val msg = "Kata sandi wajib diisi untuk konfirmasi keamanan."
+  Line 1858: "Demi keamanan, penghapusan akun cloud memerlukan login terbaru. Silakan keluar dan login kembali sebelum menghapus akun."
+    Source: val errMsg = "Demi keamanan, penghapusan akun cloud memerlukan login terbaru. Silakan keluar dan login kembali sebelum menghapus akun."
+  Line 1866: "Gagal menghapus akun di server cloud: ${e.localizedMessage ?: "
+    Source: val errMsg = "Gagal menghapus akun di server cloud: ${e.localizedMessage ?: "Kesalahan jaringan"}. Penghapusan data lokal dibatalkan demi keamanan."
+  Line 1936: "Akun dan seluruh data lokal berhasil dihapus secara permanen."
+    Source: _isSuccessToast.value = "Akun dan seluruh data lokal berhasil dihapus secara permanen."
+  Line 2084: "Alamat email Google tidak valid. Masuk dengan akun Google terlebih dahulu."
+    Source: _authError.value = "Alamat email Google tidak valid. Masuk dengan akun Google terlebih dahulu."
+  Line 2108: "Gagal menghubungkan Google Drive: ${authResult.message}"
+    Source: _authError.value = "Gagal menghubungkan Google Drive: ${authResult.message}"
+  Line 2147: "Pencadangan ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: _isSuccessToast.value = "Pencadangan ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+  Line 2155: "Gagal mencadangkan: Sesi pengguna tidak aktif."
+    Source: _isSuccessToast.value = "Gagal mencadangkan: Sesi pengguna tidak aktif."
+  Line 2174: "Pemulihan data ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: _isSuccessToast.value = "Pemulihan data ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+  Line 2180: "Gagal memulihkan: Sesi pengguna tidak aktif."
+    Source: _isSuccessToast.value = "Gagal memulihkan: Sesi pengguna tidak aktif."
+  Line 2199: "Pencadangan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: val msg = "Pencadangan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+  Line 2207: "Gagal mencadangkan: Sesi pengguna tidak aktif."
+    Source: _isSuccessToast.value = "Gagal mencadangkan: Sesi pengguna tidak aktif."
+  Line 2225: "Pemulihan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: val msg = "Pemulihan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+  Line 2232: "Gagal memulihkan: Sesi pengguna tidak aktif."
+    Source: _isSuccessToast.value = "Gagal memulihkan: Sesi pengguna tidak aktif."
+  Line 2298: "No-Spend Challenge Aktif! Pertahankan 24 jam untuk Multiplier 2x!"
+    Source: _isSuccessToast.value = if (enabled) "No-Spend Challenge Aktif! Pertahankan 24 jam untuk Multiplier 2x!" else "No-Spend Challenge Dinonaktifkan"
+  Line 2334: "⚠️ DompetNalar Masuk Mode Stealth (Duress PIN Mode)"
+    Source: _isSuccessToast.value = "⚠️ DompetNalar Masuk Mode Stealth (Duress PIN Mode)"
+  Line 2352: "⚠️ DompetNalar Masuk Mode Stealth"
+    Source: _isSuccessToast.value = "⚠️ DompetNalar Masuk Mode Stealth"
+
+=== app/src/main/java/com/example/ui/viewmodel/DebtPlannerViewModel.kt (2 items) ===
+  Line 17: "Cicilan Motor"
+    Source: DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan")
+  Line 17: "Cicilan Kendaraan"
+    Source: DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan")
+
+=== app/src/main/java/com/example/ui/viewmodel/FeedbackViewModel.kt (15 items) ===
+  Line 142: "FirebaseApp belum terkonfigurasi (google-services.json belum dimuat)."
+    Source: _cloudFetchStatus.value = "FirebaseApp belum terkonfigurasi (google-services.json belum dimuat)."
+  Line 148: "Sesi Lokal Aktif (Belum Ada Token Firebase Auth). Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString("
+    Source: _cloudFetchStatus.value = "Sesi Lokal Aktif (Belum Ada Token Firebase Auth). Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")}) untuk mengakses Firestore Cloud."
+  Line 148: ")}) untuk mengakses Firestore Cloud."
+    Source: _cloudFetchStatus.value = "Sesi Lokal Aktif (Belum Ada Token Firebase Auth). Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")}) untuk mengakses Firestore Cloud."
+  Line 208: "Cloud Firestore terhubung (Akun: ${fbAuthUser.email}). Belum ada feedback dari pengguna di cloud."
+    Source: _cloudFetchStatus.value = "Cloud Firestore terhubung (Akun: ${fbAuthUser.email}). Belum ada feedback dari pengguna di cloud."
+  Line 210: "Berhasil memuat ${sortedItems.size} feedback dari Cloud Firestore (Akun: ${fbAuthUser.email})."
+    Source: _cloudFetchStatus.value = "Berhasil memuat ${sortedItems.size} feedback dari Cloud Firestore (Akun: ${fbAuthUser.email})."
+  Line 227: "Akses Cloud Ditolak (PERMISSION_DENIED): Belum ada sesi Firebase Auth aktif. Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString("
+    Source: _cloudFetchStatus.value = "Akses Cloud Ditolak (PERMISSION_DENIED): Belum ada sesi Firebase Auth aktif. Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")})."
+  Line 229: "Akses Cloud Ditolak (PERMISSION_DENIED): Akun terverifikasi '$authEmail' ditolak oleh aturan Firestore di Cloud. Pastikan file firestore.rules lokal sudah dipublikasikan ke Firebase Console (Project: finsmart-47fdd) dengan menambahkan '$authEmail' ke fungsi isAdmin()."
+    Source: _cloudFetchStatus.value = "Akses Cloud Ditolak (PERMISSION_DENIED): Akun terverifikasi '$authEmail' ditolak oleh aturan Firestore di Cloud. Pastikan file firestore.rules lokal sudah dipublikasikan ke Firebase Console (Project: finsmart-47fdd) dengan menambahkan '$authEmail' ke fungsi isAdmin()."
+  Line 231: "Akses Cloud Ditolak: Akun '$authEmail' bukan administrator yang berwenang."
+    Source: _cloudFetchStatus.value = "Akses Cloud Ditolak: Akun '$authEmail' bukan administrator yang berwenang."
+  Line 234: "Sesi Tidak Terotentikasi (UNAUTHENTICATED): Sesi Firebase Auth tidak valid atau telah berakhir. Silakan hubungkan ulang akun Google."
+    Source: _cloudFetchStatus.value = "Sesi Tidak Terotentikasi (UNAUTHENTICATED): Sesi Firebase Auth tidak valid atau telah berakhir. Silakan hubungkan ulang akun Google."
+  Line 236: "Gagal terhubung ke Cloud Firestore: Periksa koneksi internet perangkat Anda."
+    Source: _cloudFetchStatus.value = "Gagal terhubung ke Cloud Firestore: Periksa koneksi internet perangkat Anda."
+  Line 238: "Gagal memuat feedback cloud: $msg"
+    Source: _cloudFetchStatus.value = "Gagal memuat feedback cloud: $msg"
+  Line 324: "Feedback berhasil dikirim dan tersinkronisasi."
+    Source: _submissionSuccess.value = "Feedback berhasil dikirim dan tersinkronisasi."
+  Line 328: "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+    Source: _submissionSuccess.value = "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+  Line 334: "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+    Source: _submissionSuccess.value = "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+  Line 341: "Feedback gagal disimpan. Silakan coba lagi."
+    Source: val errMsg = "Feedback gagal disimpan. Silakan coba lagi."
+
+=== app/src/main/java/com/example/ui/viewmodel/FinanceViewModel.kt (27 items) ===
+  Line 268: "Pengguna belum login"
+    Source: onComplete?.invoke(Result.failure(IllegalStateException("Pengguna belum login")))
+  Line 596: "Kalkulasi saldo melampaui batas numerik 64-bit (Overflow)"
+    Source: _aggregationError.value = "Kalkulasi saldo melampaui batas numerik 64-bit (Overflow)"
+  Line 723: "Kalkulasi pemasukan melampaui batas numerik 64-bit (Overflow)"
+    Source: _aggregationError.value = "Kalkulasi pemasukan melampaui batas numerik 64-bit (Overflow)"
+  Line 750: "Kalkulasi pengeluaran melampaui batas numerik 64-bit (Overflow)"
+    Source: _aggregationError.value = "Kalkulasi pengeluaran melampaui batas numerik 64-bit (Overflow)"
+  Line 893: "Sesi login tidak aktif. Silakan masuk akun terlebih dahulu."
+    Source: onError?.invoke("Sesi login tidak aktif. Silakan masuk akun terlebih dahulu.")
+  Line 897: "Nominal transaksi harus lebih dari Rp 0."
+    Source: onError?.invoke("Nominal transaksi harus lebih dari Rp 0.")
+  Line 903: "Dompet tujuan transfer harus dipilih."
+    Source: onError?.invoke("Dompet tujuan transfer harus dipilih.")
+  Line 907: "Dompet sumber dan dompet tujuan transfer tidak boleh sama."
+    Source: onError?.invoke("Dompet sumber dan dompet tujuan transfer tidak boleh sama.")
+  Line 945: "Gagal menyimpan transaksi: ${e.message ?: "
+    Source: onError?.invoke("Gagal menyimpan transaksi: ${e.message ?: "Kesalahan database"}")
+  Line 1034: "Gagal menghapus dompet."
+    Source: val msg = e.message ?: "Gagal menghapus dompet."
+  Line 1082: "Akses SmartMaster diperlukan untuk membuat dompet via AI."
+    Source: onError("Akses SmartMaster diperlukan untuk membuat dompet via AI.")
+  Line 1092: "Akses ditolak: Draft dompet ini tidak memiliki pemilik sah atau bukan milik sesi aktif."
+    Source: onError("Akses ditolak: Draft dompet ini tidak memiliki pemilik sah atau bukan milik sesi aktif.")
+  Line 1105: "Gagal membuat dompet."
+    Source: onError(err.localizedMessage ?: "Gagal membuat dompet.")
+  Line 1123: "Akses SmartMaster diperlukan untuk menyimpan transaksi via AI."
+    Source: onError(if (com.example.util.LocaleHelper.isEnglish()) "SmartMaster access required to record transaction via AI." else "Akses SmartMaster diperlukan untuk menyimpan transaksi via AI.")
+  Line 1133: "Akses ditolak: Draft transaksi ini tidak memiliki pemilik sah atau bukan milik sesi aktif."
+    Source: onError("Akses ditolak: Draft transaksi ini tidak memiliki pemilik sah atau bukan milik sesi aktif.")
+  Line 1146: "Gagal menyimpan transaksi."
+    Source: onError(err.localizedMessage ?: "Gagal menyimpan transaksi.")
+  Line 1330: "Jumlah transaksi '${tx.title}' tidak valid."
+    Source: throw IllegalArgumentException("Jumlah transaksi '${tx.title}' tidak valid.")
+  Line 1337: "Batas anggaran untuk '${b.id}' tidak valid."
+    Source: throw IllegalArgumentException("Batas anggaran untuk '${b.id}' tidak valid.")
+  Line 1358: "Data cadangan tidak valid: Ditemukan transaksi tetapi tidak ada dompet dalam cadangan."
+    Source: throw IllegalArgumentException("Data cadangan tidak valid: Ditemukan transaksi tetapi tidak ada dompet dalam cadangan.")
+  Line 1361: "Data cadangan tidak valid: Ditemukan jadwal berulang tetapi tidak ada dompet dalam cadangan."
+    Source: throw IllegalArgumentException("Data cadangan tidak valid: Ditemukan jadwal berulang tetapi tidak ada dompet dalam cadangan.")
+  Line 1367: "Integritas data cadangan tidak valid: Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan."
+    Source: throw IllegalArgumentException("Integritas data cadangan tidak valid: Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan.")
+  Line 1371: "Transaksi transfer '${tx.title}' tidak memiliki dompet tujuan yang valid dalam cadangan."
+    Source: throw IllegalArgumentException("Transaksi transfer '${tx.title}' tidak memiliki dompet tujuan yang valid dalam cadangan.")
+  Line 1374: "Transaksi transfer '${tx.title}' memiliki dompet asal dan tujuan yang sama."
+    Source: throw IllegalArgumentException("Transaksi transfer '${tx.title}' memiliki dompet asal dan tujuan yang sama.")
+  Line 1378: "Transaksi '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam cadangan."
+    Source: throw IllegalArgumentException("Transaksi '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam cadangan.")
+  Line 1387: "Jadwal berulang '${rs.title}' merujuk dompet (ID: ${rs.walletId}) yang tidak ditemukan dalam cadangan."
+    Source: throw IllegalArgumentException("Jadwal berulang '${rs.title}' merujuk dompet (ID: ${rs.walletId}) yang tidak ditemukan dalam cadangan.")
+  Line 1443: "Pemetaan dompet gagal untuk ID: ${tx.walletId}"
+    Source: ?: throw IllegalStateException("Pemetaan dompet gagal untuk ID: ${tx.walletId}")
+  Line 1468: "Pemetaan dompet jadwal berulang gagal untuk ID: ${rs.walletId}"
+    Source: ?: throw IllegalStateException("Pemetaan dompet jadwal berulang gagal untuk ID: ${rs.walletId}")
+
+=== app/src/main/java/com/example/ui/viewmodel/MasterDevViewModel.kt (1 items) ===
+  Line 24: "• Peningkatan akurasi AI Date Recognition pada transaksi\n"
+    Source: "• Peningkatan akurasi AI Date Recognition pada transaksi\n" +
+
+=== app/src/main/java/com/example/ui/viewmodel/UpdateViewModel.kt (1 items) ===
+  Line 58: "DompetNalar sudah versi terbaru (v${status.metadata.version_name})"
+    Source: "DompetNalar sudah versi terbaru (v${status.metadata.version_name})",
+
+=== app/src/main/java/com/example/util/AdManager.kt (2 items) ===
+  Line 406: "Anda sudah memiliki akses SmartMaster aktif tanpa iklan."
+    Source: onAdClosedOrFailed("Anda sudah memiliki akses SmartMaster aktif tanpa iklan.")
+  Line 439: "Iklan video belum tersedia. Periksa koneksi internet Anda dan coba lagi."
+    Source: onAdClosedOrFailed("Iklan video belum tersedia. Periksa koneksi internet Anda dan coba lagi.")
+
+=== app/src/main/java/com/example/util/AppStrings.kt (1 items) ===
+  Line 132: "Halo! Saya Asisten AI Finansial DompetNalar.\nKetik transaksi, buat dompet, atau tanyakan kondisi keuangan Anda.\n\nContoh:\n• 'Makan siang 35.000 pakai GoPay'\n• 'Buat dompet Dana saldo awal 100 ribu'\n• 'Bagaimana kondisi keuanganku bulan ini?'\n• 'Tagihan apa yang jatuh tempo minggu ini?'"
+    Source: "Halo! Saya Asisten AI Finansial DompetNalar.\nKetik transaksi, buat dompet, atau tanyakan kondisi keuangan Anda.\n\nContoh:\n• 'Makan siang 35.000 pakai GoPay'\n• 'Buat dompet Dana saldo awal 100 ribu'\n• 'Bagaimana kondisi keuanganku bulan ini?'\n• 'Tagihan apa yang jatuh tempo minggu ini?'",
+
+=== app/src/main/java/com/example/util/BillingManager.kt (8 items) ===
+  Line 275: "Paket seumur hidup tidak lagi tersedia untuk pembelian baru."
+    Source: .setDebugMessage("Paket seumur hidup tidak lagi tersedia untuk pembelian baru.")
+  Line 284: "Layanan Google Play Billing belum terhubung."
+    Source: .setDebugMessage("Layanan Google Play Billing belum terhubung.")
+  Line 293: "Layanan Google Play Billing belum terhubung. Pastikan koneksi internet stabil dan Play Store aktif."
+    Source: "Layanan Google Play Billing belum terhubung. Pastikan koneksi internet stabil dan Play Store aktif."
+  Line 295: "Detail langganan '$productId' belum aktif di Google Play. Pastikan produk Subscription dan Base Plan aktif di Play Console serta akun tester terdaftar."
+    Source: "Detail langganan '$productId' belum aktif di Google Play. Pastikan produk Subscription dan Base Plan aktif di Play Console serta akun tester terdaftar."
+  Line 317: "Base Plan/Offer untuk paket '$productId' belum aktif di Google Play Console untuk negara/akun Anda."
+    Source: .setDebugMessage("Base Plan/Offer untuk paket '$productId' belum aktif di Google Play Console untuk negara/akun Anda.")
+  Line 429: "Layanan Google Play Billing belum siap."
+    Source: onComplete?.invoke(0, "Layanan Google Play Billing belum siap.")
+  Line 476: "Berhasil memulihkan $restoredCount langganan aktif Google Play!"
+    Source: "Berhasil memulihkan $restoredCount langganan aktif Google Play!"
+  Line 478: "Tidak ditemukan langganan aktif yang dapat dipulihkan."
+    Source: "Tidak ditemukan langganan aktif yang dapat dipulihkan."
+
+=== app/src/main/java/com/example/util/DebtFreedomPlanner.kt (7 items) ===
+  Line 109: "Masukkan data pendapatan bulanan Anda untuk memulai simulasi bebas utang."
+    Source: adviceBuilder.append("Masukkan data pendapatan bulanan Anda untuk memulai simulasi bebas utang.")
+  Line 112: "Arus kas Anda mengalami defisit sebesar ${CurrencyFormatter.formatRupiah(deficitAmount)}/bulan setelah dikurangi kebutuhan pokok. Pendapatan saat ini belum mencukupi untuk memenuhi seluruh cicilan minimum."
+    Source: adviceBuilder.append("Arus kas Anda mengalami defisit sebesar ${CurrencyFormatter.formatRupiah(deficitAmount)}/bulan setelah dikurangi kebutuhan pokok. Pendapatan saat ini belum mencukupi untuk memenuhi seluruh cicilan minimum.")
+  Line 113: "Segera hubungi kreditur untuk restrukturisasi tenor atau penurunan suku bunga."
+    Source: recommendations.add("Segera hubungi kreditur untuk restrukturisasi tenor atau penurunan suku bunga.")
+  Line 114: "Kurangi pengeluaran sekunder sementara waktu agar kebutuhan pokok tetap terlindungi."
+    Source: recommendations.add("Kurangi pengeluaran sekunder sementara waktu agar kebutuhan pokok tetap terlindungi.")
+  Line 115: "Fokus bayar tagihan dengan jatuh tempo paling mendesak untuk menghindari penalti/denda."
+    Source: recommendations.add("Fokus bayar tagihan dengan jatuh tempo paling mendesak untuk menghindari penalti/denda.")
+  Line 117: "Rencana pelunasan realistis! Anda memiliki dana ekstra sebesar ${CurrencyFormatter.formatRupiah(netExtraForDebt)}/bulan setelah mengamankan kebutuhan pokok."
+    Source: adviceBuilder.append("Rencana pelunasan realistis! Anda memiliki dana ekstra sebesar ${CurrencyFormatter.formatRupiah(netExtraForDebt)}/bulan setelah mengamankan kebutuhan pokok.")
+  Line 119: " Diestimasikan bebas utang pada $debtFreeDateString ($totalMonths bulan)."
+    Source: adviceBuilder.append(" Diestimasikan bebas utang pada $debtFreeDateString ($totalMonths bulan).")
+
+=== app/src/main/java/com/example/util/DebtPriorityEngine.kt (7 items) ===
+  Line 239: "Tagihan Utang"
+    Source: name = item.name.ifBlank { "Tagihan Utang" },
+  Line 270: "Cicilan ${plan.provider}"
+    Source: name = plan.name.ifBlank { "Cicilan ${plan.provider}" },
+  Line 317: "Selamat! Anda tidak memiliki kewajiban utang atau cicilan aktif saat ini."
+    Source: summaryExplanation = "Selamat! Anda tidak memiliki kewajiban utang atau cicilan aktif saat ini."
+  Line 370: "Prioritas #$rank (Bayar cicilan minimum bulanan)"
+    Source: append("Prioritas #$rank (Bayar cicilan minimum bulanan)")
+  Line 397: "Anggaran bulanan Anda (${CurrencyFormatter.formatRupiah(sanitizedBudget)}) belum mencukupi total kewajiban minimum bulanan (${CurrencyFormatter.formatRupiah(totalMandatoryMin)}). Terdapat defisit sebesar ${CurrencyFormatter.formatRupiah(shortfall)}/bulan. Prioritaskan pelunasan kewajiban yang jatuh tempo paling mendesak."
+    Source: append("Anggaran bulanan Anda (${CurrencyFormatter.formatRupiah(sanitizedBudget)}) belum mencukupi total kewajiban minimum bulanan (${CurrencyFormatter.formatRupiah(totalMandatoryMin)}). Terdapat defisit sebesar ${CurrencyFormatter.formatRupiah(shortfall)}/bulan. Prioritaskan pelunasan kewajiban yang jatuh tempo paling mendesak.")
+  Line 399: "Dengan metode Debt Avalanche, seluruh utang Anda dibayar dengan cicilan minimum, dan sisa dana ekstra dipusatkan ke utang dengan biaya bunga terbesar."
+    Source: append("Dengan metode Debt Avalanche, seluruh utang Anda dibayar dengan cicilan minimum, dan sisa dana ekstra dipusatkan ke utang dengan biaya bunga terbesar.")
+  Line 404: " (Catatan: $unverifiedCount tagihan tidak memiliki data suku bunga terverifikasi dan diprioritaskan berdasarkan jatuh tempo)."
+    Source: append(" (Catatan: $unverifiedCount tagihan tidak memiliki data suku bunga terverifikasi dan diprioritaskan berdasarkan jatuh tempo).")
+
+=== app/src/main/java/com/example/util/DriveUpdateRepository.kt (4 items) ===
+  Line 82: "DompetNalar sudah menggunakan versi terbaru."
+    Source: put("release_notes", "DompetNalar sudah menggunakan versi terbaru.")
+  Line 88: "Gagal mengurai format JSON pembaruan."
+    Source: val metadata = parseMetadata(jsonStr) ?: return@withContext UpdateStatus.Error("Gagal mengurai format JSON pembaruan.")
+  Line 115: "Koneksi gagal: ${e.localizedMessage}"
+    Source: UpdateStatus.Error("Koneksi gagal: ${e.localizedMessage}")
+  Line 198: "Gagal mengunduh pembaruan: ${e.message}"
+    Source: Pair(false, "Gagal mengunduh pembaruan: ${e.message}")
+
+=== app/src/main/java/com/example/util/EncryptionUtils.kt (2 items) ===
+  Line 167: "Kata sandi cadangan diperlukan untuk memulihkan file ini"
+    Source: ?: throw IllegalArgumentException("Kata sandi cadangan diperlukan untuk memulihkan file ini")
+  Line 196: "Gagal memulihkan cadangan v2"
+    Source: throw lastException ?: IllegalStateException("Gagal memulihkan cadangan v2")
+
+=== app/src/main/java/com/example/util/GamificationManager.kt (17 items) ===
+  Line 29: "Bagaimana Anda merespons saat menerima gaji/pemasukan bulanan?"
+    Source: questionText = "Bagaimana Anda merespons saat menerima gaji/pemasukan bulanan?",
+  Line 32: "Sisihkan sebagian untuk investasi saham/reksadana/emas"
+    Source: PersonalityOption("Sisihkan sebagian untuk investasi saham/reksadana/emas", FinancialPersonality.INVESTOR),
+  Line 33: "Beli wishlist belanja/hobi yang sudah diincar sejak lama"
+    Source: PersonalityOption("Beli wishlist belanja/hobi yang sudah diincar sejak lama", FinancialPersonality.IMPULSE_SHOPPER),
+  Line 34: "Bagi rata untuk kebutuhan pokok, tabungan, dan hiburan"
+    Source: PersonalityOption("Bagi rata untuk kebutuhan pokok, tabungan, dan hiburan", FinancialPersonality.BALANCED)
+  Line 39: "Apa reaksi Anda saat melihat diskon kilat (Flash Sale) barang impian?"
+    Source: questionText = "Apa reaksi Anda saat melihat diskon kilat (Flash Sale) barang impian?",
+  Line 41: "Abaikan jika tidak ada di rencana anggaran bulanan"
+    Source: PersonalityOption("Abaikan jika tidak ada di rencana anggaran bulanan", FinancialPersonality.SAVER),
+  Line 44: "Tunggu 24 jam (cooldown) untuk memastikan apakah benar butuh"
+    Source: PersonalityOption("Tunggu 24 jam (cooldown) untuk memastikan apakah benar butuh", FinancialPersonality.BALANCED)
+  Line 49: "Bagaimana strategi Anda dalam menghadapi pengeluaran tak terduga?"
+    Source: questionText = "Bagaimana strategi Anda dalam menghadapi pengeluaran tak terduga?",
+  Line 51: "Tenang karena sudah punya dana darurat khusus 6 bulan"
+    Source: PersonalityOption("Tenang karena sudah punya dana darurat khusus 6 bulan", FinancialPersonality.SAVER),
+  Line 59: "Apa tujuan keuangan terbesar Anda dalam 3-5 tahun ke depan?"
+    Source: questionText = "Apa tujuan keuangan terbesar Anda dalam 3-5 tahun ke depan?",
+  Line 69: "Bagaimana Anda mencatat pengeluaran harian Anda?"
+    Source: questionText = "Bagaimana Anda mencatat pengeluaran harian Anda?",
+  Line 73: "Sering lupa dan baru sadar saat saldo dompet habis"
+    Source: PersonalityOption("Sering lupa dan baru sadar saat saldo dompet habis", FinancialPersonality.IMPULSE_SHOPPER),
+  Line 74: "Rutin mencatat garis besar pengeluaran per kategori"
+    Source: PersonalityOption("Rutin mencatat garis besar pengeluaran per kategori", FinancialPersonality.BALANCED)
+  Line 91: "Berhasil mencatat transaksi 7 hari berturut-turut."
+    Source: description = "Berhasil mencatat transaksi 7 hari berturut-turut.",
+  Line 98: "Berhasil menjaga pengeluaran di bawah anggaran atau streak 30 hari."
+    Source: description = "Berhasil menjaga pengeluaran di bawah anggaran atau streak 30 hari.",
+  Line 105: "Konsistensi finansial luar biasa dengan streak 90 hari."
+    Source: description = "Konsistensi finansial luar biasa dengan streak 90 hari.",
+  Line 119: "Berhasil melewati No-Spend Day Challenge 24 jam."
+    Source: description = "Berhasil melewati No-Spend Day Challenge 24 jam.",
+
+=== app/src/main/java/com/example/util/GoogleDrivePublisherEngine.kt (2 items) ===
+  Line 104: "Pembaruan v$targetVersionName (Build $targetVersionCode) Berhasil Dipublikasikan ke Google Drive!"
+    Source: Pair(true, "Pembaruan v$targetVersionName (Build $targetVersionCode) Berhasil Dipublikasikan ke Google Drive!")
+  Line 107: "Gagal mempublikasikan pembaruan: ${e.message}"
+    Source: Pair(false, "Gagal mempublikasikan pembaruan: ${e.message}")
+
+=== app/src/main/java/com/example/util/GoogleDriveService.kt (39 items) ===
+  Line 91: "Belum pernah dicadangkan"
+    Source: if (timestamp == 0L) return "Belum pernah dicadangkan"
+  Line 154: "Alamat email akun Google belum diatur."
+    Source: return@withContext DriveAuthResult.Error("Alamat email akun Google belum diatur.")
+  Line 166: "Izin otorisasi Google Drive ditolak atau gagal: ${e.message}"
+    Source: DriveAuthResult.Error("Izin otorisasi Google Drive ditolak atau gagal: ${e.message}")
+  Line 283: "File cadangan di Google Drive berhasil diperbarui."
+    Source: Pair(true, "File cadangan di Google Drive berhasil diperbarui.")
+  Line 286: "Gagal memperbarui file di Google Drive: $err"
+    Source: Pair(false, "Gagal memperbarui file di Google Drive: $err")
+  Line 322: "File cadangan berhasil diunggah ke Google Drive."
+    Source: Pair(true, "File cadangan berhasil diunggah ke Google Drive.")
+  Line 325: "Gagal mengunggah file ke Google Drive: $err"
+    Source: Pair(false, "Gagal mengunggah file ke Google Drive: $err")
+  Line 423: "Pencadangan ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: return@withContext Pair(false, "Pencadangan ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.")
+  Line 496: " dan berhasil diunggah ke Google Drive Cloud ($connectedEmail)"
+    Source: cloudStatusMessage = " dan berhasil diunggah ke Google Drive Cloud ($connectedEmail)"
+  Line 498: " (Tersimpan lokal; Gagal sinkronisasi Drive: ${uploadResult.second})"
+    Source: cloudStatusMessage = " (Tersimpan lokal; Gagal sinkronisasi Drive: ${uploadResult.second})"
+  Line 505: " (Tersimpan lokal; Gagal otorisasi Drive: ${authResult.message})"
+    Source: cloudStatusMessage = " (Tersimpan lokal; Gagal otorisasi Drive: ${authResult.message})"
+  Line 509: " (Tersimpan di penyimpanan lokal yang aman)"
+    Source: cloudStatusMessage = " (Tersimpan di penyimpanan lokal yang aman)"
+  Line 517: "Pencadangan berhasil dibuat [Format v2 Terautentikasi]$cloudStatusMessage"
+    Source: Pair(true, "Pencadangan berhasil dibuat [Format v2 Terautentikasi]$cloudStatusMessage")
+  Line 520: "Gagal mencadangkan data: ${e.message}"
+    Source: Pair(false, "Gagal mencadangkan data: ${e.message}")
+  Line 537: "Pemulihan data ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: return@withContext Pair(false, "Pemulihan data ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.")
+  Line 540: "Gagal memulihkan: Sesi pengguna tidak aktif."
+    Source: return@withContext Pair(false, "Gagal memulihkan: Sesi pengguna tidak aktif.")
+  Line 544: "Gagal memulihkan: Akun pengguna tidak ditemukan di database."
+    Source: return@withContext Pair(false, "Gagal memulihkan: Akun pengguna tidak ditemukan di database.")
+  Line 563: "Gagal otorisasi Google Drive: ${authResult.message}"
+    Source: driveAuthNotice = "Gagal otorisasi Google Drive: ${authResult.message}"
+  Line 654: "Gagal mengurai isi data cadangan $BACKUP_FILE_NAME."
+    Source: ?: return@withContext Pair(false, "Gagal mengurai isi data cadangan $BACKUP_FILE_NAME.")
+  Line 664: "Gagal memulihkan data: ${e.message}"
+    Source: return@withContext Pair(false, "Gagal memulihkan data: ${e.message}")
+  Line 687: "Pemulihan data berhasil [$formatLabel dari $sourceLabel]! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan (Tanggal: ${SimpleDateFormat("
+    Source: "Pemulihan data berhasil [$formatLabel dari $sourceLabel]! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan (Tanggal: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})"
+  Line 693: "Gagal memulihkan data: Kunci perangkat tidak cocok (cadangan kemungkinan berasal dari perangkat atau instalasi lain). Silakan gunakan opsi 'Pulihkan Cadangan Portabel' dengan kata sandi Anda."
+    Source: "Gagal memulihkan data: Kunci perangkat tidak cocok (cadangan kemungkinan berasal dari perangkat atau instalasi lain). Silakan gunakan opsi 'Pulihkan Cadangan Portabel' dengan kata sandi Anda."
+  Line 695: "Gagal memulihkan data: File cadangan ini dilindungi kata sandi. Silakan gunakan opsi 'Pulihkan Cadangan Portabel' untuk memasukkan kata sandi."
+    Source: "Gagal memulihkan data: File cadangan ini dilindungi kata sandi. Silakan gunakan opsi 'Pulihkan Cadangan Portabel' untuk memasukkan kata sandi."
+  Line 696: "Gagal memulihkan data: ${e.message ?: "
+    Source: else -> "Gagal memulihkan data: ${e.message ?: "Format atau kunci cadangan tidak valid"}"
+  Line 720: "Pencadangan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: return@withContext Triple(false, "Pencadangan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.", null)
+  Line 772: "Cadangan portabel berhasil dibuat [Format v2 Terenkripsi Kata Sandi]."
+    Source: Triple(true, "Cadangan portabel berhasil dibuat [Format v2 Terenkripsi Kata Sandi].", exportFile)
+  Line 775: "Gagal membuat cadangan portabel: ${e.message}"
+    Source: Triple(false, "Gagal membuat cadangan portabel: ${e.message}", null)
+  Line 797: "Pemulihan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+    Source: return@withContext Pair(false, "Pemulihan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.")
+  Line 800: "Gagal memulihkan: Sesi pengguna tidak aktif."
+    Source: return@withContext Pair(false, "Gagal memulihkan: Sesi pengguna tidak aktif.")
+  Line 804: "Gagal memulihkan: Akun pengguna tidak ditemukan di database."
+    Source: return@withContext Pair(false, "Gagal memulihkan: Akun pengguna tidak ditemukan di database.")
+  Line 819: "File cadangan portabel tidak ditemukan. Silakan pilih file cadangan (.json)."
+    Source: else -> return@withContext Pair(false, "File cadangan portabel tidak ditemukan. Silakan pilih file cadangan (.json).")
+  Line 841: "Kata sandi salah atau isi cadangan telah diubah (integritas gagal)."
+    Source: return@withContext Pair(false, "Kata sandi salah atau isi cadangan telah diubah (integritas gagal).")
+  Line 843: "Gagal mendekripsi: kata sandi salah atau data cadangan rusak."
+    Source: return@withContext Pair(false, "Gagal mendekripsi: kata sandi salah atau data cadangan rusak.")
+  Line 851: "Gagal membaca isi data cadangan (struktur data rusak)."
+    Source: } ?: return@withContext Pair(false, "Gagal membaca isi data cadangan (struktur data rusak).")
+  Line 864: "Gagal memulihkan cadangan portabel: ${e.message}"
+    Source: return@withContext Pair(false, "Gagal memulihkan cadangan portabel: ${e.message}")
+  Line 869: "Pemulihan data portabel berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan (Tanggal cadangan: ${SimpleDateFormat("
+    Source: "Pemulihan data portabel berhasil! ${payload.wallets.size} dompet & ${payload.transactions.size} transaksi dipulihkan (Tanggal cadangan: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(payload.exportedAt))})."
+  Line 873: "Gagal memulihkan cadangan portabel: ${e.message}"
+    Source: Pair(false, "Gagal memulihkan cadangan portabel: ${e.message}")
+  Line 889: "Laporan berhasil diarsipkan (DompetNalar_Reports/${reportFile.name})"
+    Source: onComplete(true, "Laporan berhasil diarsipkan (DompetNalar_Reports/${reportFile.name})")
+  Line 892: "Gagal mengunggah laporan: ${e.message}"
+    Source: onComplete(false, "Gagal mengunggah laporan: ${e.message}")
+
+=== app/src/main/java/com/example/util/GoogleDriveUpdateManager.kt (3 items) ===
+  Line 77: "Gagal memeriksa pembaruan di Google Drive: ${e.message}"
+    Source: UpdateCheckResult.Error("Gagal memeriksa pembaruan di Google Drive: ${e.message}")
+  Line 126: "Gagal mengunduh berkas instalasi: ${e.message}"
+    Source: Pair(false, "Gagal mengunduh berkas instalasi: ${e.message}")
+  Line 192: "AI Debt Planner dengan strategi Due-Date First"
+    Source: "AI Debt Planner dengan strategi Due-Date First",
+
+=== app/src/main/java/com/example/util/LocaleHelper.kt (2 items) ===
+  Line 41: "Menyesuaikan dengan pengaturan bahasa perangkat Anda"
+    Source: idSubtitle = "Menyesuaikan dengan pengaturan bahasa perangkat Anda",
+  Line 55: "Gunakan Bahasa Inggris untuk seluruh aplikasi"
+    Source: idSubtitle = "Gunakan Bahasa Inggris untuk seluruh aplikasi",
+
+=== app/src/main/java/com/example/util/NotificationDataHelper.kt (24 items) ===
+  Line 34: "Saldo Habis: ${wallet.name}"
+    Source: title = "Saldo Habis: ${wallet.name}",
+  Line 35: "Saldo pada ${wallet.name} bernilai ${CurrencyFormatter.formatRupiah(wallet.balance)}. Harap segera isi ulang saldo rekening."
+    Source: message = "Saldo pada ${wallet.name} bernilai ${CurrencyFormatter.formatRupiah(wallet.balance)}. Harap segera isi ulang saldo rekening.",
+  Line 43: "Peringatan Saldo Rendah: ${wallet.name}"
+    Source: title = "Peringatan Saldo Rendah: ${wallet.name}",
+  Line 44: "Saldo pada ${wallet.name} tersisa ${CurrencyFormatter.formatRupiah(wallet.balance)}, berada di bawah batas minimum Rp50.000."
+    Source: message = "Saldo pada ${wallet.name} tersisa ${CurrencyFormatter.formatRupiah(wallet.balance)}, berada di bawah batas minimum Rp50.000.",
+  Line 67: "Tagihan ${debt.name} sebesar $formattedAmount jatuh tempo hari ini (${debt.dueDate}). Segera lakukan pembayaran!"
+    Source: message = "Tagihan ${debt.name} sebesar $formattedAmount jatuh tempo hari ini (${debt.dueDate}). Segera lakukan pembayaran!",
+  Line 77: "Tagihan ${debt.name} jatuh tempo dalam $daysLeft hari (${debt.dueDate}). Siapkan dana pembayaran sebesar $formattedAmount."
+    Source: message = "Tagihan ${debt.name} jatuh tempo dalam $daysLeft hari (${debt.dueDate}). Siapkan dana pembayaran sebesar $formattedAmount.",
+  Line 86: "Tagihan Terlewat: ${debt.name}"
+    Source: title = "Tagihan Terlewat: ${debt.name}",
+  Line 87: "Jatuh tempo ${debt.dueDate} telah terlewat $daysPassed hari lalu. Pastikan tagihan telah dibayarkan untuk menghindari denda."
+    Source: message = "Jatuh tempo ${debt.dueDate} telah terlewat $daysPassed hari lalu. Pastikan tagihan telah dibayarkan untuk menghindari denda.",
+  Line 108: "Jatuh Tempo Cicilan Hari Ini: ${plan.name}"
+    Source: title = "Jatuh Tempo Cicilan Hari Ini: ${plan.name}",
+  Line 118: "Pengingat Cicilan: ${plan.name}"
+    Source: title = "Pengingat Cicilan: ${plan.name}",
+  Line 128: "Cicilan Terlewat: ${plan.name}"
+    Source: title = "Cicilan Terlewat: ${plan.name}",
+  Line 129: "Angsuran ${plan.name} ($periodStr) pada ${plan.nextDueDate} telah terlewat $daysPassed hari lalu. Harap segera konfirmasi pembayaran."
+    Source: message = "Angsuran ${plan.name} ($periodStr) pada ${plan.nextDueDate} telah terlewat $daysPassed hari lalu. Harap segera konfirmasi pembayaran.",
+  Line 145: "Overbudget Anggaran Bulanan!"
+    Source: title = "Overbudget Anggaran Bulanan!",
+  Line 146: "Total pengeluaran bulan ini (${CurrencyFormatter.formatRupiah(totalSpent)}) telah melampaui limit anggaran (${CurrencyFormatter.formatRupiah(totalLimit.limitAmount)})."
+    Source: message = "Total pengeluaran bulan ini (${CurrencyFormatter.formatRupiah(totalSpent)}) telah melampaui limit anggaran (${CurrencyFormatter.formatRupiah(totalLimit.limitAmount)}).",
+  Line 155: "Peringatan Anggaran Bulanan ($pct%)"
+    Source: title = "Peringatan Anggaran Bulanan ($pct%)",
+  Line 156: "Pengeluaran telah mencapai $pct% dari limit bulanan (${CurrencyFormatter.formatRupiah(totalSpent)} / ${CurrencyFormatter.formatRupiah(totalLimit.limitAmount)})."
+    Source: message = "Pengeluaran telah mencapai $pct% dari limit bulanan (${CurrencyFormatter.formatRupiah(totalSpent)} / ${CurrencyFormatter.formatRupiah(totalLimit.limitAmount)}).",
+  Line 173: "Pengeluaran kategori ${catLimit.id} (${CurrencyFormatter.formatRupiah(spent)}) telah melampaui limit (${CurrencyFormatter.formatRupiah(catLimit.limitAmount)})."
+    Source: message = "Pengeluaran kategori ${catLimit.id} (${CurrencyFormatter.formatRupiah(spent)}) telah melampaui limit (${CurrencyFormatter.formatRupiah(catLimit.limitAmount)}).",
+  Line 182: "Mendekati Limit: ${catLimit.id} ($pct%)"
+    Source: title = "Mendekati Limit: ${catLimit.id} ($pct%)",
+  Line 183: "Pengeluaran ${catLimit.id} telah mencapai $pct% dari limit anggaran (${CurrencyFormatter.formatRupiah(spent)} / ${CurrencyFormatter.formatRupiah(catLimit.limitAmount)})."
+    Source: message = "Pengeluaran ${catLimit.id} telah mencapai $pct% dari limit anggaran (${CurrencyFormatter.formatRupiah(spent)} / ${CurrencyFormatter.formatRupiah(catLimit.limitAmount)}).",
+  Line 208: "Konsistensi finansial luar biasa! Anda telah konsisten mencatat selama lebih dari 90 hari."
+    Source: message = "Konsistensi finansial luar biasa! Anda telah konsisten mencatat selama lebih dari 90 hari.",
+  Line 228: "Pertahankan konsistensi Anda! Dynamic App Icons telah terbuka di Gamification Hub."
+    Source: message = "Pertahankan konsistensi Anda! Dynamic App Icons telah terbuka di Gamification Hub.",
+  Line 238: "Selamat! Anda berhasil mencatat keuangan selama 7 hari berturut-turut. Klaim reward Anda di Gamification Hub!"
+    Source: message = "Selamat! Anda berhasil mencatat keuangan selama 7 hari berturut-turut. Klaim reward Anda di Gamification Hub!",
+  Line 255: "Transaksi Berulang Tercatat"
+    Source: title = "Transaksi Berulang Tercatat",
+  Line 256: "${tx.title}: ${CurrencyFormatter.formatRupiah(tx.amount)} berhasil dicatat ke ${tx.walletName}."
+    Source: message = "${tx.title}: ${CurrencyFormatter.formatRupiah(tx.amount)} berhasil dicatat ke ${tx.walletName}.",
+
+=== app/src/main/java/com/example/util/PayLaterDeduplicator.kt (5 items) ===
+  Line 100: "Ditemukan tagihan '${debt.name}' dengan nominal dan tanggal jatuh tempo yang sama (${debt.dueDate})."
+    Source: reason = "Ditemukan tagihan '${debt.name}' dengan nominal dan tanggal jatuh tempo yang sama (${debt.dueDate})."
+  Line 106: "Ditemukan tagihan '${debt.name}' dari penyedia yang sama dengan tanggal jatuh tempo serupa (${debt.dueDate}). Harap periksa apakah ini tagihan yang sama."
+    Source: reason = "Ditemukan tagihan '${debt.name}' dari penyedia yang sama dengan tanggal jatuh tempo serupa (${debt.dueDate}). Harap periksa apakah ini tagihan yang sama."
+  Line 112: "Ditemukan tagihan '${debt.name}' dari penyedia yang sama dengan nominal serupa."
+    Source: reason = "Ditemukan tagihan '${debt.name}' dari penyedia yang sama dengan nominal serupa."
+  Line 134: "Ditemukan kontrak cicilan berjangka '${plan.name}' (${plan.paidCount}/${plan.totalTenor} angsuran). Tagihan ini terdeteksi berasal dari kontrak cicilan yang sama."
+    Source: reason = "Ditemukan kontrak cicilan berjangka '${plan.name}' (${plan.paidCount}/${plan.totalTenor} angsuran). Tagihan ini terdeteksi berasal dari kontrak cicilan yang sama."
+  Line 169: "Item ke-${i + 1} dalam batch import ini memiliki penyedia, tanggal jatuh tempo, dan nominal yang identik."
+    Source: reason = "Item ke-${i + 1} dalam batch import ini memiliki penyedia, tanggal jatuh tempo, dan nominal yang identik."
+
+=== app/src/main/java/com/example/util/ReceiptFormatter.kt (6 items) ===
+  Line 28: "PENGELUARAN"
+    Source: TransactionType.EXPENSE -> "PENGELUARAN"
+  Line 29: "PEMASUKAN"
+    Source: TransactionType.INCOME -> "PEMASUKAN"
+  Line 30: "TRANSFER ANTAR DOMPET"
+    Source: TransactionType.TRANSFER -> "TRANSFER ANTAR DOMPET"
+  Line 64: "Dompet Tujuan"
+    Source: val target = transaction.targetWalletName ?: "Dompet Tujuan"
+  Line 77: "TOTAL KELUAR"
+    Source: TransactionType.EXPENSE -> "TOTAL KELUAR"
+  Line 78: "TOTAL MASUK"
+    Source: TransactionType.INCOME -> "TOTAL MASUK"
+
+=== app/src/main/java/com/example/util/RecurringTransactionWorker.kt (4 items) ===
+  Line 64: "DompetNalar Transaksi Berulang 💰"
+    Source: title = "DompetNalar Transaksi Berulang 💰",
+  Line 65: "Transaksi rutin ${result.title} sebesar ${CurrencyFormatter.formatRupiah(result.amount)} berhasil dicatat ke ${result.walletName}!"
+    Source: message = "Transaksi rutin ${result.title} sebesar ${CurrencyFormatter.formatRupiah(result.amount)} berhasil dicatat ke ${result.walletName}!"
+  Line 144: "DompetNalar Transaksi Berulang"
+    Source: "DompetNalar Transaksi Berulang",
+  Line 147: "Notifikasi transaksi berulang otomatis (Gaji / Rutin)"
+    Source: description = "Notifikasi transaksi berulang otomatis (Gaji / Rutin)"
+
+=== app/src/main/java/com/example/util/ReportExporter.kt (3 items) ===
+  Line 248: "ID,Tanggal,Tipe,Judul,Kategori,Sumber Dompet,Tujuan Dompet,Nominal,Catatan,Tag,Mode\n"
+    Source: writer.write("ID,Tanggal,Tipe,Judul,Kategori,Sumber Dompet,Tujuan Dompet,Nominal,Catatan,Tag,Mode\n")
+  Line 318: "Sumber Dompet"
+    Source: "Sumber Dompet" -> "\"${escapeCsvField(tx.walletName)}\""
+  Line 319: "Tujuan Dompet"
+    Source: "Tujuan Dompet" -> "\"${escapeCsvField(tx.targetWalletName ?: "")}\""
+
+=== app/src/main/java/com/example/util/RewardedAdRewardManager.kt (1 items) ===
+  Line 150: "Hadiah SmartMaster hari ini sudah digunakan. Anda masih dapat menonton iklan, tetapi tidak memperoleh hadiah tambahan."
+    Source: message = "Hadiah SmartMaster hari ini sudah digunakan. Anda masih dapat menonton iklan, tetapi tidak memperoleh hadiah tambahan."
+
+=== app/src/main/java/com/example/util/SplitBillCalculator.kt (4 items) ===
+  Line 112: "Rekening / Dompet Penyelenggara"
+    Source: paymentTargetInfo = paymentTargetInfo.ifBlank { "Rekening / Dompet Penyelenggara" },
+  Line 136: "   • _(Belum memilih item pesanan)_\n"
+    Source: sb.append("   • _(Belum memilih item pesanan)_\n")
+  Line 152: "⚠️ *Item Belum Dibagi (${formatRp(unassignedSum)}):*\n"
+    Source: sb.append("⚠️ *Item Belum Dibagi (${formatRp(unassignedSum)}):*\n")
+  Line 160: "💰 *Total Tagihan Keseluruhan:* *${formatRp(splitResult.grandTotal)}*\n\n"
+    Source: sb.append("💰 *Total Tagihan Keseluruhan:* *${formatRp(splitResult.grandTotal)}*\n\n")
+
+=== app/src/main/java/com/example/util/ThemeEngine.kt (1 items) ===
+  Line 16: "Tampilan cerah dengan kontras tinggi"
+    Source: LIGHT("Mode Terang (Light Mode)", "Tampilan cerah dengan kontras tinggi"),
+
+=== app/src/main/java/com/example/util/TransactionDateParser.kt (5 items) ===
+  Line 41: "\\b(kemarin\\s+lusa|lusa\\s+kemarin|2\\s*hari\\s*(?:yang\\s*|yg\\s*)?lalu)\\b"
+    Source: val twoDaysAgoRegex = Pattern.compile("\\b(kemarin\\s+lusa|lusa\\s+kemarin|2\\s*hari\\s*(?:yang\\s*|yg\\s*)?lalu)\\b")
+  Line 50: "\\b(\\d+)\\s*hari\\s*(?:yang\\s*|yg\\s*)?lalu\\b"
+    Source: val daysAgoRegex = Pattern.compile("\\b(\\d+)\\s*hari\\s*(?:yang\\s*|yg\\s*)?lalu\\b")
+  Line 102: "\\b(?:1\\s*|se)?minggu\\s*(?:yang\\s*|yg\\s*)?lalu\\b"
+    Source: val weekAgoRegex = Pattern.compile("\\b(?:1\\s*|se)?minggu\\s*(?:yang\\s*|yg\\s*)?lalu\\b")
+  Line 112: "\\b(\\d+)\\s*minggu\\s*(?:yang\\s*|yg\\s*)?lalu\\b"
+    Source: val weeksAgoRegex = Pattern.compile("\\b(\\d+)\\s*minggu\\s*(?:yang\\s*|yg\\s*)?lalu\\b")
+  Line 123: "\\b(?:1\\s*|se)?bulan\\s*(?:yang\\s*|yg\\s*)?lalu\\b"
+    Source: val monthAgoRegex = Pattern.compile("\\b(?:1\\s*|se)?bulan\\s*(?:yang\\s*|yg\\s*)?lalu\\b")
+
+=== app/src/main/java/com/example/util/VoiceInputHelper.kt (3 items) ===
+  Line 71: "Tidak ada suara yang terdeteksi."
+    Source: _voiceState.value = VoiceState.Error("Tidak ada suara yang terdeteksi.")
+  Line 86: "Ucapkan transaksi (contoh: Makan siang 25 ribu pakai GoPay)..."
+    Source: putExtra(RecognizerIntent.EXTRA_PROMPT, "Ucapkan transaksi (contoh: Makan siang 25 ribu pakai GoPay)...")
+  Line 93: "Gagal memulai mikrofon: ${e.message}"
+    Source: _voiceState.value = VoiceState.Error("Gagal memulai mikrofon: ${e.message}")
+

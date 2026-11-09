@@ -109,13 +109,13 @@ fun TransactionsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Riwayat Transaksi (Mutasi)",
+                        text = com.example.util.AppStrings.t("Riwayat Transaksi (Mutasi)", "Transaction History (Mutations)"),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Catatan keuangan mode ${accountMode.displayName}",
+                        text = com.example.util.AppStrings.t("Catatan keuangan mode ${accountMode.displayName}", "Financial records in ${accountMode.displayName} mode"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -126,7 +126,7 @@ fun TransactionsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Print,
-                        contentDescription = "Ekspor Laporan Keuangan",
+                        contentDescription = com.example.util.AppStrings.t("Ekspor Laporan Keuangan", "Export Financial Report"),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -138,12 +138,12 @@ fun TransactionsScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
-                placeholder = { Text("Cari judul, kategori, catatan, tag...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Cari") },
+                placeholder = { Text(com.example.util.AppStrings.t("Cari judul, kategori, catatan, tag...", "Search title, category, notes, tags...")) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.example.util.AppStrings.search) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onSearchChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Hapus Pencarian")
+                            Icon(Icons.Default.Clear, contentDescription = com.example.util.AppStrings.t("Hapus Pencarian", "Clear Search"))
                         }
                     }
                 },
@@ -184,7 +184,7 @@ fun TransactionsScreen(
                     FilterChip(
                         selected = selectedWalletFilter != null,
                         onClick = { walletMenuExpanded = true },
-                        label = { Text(activeWallet?.name ?: "Semua Dompet", fontSize = 12.sp) },
+                        label = { Text(activeWallet?.name ?: com.example.util.AppStrings.t("Semua Dompet", "All Wallets"), fontSize = 12.sp) },
                         leadingIcon = { Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     )
 
@@ -193,7 +193,7 @@ fun TransactionsScreen(
                         onDismissRequest = { walletMenuExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Semua Dompet") },
+                            text = { Text(com.example.util.AppStrings.t("Semua Dompet", "All Wallets")) },
                             onClick = {
                                 onWalletFilterChange(null)
                                 walletMenuExpanded = false
@@ -220,7 +220,7 @@ fun TransactionsScreen(
                         FilterChip(
                             selected = selectedCategoryFilter == null,
                             onClick = { onCategoryFilterChange(null) },
-                            label = { Text("Semua Kategori", fontSize = 11.sp) }
+                            label = { Text(com.example.util.AppStrings.t("Semua Kategori", "All Categories"), fontSize = 11.sp) }
                         )
                     }
                     items(categories) { cat ->
@@ -254,17 +254,23 @@ fun TransactionsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Rekapitulasi Arus Kas (${selectedTimeframe.label})",
+                            text = com.example.util.AppStrings.t("Rekapitulasi Arus Kas (${selectedTimeframe.label})", "Cashflow Recapitulation (${selectedTimeframe.label})"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
+                        Spacer(modifier = Modifier.width(6.dp))
                         val netDiff = totalIncome - totalExpense
                         Text(
                             text = if (isPrivacyMode) "Net: Rp •••" else "Net: ${if (netDiff >= 0) "+" else ""}${CurrencyFormatter.formatRupiah(netDiff)}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (netDiff >= 0) IncomeGreen else ExpenseRed
+                            color = if (netDiff >= 0) IncomeGreen else ExpenseRed,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -274,7 +280,7 @@ fun TransactionsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Total Pemasukan", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(com.example.util.AppStrings.t("Total Pemasukan", "Total Income"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatRupiah(totalIncome),
                                 color = IncomeGreen,
@@ -283,7 +289,7 @@ fun TransactionsScreen(
                             )
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Total Pengeluaran", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(com.example.util.AppStrings.t("Total Pengeluaran", "Total Expense"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatRupiah(totalExpense),
                                 color = ExpenseRed,
@@ -322,12 +328,12 @@ fun TransactionsScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Tidak Ada Transaksi Ditemukan",
+                            text = com.example.util.AppStrings.t("Tidak Ada Transaksi Ditemukan", "No Transactions Found"),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Coba ubah kata kunci pencarian atau filter yang dipilih.",
+                            text = com.example.util.AppStrings.t("Coba ubah kata kunci pencarian atau filter yang dipilih.", "Try changing your search keywords or active filters."),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center

@@ -163,7 +163,7 @@ fun PublishUpdateBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Target Google Drive Folder:\nFinSmart/App Updates/ (version.json & FinSmart_v$targetName.apk)",
+                        text = "Target Google Drive Folder:\nDompetNalar/App Updates/ (version.json & DompetNalar_v$targetName.apk)",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

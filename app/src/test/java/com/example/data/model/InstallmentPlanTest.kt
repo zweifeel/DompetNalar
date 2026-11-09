@@ -525,4 +525,112 @@ class InstallmentPlanTest {
         assertEquals("Histori pembayaran tetap tertaut meskipun nama kontrak diedit", 1, linkedAfterEdit.size)
         assertEquals(500000.0, linkedAfterEdit[0].amount, EPSILON)
     }
+
+    @Test
+    fun test19_StatusAktifIndonesianIsCountedAsActive() {
+        val plan = InstallmentPlanItem(
+            name = "Cicilan Kulkas",
+            installmentAmount = 250000.0,
+            totalTenor = 12,
+            paidCount = 3,
+            status = "AKTIF",
+            startDate = "2026-01-01",
+            nextDueDate = "01-02-2026"
+        )
+
+        assertTrue(plan.isActive)
+        assertFalse(plan.isCompleted)
+        assertEquals(9, plan.remainingTenor)
+    }
+
+    @Test
+    fun test20_StatusActiveEnglishIsHandledCompatibly() {
+        val plan = InstallmentPlanItem(
+            name = "Cicilan AC",
+            installmentAmount = 300000.0,
+            totalTenor = 6,
+            paidCount = 1,
+            status = "ACTIVE",
+            startDate = "2026-01-01",
+            nextDueDate = "01-02-2026"
+        )
+
+        assertTrue(plan.isActive)
+        assertFalse(plan.isCompleted)
+        assertEquals(5, plan.remainingTenor)
+    }
+
+    @Test
+    fun test21_CompletedPlansAreNotActive() {
+        val planPaidTenor = InstallmentPlanItem(
+            name = "Cicilan TV",
+            installmentAmount = 400000.0,
+            totalTenor = 10,
+            paidCount = 10,
+            status = "AKTIF",
+            startDate = "2026-01-01",
+            nextDueDate = "Lunas"
+        )
+        assertTrue(planPaidTenor.isCompleted)
+        assertFalse(planPaidTenor.isActive)
+
+        val planStatusSelesai = InstallmentPlanItem(
+            name = "Cicilan Sofa",
+            installmentAmount = 150000.0,
+            totalTenor = 5,
+            paidCount = 2,
+            status = "SELESAI",
+            startDate = "2026-01-01",
+            nextDueDate = "Lunas"
+        )
+        assertTrue(planStatusSelesai.isCompleted)
+        assertFalse(planStatusSelesai.isActive)
+
+        val planStatusCompleted = InstallmentPlanItem(
+            name = "Cicilan Mesin Cuci",
+            installmentAmount = 350000.0,
+            totalTenor = 8,
+            paidCount = 3,
+            status = "COMPLETED",
+            startDate = "2026-01-01",
+            nextDueDate = "Lunas"
+        )
+        assertTrue(planStatusCompleted.isCompleted)
+        assertFalse(planStatusCompleted.isActive)
+    }
+
+    @Test
+    fun test22_StoppedOrCancelledPlansAreNotActive() {
+        val planStopped = InstallmentPlanItem(
+            name = "Cicilan Dibatalkan",
+            installmentAmount = 200000.0,
+            totalTenor = 6,
+            paidCount = 1,
+            status = "DIHENTIKAN",
+            startDate = "2026-01-01",
+            nextDueDate = "01-02-2026"
+        )
+        assertFalse(planStopped.isActive)
+    }
+
+    @Test
+    fun test23_MixedDataActiveFilterAndBannerCalculations() {
+        val list = listOf(
+            InstallmentPlanItem(name = "P1", installmentAmount = 500000.0, totalTenor = 10, paidCount = 2, status = "AKTIF", startDate = "2026-01-01", nextDueDate = "15-02-2026"),
+            InstallmentPlanItem(name = "P2", installmentAmount = 300000.0, totalTenor = 6, paidCount = 1, status = "ACTIVE", startDate = "2026-01-01", nextDueDate = "15-02-2026"),
+            InstallmentPlanItem(name = "P3", installmentAmount = 200000.0, totalTenor = 5, paidCount = 5, status = "SELESAI", startDate = "2026-01-01", nextDueDate = "Lunas"),
+            InstallmentPlanItem(name = "P4", installmentAmount = 150000.0, totalTenor = 12, paidCount = 12, status = "AKTIF", startDate = "2026-01-01", nextDueDate = "Lunas"),
+            InstallmentPlanItem(name = "P5", installmentAmount = 100000.0, totalTenor = 4, paidCount = 1, status = "DIHENTIKAN", startDate = "2026-01-01", nextDueDate = "15-02-2026")
+        )
+
+        val activePlans = list.filter { it.isActive }
+        val completedPlans = list.filter { it.isCompleted }
+
+        assertEquals(2, activePlans.size)
+        assertEquals("P1", activePlans[0].name)
+        assertEquals("P2", activePlans[1].name)
+        assertEquals(800000.0, activePlans.sumOf { it.installmentAmount }, EPSILON)
+
+        assertEquals(2, completedPlans.size) // P3 (SELESAI) and P4 (paidCount == totalTenor)
+    }
 }

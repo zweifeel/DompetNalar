@@ -120,7 +120,7 @@ object GoogleDriveUpdateManager {
                 launchInstallIntent(context, targetApkFile)
             }
 
-            Pair(true, "Berkas instalasi FinSmart v${metadata.version_name} siap dipasang.")
+            Pair(true, "Berkas instalasi DompetNalar v${metadata.version_name} siap dipasang.")
         } catch (e: Exception) {
             Log.e(TAG, "Error downloading and installing APK", e)
             Pair(false, "Gagal mengunduh berkas instalasi: ${e.message}")

@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -89,7 +90,7 @@ fun ChangelogBottomSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Catatan Rilis (Changelog)",
+                            text = AppStrings.t("Catatan Rilis (Changelog)", "Release Notes (Changelog)"),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -124,13 +125,13 @@ fun ChangelogBottomSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "FinSmart v1.0.3 Siap Digunakan",
+                            text = AppStrings.t("DompetNalar v1.0.3 Siap Digunakan", "DompetNalar v1.0.3 Ready to Use"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Pembaruan ini mencakup perbaikan AI Date Parsing, Selector Mata Uang Global, Manajemen Hutang & Aset, dan optimasi UI.",
+                            text = AppStrings.t("Pembaruan ini mencakup perbaikan AI Date Parsing, Selector Mata Uang Global, Manajemen Hutang & Aset, dan optimasi UI.", "This update includes fixes for AI Date Parsing, Global Currency Selector, Debt & Asset Management, and UI optimizations."),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -158,38 +159,38 @@ fun ChangelogBottomSheet(
 
             ChangelogItemRow(
                 icon = Icons.Default.Language,
-                title = "Otomatisasi Bahasa & Multi-Currency Selector",
+                title = AppStrings.t("Otomatisasi Bahasa & Multi-Currency Selector", "Language Automation & Multi-Currency Selector"),
                 description = "Dukungan bahasa aplikasi mengikuti sistem HP (Locale default), serta pemilih mata uang global (IDR Rp, USD $, EUR €, SGD S$, MYR RM) yang memperbarui format angka secara real-time di seluruh layar."
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.CreditCard,
-                title = "Manajemen Hutang & Tanggal Jatuh Tempo",
+                title = AppStrings.t("Manajemen Hutang & Tanggal Jatuh Tempo", "Debt Management & Due Dates"),
                 description = "Tambah ikon edit & hapus per-item hutang, opsi hapus seluruh kategori hutang, pemilihan tanggal jatuh tempo (due date), serta tombol Reset Semua Hutang (Fresh Start)."
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.CorporateFare,
-                title = "Asset & Depreciating Asset Tracker Fleksibel",
+                title = AppStrings.t("Asset & Depreciating Asset Tracker Fleksibel", "Flexible Asset & Depreciation Tracker"),
                 description = "Kontrol edit & hapus item aset fisik, hapus kategori aset sekaligus, kalkulasi depresiasi nilai otomatis, dan tombol Reset Semua Aset."
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.Calculate,
-                title = "Split Bill Ringkas & Cepat",
+                title = AppStrings.t("Split Bill Ringkas & Cepat", "Quick & Compact Split Bill"),
                 description = "Daftar item pada kalkulator utama dibatasi 2-3 item dengan tombol 'Lihat Selengkapnya / Riwayat' agar tombol 'Kirim WA' terlihat langsung tanpa perlu scroll panjang."
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.PieChart,
-                title = "Visualisasi Pie / Donut Chart di Analisis",
+                title = AppStrings.t("Visualisasi Pie / Donut Chart di Analisis", "Pie / Donut Chart Visualization in Analysis"),
                 description = "Tambahan mode grafik lingkaran (Donut/Pie Chart) pada Analisis Arus Kas untuk memvisualisasikan proporsi pengeluaran per kategori secara interaktif."
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.Security,
-                title = "Pembersihan Pengaturan & Cloud Sync",
-                description = "Menu preferensi lebih bersih, integrasi sinkronisasi Google Drive Folder 'FinSmart/App Updates', dan menu Cek Pembaruan Versi otomatis."
+                title = AppStrings.t("Pembersihan Pengaturan & Cloud Sync", "Settings Cleanup & Cloud Sync"),
+                description = "Menu preferensi lebih bersih, integrasi sinkronisasi Google Drive Folder 'DompetNalar/App Updates', dan menu Cek Pembaruan Versi otomatis."
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -202,7 +203,7 @@ fun ChangelogBottomSheet(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
             ) {
-                Text("Tutup Catatan Rilis", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(AppStrings.t("Tutup Catatan Rilis", "Close Release Notes"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
         }
     }

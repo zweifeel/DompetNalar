@@ -63,10 +63,22 @@ interface AssetDao {
     @Query("SELECT COUNT(*) FROM assets WHERE userId = :userId")
     suspend fun getAssetCount(userId: Long): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAsset(asset: AssetItem)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAssets(assets: List<AssetItem>)
+
+    @androidx.room.Update
+    suspend fun updateAsset(asset: AssetItem): Int
+
+    @Query("SELECT * FROM assets WHERE userId IS NULL ORDER BY id ASC")
+    suspend fun getLegacyNullOwnerAssets(): List<AssetItem>
+
+    @Query("UPDATE assets SET userId = :userId WHERE id = :id AND userId IS NULL")
+    suspend fun claimLegacyAsset(id: String, userId: Long): Int
+
+    @Query("UPDATE assets SET userId = :userId WHERE userId IS NULL")
+    suspend fun claimLegacyAssets(userId: Long): Int
 
 }

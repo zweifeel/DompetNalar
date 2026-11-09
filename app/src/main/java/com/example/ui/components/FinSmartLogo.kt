@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.util.AppStrings
 import com.example.R
 import com.example.ui.theme.FinSmartPrimary
 
@@ -117,7 +118,7 @@ fun FinSmartLogo(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.finsmart_logo_1790471910026),
-                    contentDescription = "FinSmart Logo",
+                    contentDescription = "DompetNalar Logo",
                     modifier = Modifier.size(size),
                     contentScale = ContentScale.Crop
                 )
@@ -214,8 +215,8 @@ fun FinSmartLogo(
 @Composable
 fun FinSmartBrandHeader(
     modifier: Modifier = Modifier,
-    title: String = "FinSmart",
-    subtitle: String = "Kelola finansial cerdas dengan AI & Analitik"
+    title: String = "DompetNalar",
+    subtitle: String = AppStrings.t("Kelola finansial cerdas dengan AI & Analitik", "Smart financial management with AI & Analytics")
 ) {
     Column(
         modifier = modifier,

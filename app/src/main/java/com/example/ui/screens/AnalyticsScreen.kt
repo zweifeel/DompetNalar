@@ -66,6 +66,7 @@ import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.IncomeGreen
 import com.example.ui.viewmodel.CashflowDataPoint
 import com.example.ui.viewmodel.TimeframeFilter
+import com.example.util.AppStrings
 import com.example.util.CurrencyFormatter
 import kotlin.math.roundToInt
 
@@ -143,13 +144,13 @@ fun AnalyticsScreen(
         item {
             Column {
                 Text(
-                    text = "Analitik & Kesehatan Finansial",
+                    text = AppStrings.t("Analitik & Kesehatan Finansial", "Analytics & Financial Health"),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Laporan wawasan cerdas arus kas (${accountMode.displayName})",
+                    text = "${AppStrings.t("Laporan wawasan cerdas arus kas", "Smart cashflow insight report")} (${accountMode.displayName})",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -182,9 +183,9 @@ fun AnalyticsScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = when {
-                                healthScore >= 85 -> "Keuangan Sangat Sehat (Optimal)"
-                                healthScore >= 70 -> "Keuangan Stabil & Terkendali"
-                                else -> "Perlu Perhatian pada Pengeluaran"
+                                healthScore >= 85 -> AppStrings.t("Keuangan Sangat Sehat (Optimal)", "Very Healthy Finances (Optimal)")
+                                healthScore >= 70 -> AppStrings.t("Keuangan Stabil & Terkendali", "Finances Stable & Controlled")
+                                else -> AppStrings.t("Perlu Perhatian pada Pengeluaran", "Needs Attention on Expenses")
                             },
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
@@ -192,7 +193,7 @@ fun AnalyticsScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Rasio tabungan: ${savingsRate.roundToInt()}% dari total pemasukan.",
+                            text = "${AppStrings.t("Rasio tabungan", "Savings ratio")}: ${savingsRate.roundToInt()}% ${AppStrings.t("dari total pemasukan.", "of total income.")}",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -251,7 +252,7 @@ fun AnalyticsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Proporsi Pengeluaran",
+                            text = AppStrings.t("Proporsi Pengeluaran", "Expense Proportion"),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -323,7 +324,7 @@ fun AnalyticsScreen(
 
                     if (expenseCategories.isEmpty() || totalExpense == 0.0) {
                         Text(
-                            text = "Belum ada data pengeluaran untuk dianalisis.",
+                            text = AppStrings.t("Belum ada data pengeluaran untuk dianalisis.", "No expense data to analyze yet."),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 12.dp)
@@ -355,7 +356,7 @@ fun AnalyticsScreen(
                                     }
 
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("Total", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(AppStrings.t("Total", "Total"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(
                                             text = if (isPrivacyMode) "Rp •••" else CurrencyFormatter.formatCompactRupiah(totalExpense),
                                             fontWeight = FontWeight.Bold,

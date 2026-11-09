@@ -1,6 +1,9 @@
 package com.example.ui.screens
+import com.example.util.AppStrings
 
+import android.app.Activity
 import android.app.DatePickerDialog
+import com.example.util.AdManager
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -82,6 +85,15 @@ import androidx.compose.material.icons.filled.Tune
 import java.io.File
 import java.util.Calendar
 import java.util.Date
+
+private fun Context.findActivity(): Activity? {
+    var current = this
+    while (current is android.content.ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
+}
 
 enum class ExportPeriod {
     THIS_MONTH,
@@ -200,14 +212,14 @@ fun ExportScreen(
     val displayPeriodTitle by remember(selectedPeriod, customStartDate, customEndDate) {
         derivedStateOf {
             when (selectedPeriod) {
-                ExportPeriod.THIS_MONTH -> "Bulan Ini (${CurrencyFormatter.formatDate(System.currentTimeMillis(), "MMMM yyyy")})"
+                ExportPeriod.THIS_MONTH -> "${AppStrings.t("Bulan Ini", "This Month")} (${CurrencyFormatter.formatDate(System.currentTimeMillis(), "MMMM yyyy")})"
                 ExportPeriod.LAST_MONTH -> {
                     val cal = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
-                    "Bulan Lalu (${CurrencyFormatter.formatDate(cal.timeInMillis, "MMMM yyyy")})"
+                    "${AppStrings.t("Bulan Lalu", "Last Month")} (${CurrencyFormatter.formatDate(cal.timeInMillis, "MMMM yyyy")})"
                 }
-                ExportPeriod.LAST_30_DAYS -> "30 Hari Terakhir"
-                ExportPeriod.THIS_YEAR -> "Tahun ${Calendar.getInstance().get(Calendar.YEAR)}"
-                ExportPeriod.CUSTOM -> "${CurrencyFormatter.formatDate(customStartDate)} s/d ${CurrencyFormatter.formatDate(customEndDate)}"
+                ExportPeriod.LAST_30_DAYS -> AppStrings.t("30 Hari Terakhir", "Last 30 Days")
+                ExportPeriod.THIS_YEAR -> "${AppStrings.t("Tahun", "Year")} ${Calendar.getInstance().get(Calendar.YEAR)}"
+                ExportPeriod.CUSTOM -> "${CurrencyFormatter.formatDate(customStartDate)} ${AppStrings.t("s/d", "to")} ${CurrencyFormatter.formatDate(customEndDate)}"
             }
         }
     }
@@ -227,7 +239,7 @@ fun ExportScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Ekspor Laporan Keuangan",
+                        AppStrings.t("Ekspor Laporan Keuangan", "Export Financial Report"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = MaterialTheme.colorScheme.onPrimary
@@ -237,7 +249,7 @@ fun ExportScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
+                            contentDescription = AppStrings.t("Kembali", "Back"),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -284,13 +296,13 @@ fun ExportScreen(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column {
                             Text(
-                                "Fitur Cetak & Ekspor",
+                                AppStrings.t("Fitur Cetak & Ekspor", "Print & Export Feature"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                "Ekspor pembukuan finansial pribadi atau UMKM ke dalam dokumen PDF formal atau format spreadsheet Excel.",
+                                AppStrings.t("Ekspor pembukuan finansial pribadi atau UMKM ke dalam dokumen PDF formal atau format spreadsheet Excel.", "Export personal or business financial records to formal PDF documents or Excel spreadsheets."),
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                             )
@@ -308,7 +320,7 @@ fun ExportScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "1. Pilih Mode Keuangan",
+                            AppStrings.t("1. Pilih Mode Keuangan", "1. Select Financial Mode"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.primary
@@ -362,7 +374,7 @@ fun ExportScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "2. Tentukan Rentang Periode",
+                            AppStrings.t("2. Tentukan Rentang Periode", "2. Select Period Range"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.primary
@@ -371,11 +383,11 @@ fun ExportScreen(
 
                         // Radios
                         val periods = listOf(
-                            ExportPeriod.THIS_MONTH to "Bulan Ini",
-                            ExportPeriod.LAST_MONTH to "Bulan Lalu",
-                            ExportPeriod.LAST_30_DAYS to "30 Hari Terakhir",
-                            ExportPeriod.THIS_YEAR to "Tahun Ini",
-                            ExportPeriod.CUSTOM to "Custom Tanggal (Pilih Sendiri)"
+                            ExportPeriod.THIS_MONTH to AppStrings.t("Bulan Ini", "This Month"),
+                            ExportPeriod.LAST_MONTH to AppStrings.t("Bulan Lalu", "Last Month"),
+                            ExportPeriod.LAST_30_DAYS to AppStrings.t("30 Hari Terakhir", "Last 30 Days"),
+                            ExportPeriod.THIS_YEAR to AppStrings.t("Tahun Ini", "This Year"),
+                            ExportPeriod.CUSTOM to AppStrings.t("Custom Tanggal (Pilih Sendiri)", "Custom Date (Select Range)")
                         )
 
                         periods.forEach { (p, label) ->
@@ -415,7 +427,7 @@ fun ExportScreen(
                                         }
                                         .padding(12.dp)
                                 ) {
-                                    Text("Dari Tanggal", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(AppStrings.t("Dari Tanggal", "From Date"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
@@ -439,7 +451,7 @@ fun ExportScreen(
                                         }
                                         .padding(12.dp)
                                 ) {
-                                    Text("Sampai Tanggal", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(AppStrings.t("Sampai Tanggal", "To Date"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
@@ -472,7 +484,7 @@ fun ExportScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "3. Pilih Format File Laporan",
+                                AppStrings.t("3. Pilih Format File Laporan", "3. Select Report File Format"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.primary
@@ -485,7 +497,7 @@ fun ExportScreen(
                             ) {
                                 Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Kelola Format", fontSize = 11.sp)
+                                Text(AppStrings.t("Kelola Format", "Manage Formats"), fontSize = 11.sp)
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
@@ -533,7 +545,7 @@ fun ExportScreen(
                                                         shape = RoundedCornerShape(4.dp)
                                                     ) {
                                                         Text(
-                                                            text = if (format.isBuiltIn) "Bawaan" else "Kustom",
+                                                            text = if (format.isBuiltIn) AppStrings.t("Bawaan", "Default") else AppStrings.t("Kustom", "Custom"),
                                                             fontSize = 9.sp,
                                                             fontWeight = FontWeight.Bold,
                                                             color = if (format.isBuiltIn) Color(0xFF374151) else FinSmartPrimary,
@@ -542,9 +554,9 @@ fun ExportScreen(
                                                     }
                                                 }
                                                 val subText = if (format.type == "PDF") {
-                                                    "PDF Formal siap cetak • ${format.columns.size} Kolom"
+                                                    "${AppStrings.t("PDF Formal siap cetak", "Formal Print-Ready PDF")} • ${format.columns.size} ${AppStrings.t("Kolom", "Columns")}"
                                                 } else {
-                                                    "CSV • Delimiter '${format.delimiter}' • ${format.columns.size} Kolom"
+                                                    "CSV • Delimiter '${format.delimiter}' • ${format.columns.size} ${AppStrings.t("Kolom", "Columns")}"
                                                 }
                                                 Text(subText, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
@@ -580,7 +592,7 @@ fun ExportScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Ringkasan Laporan Terdeteksi",
+                                AppStrings.t("Ringkasan Laporan Terdeteksi", "Detected Report Summary"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -591,15 +603,15 @@ fun ExportScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Total Mutasi Transaksi:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("${filteredTransactions.size} Transaksi", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(AppStrings.t("Total Mutasi Transaksi:", "Total Transactions:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${filteredTransactions.size} ${AppStrings.t("Transaksi", "Transactions")}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Total Pemasukan:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(AppStrings.t("Total Pemasukan:", "Total Income:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(CurrencyFormatter.formatRupiah(summaryIncome), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = IncomeGreen)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -607,7 +619,7 @@ fun ExportScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Total Pengeluaran:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(AppStrings.t("Total Pengeluaran:", "Total Expense:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(CurrencyFormatter.formatRupiah(summaryExpense), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseRed)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -615,7 +627,7 @@ fun ExportScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Estimasi Keuntungan (Net):", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(AppStrings.t("Estimasi Keuntungan (Net):", "Net Estimate:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 CurrencyFormatter.formatRupiah(summaryNet),
                                 fontSize = 12.sp,
@@ -637,7 +649,7 @@ fun ExportScreen(
                     Button(
                         onClick = {
                             if (filteredTransactions.isEmpty()) {
-                                Toast.makeText(context, "Tidak ada data mutasi transaksi untuk rentang tanggal ini.", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, AppStrings.t("Tidak ada data mutasi transaksi untuk rentang tanggal ini.", "No transaction records for this date range."), Toast.LENGTH_LONG).show()
                                 return@Button
                             }
 
@@ -654,14 +666,17 @@ fun ExportScreen(
                                 if (savedFile != null) {
                                     Toast.makeText(
                                         context,
-                                        "Laporan berhasil diunduh ke folder Downloads: ${savedFile.name}",
+                                        AppStrings.t("Laporan berhasil diunduh ke folder Downloads: ${savedFile.name}", "Report downloaded successfully to Downloads folder: ${savedFile.name}"),
                                         Toast.LENGTH_LONG
                                     ).show()
+                                    context.findActivity()?.let { act ->
+                                        AdManager.maybeShowInterstitial(act)
+                                    }
                                 } else {
-                                    Toast.makeText(context, "Gagal mengunduh file ke folder Downloads.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, AppStrings.t("Gagal mengunduh file ke folder Downloads.", "Failed to download file to Downloads folder."), Toast.LENGTH_SHORT).show()
                                 }
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Kesalahan ekspor: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "${AppStrings.t("Kesalahan ekspor", "Export error")}: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
@@ -674,7 +689,7 @@ fun ExportScreen(
                         Icon(Icons.Default.Download, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Download Laporan (${selectedFormatConfig.name})",
+                            text = "${AppStrings.t("Download Laporan", "Download Report")} (${selectedFormatConfig.name})",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
@@ -684,7 +699,7 @@ fun ExportScreen(
                     OutlinedButton(
                         onClick = {
                             if (filteredTransactions.isEmpty()) {
-                                Toast.makeText(context, "Tidak ada data mutasi transaksi untuk rentang tanggal ini.", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, AppStrings.t("Tidak ada data mutasi transaksi untuk rentang tanggal ini.", "No transaction records for this date range."), Toast.LENGTH_LONG).show()
                                 return@OutlinedButton
                             }
 
@@ -704,13 +719,13 @@ fun ExportScreen(
                                     type = mimeType
                                     putExtra(Intent.EXTRA_STREAM, uri)
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    putExtra(Intent.EXTRA_SUBJECT, "Laporan Keuangan FinSmart - $displayPeriodTitle")
-                                    putExtra(Intent.EXTRA_TEXT, "Halo, berikut adalah laporan keuangan FinSmart saya untuk periode $displayPeriodTitle.")
+                                    putExtra(Intent.EXTRA_SUBJECT, AppStrings.t("Laporan Keuangan DompetNalar - $displayPeriodTitle", "DompetNalar Financial Report - $displayPeriodTitle"))
+                                    putExtra(Intent.EXTRA_TEXT, AppStrings.t("Halo, berikut adalah laporan keuangan DompetNalar saya untuk periode $displayPeriodTitle.", "Hello, here is my DompetNalar financial report for $displayPeriodTitle."))
                                 }
 
-                                context.startActivity(Intent.createChooser(intent, "Bagikan Laporan Keuangan"))
+                                context.startActivity(Intent.createChooser(intent, AppStrings.t("Bagikan Laporan Keuangan", "Share Financial Report")))
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Kesalahan membagikan: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "${AppStrings.t("Kesalahan membagikan", "Share error")}: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         },
                         shape = RoundedCornerShape(14.dp),
@@ -722,7 +737,7 @@ fun ExportScreen(
                         Icon(Icons.Default.Share, contentDescription = null, tint = FinSmartPrimary)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Bagikan Laporan (Share via WhatsApp, dll)",
+                            text = AppStrings.t("Bagikan Laporan (Share via WhatsApp, dll)", "Share Report (via WhatsApp, etc.)"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = FinSmartPrimary

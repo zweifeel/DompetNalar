@@ -27,11 +27,14 @@
     @retrofit2.http.* <methods>;
 }
 
-# Gemini API & Data Models
+# FinSmart Data Models, Local AI & On-Device ML Kit
 -keep class com.example.data.model.** { *; }
 -keep class com.example.data.local.** { *; }
--keep interface com.example.data.ai.GeminiApiService { *; }
 -keep class com.example.data.ai.** { *; }
+-keep class com.example.data.chatbot.** { *; }
+-keep class com.example.data.ocr.** { *; }
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
 
 # Moshi JSON Library & Codegen Adapters
 -keepclasseswithmembers class * {
@@ -66,3 +69,6 @@
     public static int v(...);
     public static int d(...);
 }
+
+# Google Play Billing Library
+-keep class com.android.billingclient.api.** { *; }

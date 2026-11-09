@@ -1,0 +1,130 @@
+================================================================================
+LAPORAN CHANGELOG RESMI DOMPETNALAR — VERSI 1.0.9 (VERSION CODE 9)
+================================================================================
+Aplikasi         : DompetNalar
+Developer Brand  : SleepyKoala
+Application ID   : com.aistudio.finsmart.kptxvw
+Versi Sebelumnya : 1.0.8 (Version Code 8)
+Versi Baru       : 1.0.9 (Version Code 9)
+Target Platform  : Google Play Console (Closed Testing)
+Tanggal Rilis    : 26 Oktober 2026
+Artefak Rilis    : DompetNalar-v1.0.9-versionCode9-release.aab (19.538.659 bytes)
+================================================================================
+
+--------------------------------------------------------------------------------
+BAGIAN A — CHANGELOG TEKNIS LENGKAP (AUDIT V8 -> V9)
+--------------------------------------------------------------------------------
+
+1. PERBAIKAN AKUMULASI DURASI REMOTE SMART MASTER GRANT (WEB ADMIN & CLOUD)
+   - Perilaku Sebelum Perbaikan (v1.0.8):
+     Pada versi 1.0.8, Web Admin menghitung masa berlaku grant secara buta berbasis
+     waktu klik: `expiresAt = Date.now() + (selectedDurationDays * 86400000)`.
+     Dokumen `tester_grants/{docId}` kemudian langsung ditimpa menggunakan operasi
+     `setDoc`. Akibatnya:
+     * Jika seorang tester memiliki grant 14 hari yang masih aktif, lalu admin
+       memberikan perpanjangan 30 hari, grant lama terhapus dan direset menjadi 30 hari
+       dari saat tombol ditekan (durasi sisa 14 hari hilang / tidak terakumulasi).
+     * Rentan terhadap race condition: jika dua administrator menekan tombol grant
+       bersamaan atau terjadi duplikasi request browser, permintaan terakhir akan
+       menimpa permintaan sebelumnya (lost update).
+     * Ada risiko grant bertipe "Permanen" tidak sengaja tertimpa menjadi grant berdurasi
+       terbatas jika admin salah memilih opsi hari.
+   - Perubahan Sesudah Perbaikan (v1.0.9):
+     * Dibuat modul utilitas logika murni `web-admin/src/utils/grantAccumulation.js`
+       yang mengeksekusi perhitungan masa berlaku berbasis status dokumen terkini.
+     * Operasi Firestore di `MembershipScreen.jsx` diubah menjadi Transaksi Atomik
+       (`runTransaction`): membaca data server terkini terlebih dahulu di dalam
+       transaksi, lalu menghitung `expiresAt` akumulatif, dan menuliskan payload secara
+       bersama.
+     * Aturan Bisnis Akumulasi Resmi:
+       a. Belum ada grant aktif: masa berlaku baru dihitung dari waktu sekarang.
+       b. Grant lama masih aktif: durasi baru ditambahkan pada `expiresAt` lama yang
+          masih berlaku (contoh: 14 hari + 30 hari = 44 hari dari waktu awal;
+          sisa 5 hari + 30 hari = sisa 35 hari).
+       c. Grant lama sudah kedaluwarsa: mulai durasi baru dari waktu pemberian baru.
+       d. Grant lama dicabut (`revoked == true`): tidak boleh diakumulasi, durasi baru
+          mulai dari waktu pemberian baru.
+       e. Grant permanen yang aktif (`expiresAt == null`): dilarang keras diturunkan
+          menjadi grant terbatas. Nilai `null` (Permanen) tetap dipertahankan.
+       f. Pemilihan opsi Permanen oleh admin selalu menghasilkan `expiresAt = null`.
+     * UI Feedback Web Admin kini menampilkan rincian apakah grant merupakan penerbitan
+       baru atau akumulasi perpanjangan beserta tanggal kedaluwarsa akhir yang presisi.
+   - Komponen / File Terkait:
+     * web-admin/src/utils/grantAccumulation.js
+     * web-admin/src/screens/MembershipScreen.jsx
+     * web-admin/test/grantAccumulation.test.js
+   - Bukti Implementasi & Pengujian:
+     * Suite Pengujian Node.js: `web-admin/test/grantAccumulation.test.js` (10 skenario
+       uji lulus 100% dalam 145ms).
+     * Build produksi Vite Web Admin (`dist/`) berhasil terkompilasi bersih dalam 2.72s.
+
+2. SINKRONISASI ANDROID & PROTEKSI ENTITLEMENT TERHADAP GRANT TERAKUMULASI
+   - Perilaku Sebelum Perbaikan (v1.0.8):
+     Di sisi client Android, `TesterGrantManager` dan `AuthViewModel` membaca data
+     remote dari Firestore. Namun belum ada suite pengujian regresi end-to-end yang
+     menguji secara ketat dampak perpanjangan masa berlaku akumulasi terhadap modul
+     Billing, isolasi cache offline grace 72 jam, dan penanganan grant yang dicabut.
+   - Perubahan Sesudah Perbaikan (v1.0.9):
+     * Dibuat suite pengujian regresi resmi `GrantAccumulationRegressionTest.kt`
+       yang mencakup 10 skenario terintegrasi antara Android runtime dan format remote
+       grant Firestore.
+     * Proteksi Hak Google Play Billing: Terverifikasi secara deterministik bahwa akun
+       dengan langganan Play Store aktif (`PLAY_STORE_BILLING`) tidak akan pernah tertimpa
+       atau diturunkan masa berlakunya oleh grant tester yang dicabut/kedaluwarsa.
+     * Proteksi Trial 3 Hari: Aturan uji coba akun Google tetap terisolasi dan tidak
+       terpengaruh oleh perubahan siklus hidup remote grant.
+     * Isolasi Cache Offline: Grant yang telah dicabut (`revoked == true`) secara mutlak
+       ditolak oleh `isGrantActive()` dan `isOfflineGraceValid()`. Cache lokal lama
+       tidak dapat digunakan untuk membobol akses offline.
+   - Komponen / File Terkait:
+     * app/src/main/java/com/example/util/TesterGrantManager.kt
+     * app/src/main/java/com/example/util/EntitlementManager.kt
+     * app/src/main/java/com/example/ui/viewmodel/AuthViewModel.kt
+     * app/src/test/java/com/example/GrantAccumulationRegressionTest.kt
+     * app/src/test/java/com/example/RemoteGrantAndUserRegistrySecurityTest.kt
+     * app/src/test/java/com/example/BillingAndSubscriptionLifecycleTest.kt
+   - Bukti Implementasi & Pengujian:
+     * Gradle Unit Test Task `:app:testDebugUnitTest`: Seluruh skenario pada
+       `GrantAccumulationRegressionTest`, `RemoteGrantAndUserRegistrySecurityTest`,
+       dan `BillingAndSubscriptionLifecycleTest` lulus 100% tanpa kegagalan (BUILD SUCCESSFUL).
+
+3. PEMBARUAN KONFIGURASI BUILD & VERSIONING GRADLE (v1.0.8 -> v1.0.9)
+   - Perubahan:
+     * `versionCode` dinaikkan dari `8` menjadi `9`.
+     * `versionName` dinaikkan dari `"1.0.8"` menjadi `"1.0.9"`.
+     * Normalisasi resolusi `KEYSTORE_PATH` pada `local.properties` lokal agar mengarah
+       secara absolut dan stabil ke `E:/Antigravity Project/FinSmart/my-release-key.jks`.
+     * Pembuatan artefak rilis Android App Bundle (.aab) dengan task `:app:bundleRelease`
+       menggunakan flag produksi Google Play Store (`-PplayStoreBuild=true`).
+   - Komponen / File Terkait:
+     * app/build.gradle.kts
+     * local.properties
+     * app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
+   - Bukti Implementasi & Pengujian:
+     * File bundle rilis `app-release.aab` dan `DompetNalar-v1.0.9-versionCode9-release.aab`
+       berhasil dibuat (19.538.659 bytes) bertanggal 26 Oktober 2026, 00:25 WIB.
+     * Tanda tangan digital tervalidasi menggunakan `jarsigner -verify`: status `jar verified`
+       dengan alias `kodegawa` (sertifikat berlaku hingga September 2051).
+
+--------------------------------------------------------------------------------
+BAGIAN B — CHANGELOG RINGKAS UNTUK TESTER (CATATAN RILIS CLOSED TESTING GOOGLE PLAY)
+--------------------------------------------------------------------------------
+
+[BAHASA INDONESIA]
+Catatan Rilis DompetNalar Versi 1.0.9 (Closed Testing Update):
+• Peningkatan Sistem Membership Tester: Pembaruan fitur Remote Smart Master Grant kini mendukung akumulasi masa aktif saat perpanjangan akses diberikan oleh tim pengembang.
+• Keamanan & Stabilitas Sesi: Optimalisasi validasi autentikasi cloud Firestore dan perlindungan status langganan Google Play Billing v8.0.0.
+• Peningkatan Keandalan: Penanganan error koneksi yang lebih andal pada saat sinkronisasi profil offline dan online.
+
+Terima kasih atas partisipasi aktif Anda dalam program pengujian tertutup (Closed Testing) DompetNalar!
+
+---
+
+[ENGLISH]
+Release Notes for DompetNalar Version 1.0.9 (Closed Testing Update):
+• Tester Membership System Enhancement: Remote Smart Master Grant renewals now accurately accumulate remaining duration without overwriting active periods.
+• Session Security & Stability: Hardened Firestore cloud authentication checks and enhanced Google Play Billing v8.0.0 entitlement protection.
+• Reliability Improvements: More resilient error handling during online and offline profile synchronization.
+
+Thank you for participating in the DompetNalar Closed Testing program!
+================================================================================

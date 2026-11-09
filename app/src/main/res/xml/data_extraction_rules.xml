@@ -5,15 +5,17 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <include domain="sharedpref" path="."/>
+        <!-- Cegah kebocoran sesi login, PIN keamanan, dan token kredensial developer melintasi reinstall via Android Cloud Backup -->
+        <exclude domain="sharedpref" path="finsmart_session_prefs.xml"/>
+        <exclude domain="sharedpref" path="finsmart_auth_prefs.xml"/>
+        <exclude domain="sharedpref" path="finsmart_prefs.xml"/>
+        <exclude domain="sharedpref" path="finsmart_theme_prefs.xml"/>
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="sharedpref" path="."/>
+        <exclude domain="sharedpref" path="finsmart_session_prefs.xml"/>
+        <exclude domain="sharedpref" path="finsmart_auth_prefs.xml"/>
     </device-transfer>
-    -->
 </data-extraction-rules>
+

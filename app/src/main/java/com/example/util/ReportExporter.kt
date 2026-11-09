@@ -105,7 +105,7 @@ object ReportExporter {
 
         // 1. Header Band
         canvas.drawRoundRect(RectF(20f, 20f, 575f, 110f), 12f, 12f, primaryPaint)
-        canvas.drawText("Laporan Keuangan FinSmart", 40f, 55f, textWhiteBold)
+        canvas.drawText("Laporan Keuangan DompetNalar", 40f, 55f, textWhiteBold)
         canvas.drawText("Konsultan Finansial & Manajemen Mutasi Mandiri", 40f, 75f, textWhiteSmall)
         canvas.drawText("Periode: $periodTitle  |  Pengguna: $username", 40f, 92f, textWhiteSmall)
 
@@ -198,15 +198,15 @@ object ReportExporter {
         }
 
         // 6. Footer section
-        val printDateStr = SimpleDateFormat("dd MMMM yyyy HH:mm", Locale("id", "ID")).format(Date())
+        val printDateStr = SimpleDateFormat("dd MMMM yyyy HH:mm", LocaleHelper.getActiveLocale()).format(Date())
         canvas.drawText(
-            "Dokumen laporan resmi diekspor otomatis via FinSmart pada $printDateStr.",
+            (if (LocaleHelper.isEnglish()) "Official report document automatically exported via DompetNalar on $printDateStr." else "Dokumen laporan resmi diekspor otomatis via DompetNalar pada $printDateStr."),
             30f,
             pageHeight - 45f,
             textGray
         )
         canvas.drawText(
-            "© 2026 SleepyKoala • FinSmart Kelola Keuangan Cerdas. Seluruh data dienkripsi lokal.",
+            "© 2026 SleepyKoala • DompetNalar Kelola Keuangan Cerdas. Seluruh data dienkripsi lokal.",
             30f,
             pageHeight - 30f,
             textGray
@@ -219,7 +219,7 @@ object ReportExporter {
         if (!exportDir.exists()) exportDir.mkdirs()
 
         val sdfFilename = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val pdfFile = File(exportDir, "FinSmart_Laporan_$sdfFilename.pdf")
+        val pdfFile = File(exportDir, "DompetNalar_Laporan_$sdfFilename.pdf")
         val fileOutputStream = FileOutputStream(pdfFile)
         pdfDocument.writeTo(fileOutputStream)
         pdfDocument.close()
@@ -236,7 +236,7 @@ object ReportExporter {
         if (!exportDir.exists()) exportDir.mkdirs()
 
         val sdfFilename = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val csvFile = File(exportDir, "FinSmart_Laporan_$sdfFilename.csv")
+        val csvFile = File(exportDir, "DompetNalar_Laporan_$sdfFilename.csv")
         val fileOutputStream = FileOutputStream(csvFile)
 
         // Write UTF-8 BOM to make Excel recognize it as UTF-8 immediately
@@ -286,7 +286,7 @@ object ReportExporter {
         if (!exportDir.exists()) exportDir.mkdirs()
 
         val sdfFilename = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val csvFile = File(exportDir, "FinSmart_Laporan_$sdfFilename.csv")
+        val csvFile = File(exportDir, "DompetNalar_Laporan_$sdfFilename.csv")
         val fileOutputStream = FileOutputStream(csvFile)
 
         // Write UTF-8 BOM

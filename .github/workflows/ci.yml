@@ -58,13 +58,9 @@ jobs:
         run: python3 scripts/update_prd.py --validate PRD.md
 
       - name: 8. Execute Mandatory Unit Tests
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: ./gradlew testDebugUnitTest --no-daemon
 
       - name: 9. Build Debug APK
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: ./gradlew assembleDebug --no-daemon
 
       - name: 10. Upload Debug APK Artifact
@@ -112,8 +108,6 @@ jobs:
           fi
 
       - name: 6. Build Release APK
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: ./gradlew assembleRelease --no-daemon
 
       - name: 7. Upload Release Artifacts

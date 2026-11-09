@@ -49,7 +49,7 @@ object ReceiptFormatter {
 
         val sb = StringBuilder()
         sb.append(centerText("BUKTI TRANSAKSI DIGITAL", width)).append("\n")
-        sb.append(centerText("FINSMART PERSONAL FINANCE", width)).append("\n")
+        sb.append(centerText("DOMPETNALAR PERSONAL FINANCE", width)).append("\n")
         sb.append(divider).append("\n")
 
         sb.append(formatKeyValue("No. Bukti", reference, width)).append("\n")
@@ -83,7 +83,7 @@ object ReceiptFormatter {
 
         sb.append(centerText("Simpan bukti ini sebagai referensi", width)).append("\n")
         sb.append(centerText("pencatatan keuangan Anda.", width)).append("\n")
-        sb.append(centerText("--- FinSmart App ---", width))
+        sb.append(centerText("--- DompetNalar App ---", width))
 
         return sb.toString()
     }

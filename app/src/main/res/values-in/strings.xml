@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DompetNalar</string>
+
+    <!-- Navigasi Utama -->
+    <string name="nav_home">Beranda</string>
+    <string name="nav_transactions">Mutasi</string>
+    <string name="nav_wallets">Dompet</string>
+    <string name="nav_analytics">Analisis</string>
+    <string name="nav_settings">Pengaturan</string>
+    <string name="nav_scan_receipt">Scan Nota</string>
+    <string name="nav_split_bill">Split Bill</string>
+    <string name="nav_budget">Anggaran</string>
+    <string name="nav_export_report">Export Laporan</string>
+    <string name="nav_feedback">Feedback</string>
+    <string name="nav_feedback_viewer">Feedback Viewer</string>
+
+    <!-- Ringkasan Saldo & Dashboard -->
+    <string name="total_balance">Total Saldo DompetNalar</string>
+    <string name="net_worth">Kekayaan Bersih (Net Worth)</string>
+    <string name="income">Pemasukan</string>
+    <string name="expense">Pengeluaran</string>
+    <string name="transfer">Transfer</string>
+    <string name="personal_mode">Mode Pribadi</string>
+    <string name="business_mode">Mode Bisnis</string>
+    <string name="recent_transactions">Transaksi Terakhir</string>
+    <string name="view_all">Lihat Semua</string>
+    <string name="add_transaction">Catat Transaksi Cepat</string>
+
+    <!-- Tombol & Aksi Umum -->
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="close">Tutup</string>
+    <string name="delete">Hapus</string>
+    <string name="edit">Ubah</string>
+    <string name="confirm">Konfirmasi</string>
+    <string name="loading">Memuat...</string>
+    <string name="success">Berhasil</string>
+    <string name="error">Terjadi Kesalahan</string>
+
+    <!-- Smart Master & Langganan -->
+    <string name="upgrade_to_smart_master">Upgrade ke Smart Master</string>
+    <string name="smart_master_monthly">Langganan Bulanan</string>
+    <string name="smart_master_yearly">Langganan Tahunan</string>
+    <string name="restore_purchases">Pulihkan Pembelian</string>
+    <string name="trial_badge">Akses Dasar</string>
+    <string name="watch_ad_premium">Tonton Iklan (+2 Jam Premium)</string>
+
+    <!-- Pengaturan -->
+    <string name="settings_title">Pengaturan &amp; Preferensi</string>
+    <string name="account_section">Akun &amp; Profil</string>
+    <string name="app_language">Bahasa Aplikasi</string>
+    <string name="currency">Mata Uang (Currency Selector)</string>
+    <string name="duress_pin">Duress PIN &amp; Keamanan</string>
+    <string name="cloud_backup">Backup &amp; Sinkronisasi Cloud</string>
+    <string name="privacy_policy">Kebijakan Privasi</string>
+    <string name="logout">Keluar dari Akun</string>
+
+    <!-- Relatif Tanggal -->
+    <string name="today">Hari Ini</string>
+    <string name="yesterday">Kemarin</string>
+</resources>

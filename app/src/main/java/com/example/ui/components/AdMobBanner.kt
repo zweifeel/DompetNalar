@@ -25,26 +25,47 @@ fun AdMobBanner(
         return
     }
 
-    AndroidView(
+    val currentContext = androidx.compose.ui.platform.LocalContext.current
+    if (!AdManager.isEmulatorOrVirtualDisplay() && !com.example.util.ConsentManager.canRequestAds(currentContext)) {
+        return
+    }
+
+    androidx.compose.foundation.layout.Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp),
-        factory = { context ->
-            try {
-                AdView(context).apply {
-                    setAdSize(AdSize.BANNER)
-                    adUnitId = AppConfig.ADMOB_BANNER_AD_UNIT_ID
-                    adListener = object : AdListener() {
-                        override fun onAdFailedToLoad(error: LoadAdError) {
-                            Log.d("AdMobBanner", "Banner ad failed to load gracefully: ${error.message}")
+            .height(52.dp),
+        contentAlignment = androidx.compose.ui.Alignment.Center
+    ) {
+        AndroidView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            factory = { context ->
+                val adContext = (context as? android.app.Activity) ?: context
+                try {
+                    AdView(adContext).apply {
+                        setAdSize(AdSize.BANNER)
+                        adUnitId = AppConfig.ADMOB_BANNER_AD_UNIT_ID
+                        adListener = object : AdListener() {
+                            override fun onAdLoaded() {
+                                Log.i("AdMobBanner", "Banner ad loaded successfully [adUnit=${AppConfig.ADMOB_BANNER_AD_UNIT_ID}].")
+                            }
+                            override fun onAdFailedToLoad(error: LoadAdError) {
+                                Log.w("AdMobBanner", "Banner ad failed to load: code=${error.code}, message=${error.message}, domain=${error.domain}")
+                            }
                         }
+                        loadAd(AdRequest.Builder().build())
                     }
-                    loadAd(AdRequest.Builder().build())
+                } catch (e: Exception) {
+                    Log.w("AdMobBanner", "Error instantiating AdView: ${e.message}")
+                    android.view.View(context)
                 }
-            } catch (e: Exception) {
-                Log.w("AdMobBanner", "Error instantiating AdView: ${e.message}")
-                android.view.View(context)
+            },
+            onRelease = { view ->
+                try {
+                    (view as? AdView)?.destroy()
+                } catch (_: Exception) {}
             }
-        }
-    )
+        )
+    }
 }

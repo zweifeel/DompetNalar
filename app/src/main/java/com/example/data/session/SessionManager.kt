@@ -35,12 +35,19 @@ object SessionManager {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
+    private val _isStealthMode = MutableStateFlow(false)
+    val isStealthMode: StateFlow<Boolean> = _isStealthMode.asStateFlow()
+
     private var prefs: SharedPreferences? = null
 
+    fun isStealthModeActive(): Boolean = _isStealthMode.value
+
+    fun setStealthMode(enabled: Boolean) {
+        _isStealthMode.value = enabled
+    }
+
     fun initialize(context: Context) {
-        if (prefs == null) {
-            prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        }
+        prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     private fun updateState(state: SessionState) {
@@ -71,53 +78,87 @@ object SessionManager {
 
     fun login(user: User) {
         require(user.id > 0L) { "Cannot login with non-persisted user (id must be > 0)." }
+        val previousUserId = _activeUserId.value
+        if (previousUserId != null && previousUserId != user.id) {
+            com.example.data.chatbot.parser.WalletDraftManager.clearAllDrafts()
+            com.example.data.chatbot.parser.TransactionDraftManager.clearAllDrafts()
+        }
         prefs?.edit()?.putLong(KEY_SAVED_USER_ID, user.id)?.apply()
         updateState(SessionState.Authenticated(user.id, user))
     }
 
     fun logout() {
+        com.example.data.chatbot.parser.WalletDraftManager.clearAllDrafts()
+        com.example.data.chatbot.parser.TransactionDraftManager.clearAllDrafts()
         prefs?.edit()?.remove(KEY_SAVED_USER_ID)?.apply()
+        setStealthMode(false)
         updateState(SessionState.Unauthenticated)
     }
 
     fun clearSession() {
+        com.example.data.chatbot.parser.WalletDraftManager.clearAllDrafts()
+        com.example.data.chatbot.parser.TransactionDraftManager.clearAllDrafts()
         prefs?.edit()?.clear()?.apply()
+        setStealthMode(false)
         updateState(SessionState.Unauthenticated)
     }
 
-    suspend fun restoreSession(userDao: UserDao): Boolean {
+    suspend fun restoreSession(
+        userDao: UserDao,
+        isDebug: Boolean = com.example.BuildConfig.DEBUG
+    ): Boolean {
         val savedId = prefs?.getLong(KEY_SAVED_USER_ID, -1L) ?: -1L
         if (savedId <= 0L) {
             updateState(SessionState.Unauthenticated)
             return false
         }
         val user = userDao.getUserById(savedId)
-        return if (user != null && user.id > 0L) {
-            updateState(SessionState.Authenticated(user.id, user))
-            true
-        } else {
+        if (user == null || user.id <= 0L) {
             // User deleted or invalid in database
             prefs?.edit()?.remove(KEY_SAVED_USER_ID)?.apply()
             updateState(SessionState.Unauthenticated)
-            false
+            return false
         }
+
+        // Phase 1G.6: Akun target developer (Lukas / lunachroc07@gmail.com) tidak boleh dipulihkan dalam sesi apa pun
+        if (user.username.equals("Lukas", ignoreCase = true) || user.email.equals("lunachroc07@gmail.com", ignoreCase = true)) {
+            prefs?.edit()?.remove(KEY_SAVED_USER_ID)?.apply()
+            updateState(SessionState.Unauthenticated)
+            return false
+        }
+
+        // Pada build Release, sesi tersimpan dengan role MASTER_DEV tidak boleh dipulihkan secara otomatis
+        // semata-mata dari database lokal atau SharedPreferences tanpa re-autentikasi resmi.
+        if (!isDebug && user.role == UserRole.MASTER_DEV) {
+            prefs?.edit()?.remove(KEY_SAVED_USER_ID)?.apply()
+            updateState(SessionState.Unauthenticated)
+            return false
+        }
+
+        updateState(SessionState.Authenticated(user.id, user))
+        return true
     }
 
     suspend fun startGuestSession(userDao: UserDao): User {
         val guestUser = User(
-            username = "Tamu FinSmart",
+            username = "Tamu DompetNalar",
             email = "guest_${System.currentTimeMillis()}@finsmart.local",
             role = UserRole.FREE_MEMBER,
             isGuest = true,
-            trialStartDate = System.currentTimeMillis()
+            trialStartDate = 0L
         )
-        val generatedId = userDao.insertUser(guestUser)
+        val generatedId = com.example.data.local.DatabaseWriteCoordinator.getInstance().withWritePermit {
+            userDao.insertUser(guestUser)
+        }
         val persistedGuest = guestUser.copy(id = generatedId)
         login(persistedGuest)
         return persistedGuest
     }
 
     fun resetForTesting() {
+        com.example.data.chatbot.parser.WalletDraftManager.clearAllDrafts()
+        com.example.data.chatbot.parser.TransactionDraftManager.clearAllDrafts()
+        setStealthMode(false)
         updateState(SessionState.Unauthenticated)
     }
 

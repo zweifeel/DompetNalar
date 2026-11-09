@@ -22,7 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [34])
 class Migration7To8Test {
 
     private lateinit var context: Context
@@ -207,9 +207,9 @@ class Migration7To8Test {
     fun testMigration7To8_PreservesExistingDataAndCreatesInstallmentPlansTable() = runBlocking {
         createV7Database()
 
-        // Open database through Room v8 with Migration7To8
+        // Open database through Room v9 with Migration7To8 and Migration8To9
         val db = Room.databaseBuilder(context, FinSmartDatabase::class.java, dbName)
-            .addMigrations(Migration7To8)
+            .addMigrations(Migration7To8, Migration8To9, Migration9To10(), Migration10To11())
             .build()
 
         // 1. Verify existing v7 debts are preserved

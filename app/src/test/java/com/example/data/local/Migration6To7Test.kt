@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [34])
 class Migration6To7Test {
 
     private lateinit var context: Context
@@ -621,7 +621,7 @@ class Migration6To7Test {
             .build()
 
         assertNotNull(roomDb.openHelper.writableDatabase)
-        assertEquals(8, roomDb.openHelper.writableDatabase.version)
+        assertEquals(11, roomDb.openHelper.writableDatabase.version)
 
         // Seed initial data using normal populateInitialData callback logic
         runBlocking {

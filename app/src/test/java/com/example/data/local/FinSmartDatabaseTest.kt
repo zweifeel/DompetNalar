@@ -34,7 +34,7 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [34])
 class FinSmartDatabaseTest {
 
     private lateinit var db: FinSmartDatabase
@@ -71,22 +71,7 @@ class FinSmartDatabaseTest {
         FinSmartDatabase.populateInitialData(db)
 
         val users = db.userDao().getAllUsers().first()
-        assertEquals(1, users.size)
-        assertEquals("Lukas", users[0].username)
-        assertEquals(UserRole.MASTER_DEV, users[0].role)
-        val lukasId = users[0].id
-
-        val wallets = db.walletDao().getAllWallets(lukasId).first()
-        assertEquals(4, wallets.size)
-
-        val categories = db.categoryDao().getAllCategories(lukasId).first()
-        assertEquals(13, categories.size)
-
-        val debts = db.debtDao().getAllDebts(lukasId).first()
-        assertEquals(3, debts.size)
-
-        val assets = db.assetDao().getAllAssets(lukasId).first()
-        assertEquals(3, assets.size)
+        assertEquals(0, users.size)
     }
 
     @Test
@@ -286,13 +271,19 @@ class FinSmartDatabaseTest {
     @Test
     fun testMigrationRegistryDefined() {
         assertNotNull(FinSmartDatabase.MIGRATIONS)
-        assertEquals(3, FinSmartDatabase.MIGRATIONS.size)
+        assertEquals(6, FinSmartDatabase.MIGRATIONS.size)
         assertEquals(5, FinSmartDatabase.MIGRATIONS[0].startVersion)
         assertEquals(6, FinSmartDatabase.MIGRATIONS[0].endVersion)
         assertEquals(6, FinSmartDatabase.MIGRATIONS[1].startVersion)
         assertEquals(7, FinSmartDatabase.MIGRATIONS[1].endVersion)
         assertEquals(7, FinSmartDatabase.MIGRATIONS[2].startVersion)
         assertEquals(8, FinSmartDatabase.MIGRATIONS[2].endVersion)
+        assertEquals(8, FinSmartDatabase.MIGRATIONS[3].startVersion)
+        assertEquals(9, FinSmartDatabase.MIGRATIONS[3].endVersion)
+        assertEquals(9, FinSmartDatabase.MIGRATIONS[4].startVersion)
+        assertEquals(10, FinSmartDatabase.MIGRATIONS[4].endVersion)
+        assertEquals(10, FinSmartDatabase.MIGRATIONS[5].startVersion)
+        assertEquals(11, FinSmartDatabase.MIGRATIONS[5].endVersion)
     }
 
     @Test

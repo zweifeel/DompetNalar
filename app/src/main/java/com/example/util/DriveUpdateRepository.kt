@@ -79,7 +79,7 @@ object DriveUpdateRepository {
                         put("latest_version", BuildConfig.VERSION_NAME)
                         put("version_code", BuildConfig.VERSION_CODE)
                         put("apk_url", "")
-                        put("release_notes", "FinSmart sudah menggunakan versi terbaru.")
+                        put("release_notes", "DompetNalar sudah menggunakan versi terbaru.")
                     }
                     defaultObj.toString()
                 }
@@ -192,7 +192,7 @@ object DriveUpdateRepository {
                 ApkInstallHelper.installApk(context, apkFile)
             }
 
-            Pair(true, "Unduhan selesai. Memulai instalasi FinSmart v$versionName...")
+            Pair(true, "Unduhan selesai. Memulai instalasi DompetNalar v$versionName...")
         } catch (e: Exception) {
             Log.e(TAG, "Download/Install failed: ${e.message}", e)
             Pair(false, "Gagal mengunduh pembaruan: ${e.message}")

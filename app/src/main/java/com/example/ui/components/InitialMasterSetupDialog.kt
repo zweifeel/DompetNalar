@@ -143,7 +143,7 @@ fun InitialMasterSetupDialog(
                         confirmPassword = it
                         localError = null
                     },
-                    label = { Text("Konfirmasi Kata Sandi") },
+                    label = { Text(com.example.util.AppStrings.t("Konfirmasi Kata Sandi", "Confirm Password")) },
                     placeholder = { Text("Ulangi kata sandi baru") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
@@ -197,7 +197,7 @@ fun InitialMasterSetupDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
                 modifier = Modifier.testTag("btn_save_initial_master_password")
             ) {
-                Text("Simpan & Masuk", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(com.example.util.AppStrings.t("Simpan & Masuk", "Save & Sign In"), color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -205,7 +205,7 @@ fun InitialMasterSetupDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_initial_master_password")
             ) {
-                Text("Batal")
+                Text(com.example.util.AppStrings.cancel)
             }
         }
     )

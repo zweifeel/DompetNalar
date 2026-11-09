@@ -59,7 +59,7 @@ object GoogleDrivePublisherEngine {
                         targetApkFile.copyTo(publicRootApkFile, overwrite = true)
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "Could not copy provided APK URI, generating package placeholder: ${e.message}")
+                    Log.w(TAG, "Could not copy provided APK URI, generating fallback package: ${e.message}")
                     targetApkFile.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
                     publicRootApkFile.writeBytes(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
                 }

@@ -1,4 +1,5 @@
 package com.example.ui.screens
+import com.example.util.AppStrings
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -60,6 +61,7 @@ import com.example.data.model.User
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.theme.GoldAccent
 import com.example.ui.viewmodel.FeedbackViewModel
+import com.example.util.LocaleHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,17 +79,18 @@ fun FeedbackScreen(
     val isSubmitting by feedbackViewModel.isSubmitting.collectAsState()
     val submissionMessage by feedbackViewModel.submissionSuccess.collectAsState()
 
-    val categories = listOf("Bug / Kendala", "Saran Fitur", "Desain / UI", "Lainnya")
+    val isEnglish = LocaleHelper.isEnglish()
+    val categories = listOf(AppStrings.t("Bug / Kendala", "Bug / Issue"), AppStrings.t("Saran Fitur", "Feature Suggestion"), AppStrings.t("Desain / UI", "Design / UI"), AppStrings.t("Lainnya", "Other"))
 
-    val userName = currentUser?.username ?: "Pengguna FinSmart"
-    val userEmail = currentUser?.email ?: "guest@finsmart.local"
+    val userName = currentUser?.username ?: if (isEnglish) "DompetNalar User" else "Pengguna DompetNalar"
+    val userEmail = currentUser?.email ?: "guest@dompetnalar.local"
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Kirim Masukan & Saran",
+                        text = if (isEnglish) "Send Feedback & Suggestions" else "Kirim Masukan & Saran",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -97,7 +100,10 @@ fun FeedbackScreen(
                         onClick = onNavigateBack,
                         modifier = Modifier.testTag("btn_back_feedback")
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = if (isEnglish) "Back" else "Kembali"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -144,13 +150,13 @@ fun FeedbackScreen(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column {
                             Text(
-                                text = "Bantu Kami Menyempurnakan FinSmart",
+                                text = if (isEnglish) "Help Us Improve DompetNalar" else "Bantu Kami Menyempurnakan DompetNalar",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Kritik, saran, maupun laporan kendala Anda dibaca langsung oleh developer.",
+                                text = if (isEnglish) "Critiques, suggestions, and bug reports are reviewed directly by developers." else "Kritik, saran, maupun laporan kendala Anda dibaca langsung oleh developer.",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -168,7 +174,7 @@ fun FeedbackScreen(
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Text(
-                            text = "Pengirim Masukan",
+                            text = AppStrings.t("Pengirim Masukan", "Feedback Sender"),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -196,7 +202,7 @@ fun FeedbackScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Bagaimana pengalaman Anda menggunakan FinSmart?",
+                            text = AppStrings.t("Bagaimana pengalaman Anda menggunakan DompetNalar?", "How was your experience using DompetNalar?"),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -219,11 +225,11 @@ fun FeedbackScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = when (rating) {
-                                5 -> "⭐⭐⭐⭐⭐ Luar Biasa!"
-                                4 -> "⭐⭐⭐⭐ Sangat Bagus"
-                                3 -> "⭐⭐⭐ Cukup Baik"
-                                2 -> "⭐⭐ Perlu Peningkatan"
-                                else -> "⭐ Kurang Memuaskan"
+                                5 -> "⭐⭐⭐⭐⭐ " + AppStrings.t("Luar Biasa!", "Outstanding!")
+                                4 -> "⭐⭐⭐⭐ " + AppStrings.t("Sangat Bagus", "Very Good")
+                                3 -> "⭐⭐⭐ " + AppStrings.t("Cukup Baik", "Good")
+                                2 -> "⭐⭐ " + AppStrings.t("Perlu Peningkatan", "Needs Improvement")
+                                else -> "⭐ " + AppStrings.t("Kurang Memuaskan", "Poor")
                             },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -242,7 +248,7 @@ fun FeedbackScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Kategori Masukan",
+                            text = AppStrings.t("Kategori Masukan", "Feedback Category"),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -277,17 +283,35 @@ fun FeedbackScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Pesan, Saran, atau Detail Kendala",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isEnglish) "Message, Suggestion, or Bug Details" else "Pesan, Saran, atau Detail Kendala",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${feedbackMessage.length}/1000",
+                                fontSize = 11.sp,
+                                color = if (feedbackMessage.length >= 1000) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
                             value = feedbackMessage,
-                            onValueChange = { feedbackMessage = it },
-                            placeholder = { Text("Tuliskan kritik, saran, atau kendala yang Anda alami secara detail di sini...") },
+                            onValueChange = { if (it.length <= 1000) feedbackMessage = it },
+                            placeholder = {
+                                Text(
+                                    if (isEnglish)
+                                        "Please provide detailed suggestions, bug reports, or feedback..."
+                                    else
+                                        "Tuliskan kritik, saran, atau kendala yang Anda alami secara detail di sini..."
+                                )
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(130.dp)
@@ -303,7 +327,11 @@ fun FeedbackScreen(
                 Button(
                     onClick = {
                         if (feedbackMessage.isBlank()) {
-                            Toast.makeText(context, "Silakan isi pesan masukan terlebih dahulu", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                if (isEnglish) "Please enter your feedback message first" else "Silakan isi pesan masukan terlebih dahulu",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             return@Button
                         }
                         feedbackViewModel.submitFeedback(
@@ -311,11 +339,31 @@ fun FeedbackScreen(
                             userEmail = userEmail,
                             rating = rating,
                             category = selectedCategory,
-                            message = feedbackMessage
-                        ) {
-                            Toast.makeText(context, "Masukan berhasil dikirim!", Toast.LENGTH_LONG).show()
-                            onNavigateBack()
-                        }
+                            message = feedbackMessage,
+                            onResult = { isCloudSynced ->
+                                if (isCloudSynced) {
+                                    Toast.makeText(
+                                        context,
+                                        if (isEnglish) "Feedback sent and synchronized successfully." else "Feedback berhasil dikirim dan tersinkronisasi.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        if (isEnglish) "Feedback saved locally. Will be synchronized once network is available." else "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                                onNavigateBack()
+                            },
+                            onError = { _ ->
+                                Toast.makeText(
+                                    context,
+                                    if (isEnglish) "Failed to save feedback. Please try again." else "Feedback gagal disimpan. Silakan coba lagi.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -330,7 +378,11 @@ fun FeedbackScreen(
                     } else {
                         Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Kirim Masukan Sekarang", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = if (isEnglish) "Submit Feedback Now" else "Kirim Masukan Sekarang",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))

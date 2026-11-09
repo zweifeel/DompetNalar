@@ -1,0 +1,53 @@
+{
+  "_metadata": {
+    "status": "EXPLICIT_NULLS_VALIDATION",
+    "description": "Tests explicit JSON null on fields declared as nullable in Kotlin data classes."
+  },
+  "version": 2,
+  "exportedAt": 1704067200000,
+  "wallets": [
+    {
+      "id": 1,
+      "name": "Dompet Nullable Fields",
+      "type": "BANK",
+      "accountNumber": "",
+      "balance": 100000.0,
+      "userId": null
+    }
+  ],
+  "transactions": [
+    {
+      "id": 10,
+      "title": "Transaksi Reguler",
+      "amount": 50000.0,
+      "type": "EXPENSE",
+      "category": "Makanan",
+      "walletId": 1,
+      "walletName": "Dompet Nullable Fields",
+      "targetWalletId": null,
+      "targetWalletName": null,
+      "userId": null
+    }
+  ],
+  "users": [
+    {
+      "id": 101,
+      "username": "user_nulls",
+      "email": "nulls@example.com",
+      "subscriptionExpiresAt": null
+    }
+  ],
+  "installmentPlans": [
+    {
+      "id": "plan-null-01",
+      "name": "Cicilan Bebas Bunga",
+      "installmentAmount": 200000.0,
+      "totalTenor": 5,
+      "startDate": "2024-01-01",
+      "nextDueDate": "2024-02-01",
+      "totalRemainingPrincipal": null,
+      "lastPaymentDate": null,
+      "userId": null
+    }
+  ]
+}

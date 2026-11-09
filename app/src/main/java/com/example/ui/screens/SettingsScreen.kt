@@ -1,4 +1,5 @@
 package com.example.ui.screens
+import com.example.util.AppStrings
 
 import android.content.Intent
 import android.net.Uri
@@ -60,7 +61,6 @@ import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.SwitchAccount
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.AlertDialog
@@ -97,11 +97,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.config.AppConfig
+import com.example.BuildConfig
 import com.example.data.model.AccountMode
 import com.example.data.model.AppIconEdition
 import com.example.data.model.User
 import com.example.data.model.UserRole
-import com.example.ui.components.ChangelogBottomSheet
+import com.example.data.session.SessionManager
 import com.example.ui.components.ExportFormatManagementDialog
 import com.example.ui.components.PublishUpdateBottomSheet
 import com.example.ui.components.UpdateAvailableBottomSheet
@@ -119,6 +120,10 @@ import com.example.util.AppThemeMode
 import com.example.util.CurrencyFormatter
 import com.example.util.LocaleHelper
 import com.example.util.ThemeEngine
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.delay
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
@@ -140,9 +145,11 @@ fun SettingsScreen(
     driveEmail: String,
     driveLastBackup: String,
     driveAutoSync: Boolean,
+    driveAutoBackupInterval: Long = 24L,
     onConnectDrive: (String) -> Unit,
     onDisconnectDrive: () -> Unit,
     onToggleAutoSync: (Boolean) -> Unit,
+    onUpdateAutoBackupInterval: (Long) -> Unit = {},
     onTriggerBackup: () -> Unit,
     onTriggerRestore: () -> Unit,
     onTriggerPortableBackup: (String, (Boolean, String, File?) -> Unit) -> Unit = { _, _ -> },
@@ -190,20 +197,26 @@ fun SettingsScreen(
     var isAccentDialogOpen by remember { mutableStateOf(false) }
     var isWallpaperDialogOpen by remember { mutableStateOf(false) }
     var isAppIconDialogOpen by remember { mutableStateOf(false) }
-    var isCheckUpdateDialogOpen by remember { mutableStateOf(false) }
-    var isChangelogOpen by remember { mutableStateOf(false) }
     var isShakeGestureDialogOpen by remember { mutableStateOf(false) }
     var isManageExportFormatsOpen by remember { mutableStateOf(false) }
     val isGooglePlayInstalled = remember { InstallSourceHelper.isInstalledFromGooglePlay(context) }
 
     var tempOpacity by remember(customWallpaperOpacity) { mutableStateOf(customWallpaperOpacity) }
+    var isLogoutConfirmDialogOpen by remember { mutableStateOf(false) }
+    var isLoggingOut by remember { mutableStateOf(false) }
 
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri: Uri? ->
             if (uri != null) {
-                ThemeEngine.setCustomWallpaper(context, uri.toString(), customWallpaperOpacity)
-                Toast.makeText(context, "Latar belakang berhasil diterapkan!", Toast.LENGTH_SHORT).show()
+                try {
+                    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    context.contentResolver.takePersistableUriPermission(uri, flags)
+                } catch (_: Exception) {
+                    // Safe ignore jika content provider tidak mendukung persistable URI
+                }
+                ThemeEngine.setCustomWallpaperForUser(context, currentUser, uri.toString(), customWallpaperOpacity)
+                Toast.makeText(context, if (LocaleHelper.isEnglish()) "Background successfully applied!" else "Latar belakang berhasil diterapkan!", Toast.LENGTH_SHORT).show()
                 isWallpaperDialogOpen = true
             }
         }
@@ -261,13 +274,13 @@ fun SettingsScreen(
         item {
             Column {
                 Text(
-                    text = "Pengaturan",
+                    text = AppStrings.t("Pengaturan", "Settings"),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Kelola profil, keamanan, dan sinkronisasi cloud FinSmart",
+                    text = AppStrings.t("Kelola profil, keamanan, dan sinkronisasi cloud DompetNalar", "Manage DompetNalar profile, security, and cloud sync"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -282,6 +295,96 @@ fun SettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    // Smart Member Entitlement Status & Active Reactive Counter (Shared across profile row & status card)
+                    val currentTime by produceState(initialValue = System.currentTimeMillis()) {
+                        while (true) {
+                            delay(1000L)
+                            value = System.currentTimeMillis()
+                        }
+                    }
+                    val entitlement = remember(currentUser, currentTime) {
+                        com.example.util.EntitlementManager.evaluate(currentUser, now = currentTime)
+                    }
+                    val statusInfo = remember(entitlement, currentUser, currentTime) {
+                        when {
+                            currentUser?.role == UserRole.MASTER_DEV -> {
+                                SmartMemberStatusUI(
+                                    title = "Smart Member — Master Developer 👑",
+                                    detail = "Akses Penuh Seumur Hidup (Permanen)",
+                                    badge = "Permanen",
+                                    color = Color(0xFFD97706),
+                                    bgColor = Color(0xFFD97706).copy(alpha = 0.12f),
+                                    icon = Icons.Default.AdminPanelSettings
+                                )
+                            }
+                            currentUser?.isGuest == true -> {
+                                SmartMemberStatusUI(
+                                    title = "Smart Member — Tamu",
+                                    detail = "Mode Tamu (Akses fitur terbatas)",
+                                    badge = "Tamu",
+                                    color = Color(0xFF64748B),
+                                    bgColor = Color(0xFF64748B).copy(alpha = 0.10f),
+                                    icon = Icons.Default.Shield
+                                )
+                            }
+                            entitlement.isPremiumUnlocked && currentUser?.role == UserRole.SMART_MASTER -> {
+                                val expiry = entitlement.expiresAt
+                                val (detailText, badgeText) = if (expiry != null && expiry > currentTime) {
+                                    val remainingMillis = (expiry - currentTime).coerceAtLeast(0L)
+                                    val days = (remainingMillis / (24L * 3600 * 1000L)).toInt()
+                                    val hours = ((remainingMillis % (24L * 3600 * 1000L)) / (3600 * 1000L)).toInt()
+                                    val minutes = ((remainingMillis % (3600 * 1000L)) / (60 * 1000L)).toInt()
+                                    val formattedDuration = when {
+                                        days > 0 -> "$days hari $hours jam"
+                                        hours > 0 -> "$hours jam $minutes mnt"
+                                        else -> "${minutes.coerceAtLeast(1)} mnt"
+                                    }
+                                    Pair(
+                                        "Sisa masa aktif: $formattedDuration (s/d ${entitlement.getFormattedExpiry()})",
+                                        formattedDuration
+                                    )
+                                } else {
+                                    Pair("Akses: Aktif (Tidak Terbatas)", "Aktif")
+                                }
+                                SmartMemberStatusUI(
+                                    title = "Smart Member — Aktif 👑",
+                                    detail = detailText,
+                                    badge = badgeText,
+                                    color = Color(0xFFD97706),
+                                    bgColor = Color(0xFFD97706).copy(alpha = 0.12f),
+                                    icon = Icons.Default.Diamond
+                                )
+                            }
+                            entitlement.isExpired -> {
+                                val detail = "Masa aktif telah berakhir. Perpanjang untuk membuka kembali fitur." 
+                                SmartMemberStatusUI(
+                                    title = "Smart Member — Kedaluwarsa",
+                                    detail = detail,
+                                    badge = "Kedaluwarsa",
+                                    color = ExpenseRed,
+                                    bgColor = ExpenseRed.copy(alpha = 0.12f),
+                                    icon = Icons.Default.Lock
+                                )
+                            }
+                            else -> {
+                                SmartMemberStatusUI(
+                                    title = "Smart Member — Bebas Biaya",
+                                    detail = "Paket Bebas Biaya (Non-Premium)",
+                                    badge = "Gratis",
+                                    color = FinSmartPrimary,
+                                    bgColor = FinSmartPrimary.copy(alpha = 0.10f),
+                                    icon = Icons.Default.Shield
+                                )
+                            }
+                        }
+                    }
+
+                    val displayedUsername = currentUser?.username?.takeIf { it.isNotBlank() }
+                        ?: if (currentUser != null && !currentUser.isGuest && (currentUser.role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(currentUser.email))) AppStrings.t("Pengembang DompetNalar", "DompetNalar Developer")
+                        else if (currentUser?.isGuest == true) AppStrings.t("Tamu DompetNalar", "DompetNalar Guest")
+                        else AppStrings.t("Pengguna DompetNalar", "DompetNalar User")
+
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -302,7 +405,8 @@ fun SettingsScreen(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (!profilePhotoUri.isNullOrEmpty()) {
+                            val shouldShowPhoto = currentUser != null && !currentUser.isGuest && !profilePhotoUri.isNullOrEmpty()
+                            if (shouldShowPhoto) {
                                 AsyncImage(
                                     model = profilePhotoUri,
                                     contentDescription = "Foto Profil",
@@ -311,7 +415,7 @@ fun SettingsScreen(
                                 )
                             } else {
                                 Text(
-                                    text = (currentUser?.username?.take(1) ?: "L").uppercase(),
+                                    text = (displayedUsername.take(1).ifBlank { "D" }).uppercase(),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -322,9 +426,10 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
+
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = currentUser?.username ?: "Lukas",
+                                    text = displayedUsername,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -339,7 +444,7 @@ fun SettingsScreen(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
-                                        text = role.badgeText,
+                                        text = if (currentUser?.isGuest == true) "Tamu" else role.badgeText,
                                         color = when (role) {
                                             UserRole.MASTER_DEV -> Color.White
                                             UserRole.SMART_MASTER -> Color(0xFFD97706)
@@ -353,16 +458,75 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = currentUser?.email ?: "",
+                                text = if (currentUser?.isGuest == true) "" else (currentUser?.email ?: ""),
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    if (role == UserRole.MASTER_DEV) {
+                    // Dedicated Prominent Smart Member Status & Duration Counter Card
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("smart_member_status_counter_box"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = statusInfo.bgColor)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(statusInfo.color.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = statusInfo.icon,
+                                    contentDescription = null,
+                                    tint = statusInfo.color,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = statusInfo.title,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = statusInfo.color
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = statusInfo.detail,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.testTag("smart_member_duration_counter")
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = statusInfo.color.copy(alpha = 0.18f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = statusInfo.badge,
+                                    color = statusInfo.color,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    if (BuildConfig.DEBUG && role == UserRole.MASTER_DEV) {
                         Button(
                             onClick = onOpenMasterDevPanel,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
@@ -373,7 +537,7 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Default.AdminPanelSettings, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Panel Kelola Akun Master Dev", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(com.example.util.AppStrings.t("Panel Kelola Akun Master Dev", "Master Dev Account Manager"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     } else if (role == UserRole.FREE_MEMBER) {
                         Button(
@@ -386,19 +550,38 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Default.Diamond, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Upgrade ke Smart Master 👑 (Mulai Rp12.400/bln)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(com.example.util.AppStrings.t("Upgrade ke Smart Master 👑 (Mulai Rp12.400/bln)", "Upgrade to Smart Master 👑 (From Rp12.400/mo)"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
-                    SettingsRowItem(
-                        icon = Icons.Default.SwitchAccount,
-                        title = "Ganti Akun / Masuk",
-                        subtitle = "Login dengan email atau kredensial lain",
-                        onClick = onOpenAuthModal
-                    )
+                    if (currentUser != null && !currentUser.isGuest) {
+                        SettingsRowItem(
+                            icon = Icons.Default.SwitchAccount,
+                            title = if (LocaleHelper.isEnglish()) "Switch Account" else "Ganti Akun",
+                            subtitle = if (LocaleHelper.isEnglish()) "Log in with another account" else "Login dengan akun atau kredensial lain",
+                            onClick = onOpenAuthModal
+                        )
+                        Divider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                        )
+                        SettingsRowItem(
+                            icon = Icons.AutoMirrored.Filled.Logout,
+                            title = if (LocaleHelper.isEnglish()) "Log Out" else "Keluar dari Akun",
+                            subtitle = if (LocaleHelper.isEnglish()) "Sign out of current session" else "Keluar dari sesi akun saat ini",
+                            onClick = { isLogoutConfirmDialogOpen = true }
+                        )
+                    } else {
+                        SettingsRowItem(
+                            icon = Icons.Default.Person,
+                            title = if (LocaleHelper.isEnglish()) "Log In / Register" else "Masuk / Daftar Akun",
+                            subtitle = if (LocaleHelper.isEnglish()) "Save and sync your financial data" else "Simpan dan sinkronkan data keuangan Anda",
+                            onClick = onOpenAuthModal
+                        )
+                    }
                 }
             }
         }
@@ -431,8 +614,8 @@ fun SettingsScreen(
 
                     SettingsRowToggle(
                         icon = Icons.Default.Visibility,
-                        title = "Mode Samarkan Saldo (Incognito)",
-                        subtitle = "Sembunyikan angka saldo di tempat umum",
+                        title = AppStrings.t("Mode Samarkan Saldo (Incognito)", "Hide Balance Mode (Incognito)"),
+                        subtitle = AppStrings.t("Sembunyikan angka saldo di tempat umum", "Hide balance numbers in public spaces"),
                         checked = isPrivacyMode,
                         onCheckedChange = { onTogglePrivacy() }
                     )
@@ -457,10 +640,12 @@ fun SettingsScreen(
 
                     Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
+                    val isWallpaperUnlocked = role == UserRole.MASTER_DEV || role == UserRole.SMART_MASTER || com.example.util.EntitlementManager.evaluate(currentUser).isPremiumUnlocked
+
                     SettingsRowItem(
                         icon = Icons.Default.Wallpaper,
                         title = "Latar Belakang Dasbor (Wallpaper)",
-                        subtitle = if (!customWallpaperUri.isNullOrEmpty()) "Custom Wallpaper Aktif (${(customWallpaperOpacity * 100).toInt()}%)" else "Bawaan Tema FinSmart",
+                        subtitle = if (!customWallpaperUri.isNullOrEmpty()) "Custom Wallpaper Aktif (${(customWallpaperOpacity * 100).toInt()}%)" else if (isWallpaperUnlocked) AppStrings.t("Bawaan Tema DompetNalar (Terbuka)", "DompetNalar Default Theme (Unlocked)") else "Terkunci (Khusus Pengguna Smart Master 👑)",
                         onClick = { isWallpaperDialogOpen = true }
                     )
 
@@ -478,7 +663,7 @@ fun SettingsScreen(
                     SettingsRowItem(
                         icon = Icons.Default.Stars,
                         title = "Gamifikasi, Daily Streak & Badges",
-                        subtitle = "Level XP, lencana digital & custom background",
+                        subtitle = "Level XP, lencana digital & tantangan streak",
                         onClick = onOpenGamificationHub
                     )
 
@@ -495,7 +680,7 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Language,
-                        title = "Bahasa Aplikasi",
+                        title = if (LocaleHelper.isEnglish()) "App Language" else "Bahasa Aplikasi",
                         subtitle = selectedLanguage.displayName,
                         onClick = { isLanguageDialogOpen = true }
                     )
@@ -514,7 +699,7 @@ fun SettingsScreen(
                     SettingsRowItem(
                         icon = Icons.Default.Security,
                         title = "Duress PIN & Security Suite",
-                        subtitle = "PIN Utama & PIN Darurat (Mode Stealth / Dummy)",
+                        subtitle = "PIN Utama & PIN Darurat (Mode Stealth / Kamuflase)",
                         onClick = onOpenDuressPinModal
                     )
 
@@ -558,7 +743,7 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (isDriveConnected) "Terhubung: $driveEmail" else "Folder: FinSmart/Backup Data & App Updates",
+                                text = if (isDriveConnected) "Terhubung: $driveEmail" else "Folder: DompetNalar/Backup Data & App Updates",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -584,7 +769,7 @@ fun SettingsScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Silakan mendaftar atau masuk dengan Akun Google resmi untuk menggunakan fitur Backup & Restore Google Drive.",
+                                    text = AppStrings.t("Silakan mendaftar atau masuk dengan Akun Google resmi untuk menggunakan fitur Backup & Restore Google Drive.", "Please register or sign in with an official Google Account to use Google Drive Backup & Restore."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -595,7 +780,7 @@ fun SettingsScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
                                 ) {
-                                    Text("Masuk / Daftar Akun Google", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Text(com.example.util.AppStrings.t("Masuk / Daftar Akun Google", "Sign In / Register Google Account"), fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                 }
                             }
                         }
@@ -611,7 +796,7 @@ fun SettingsScreen(
                                     .testTag("btn_backup_now"),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Text("Cadangkan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(com.example.util.AppStrings.t("Cadangkan", "Backup"), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
 
                             OutlinedButton(
@@ -621,65 +806,149 @@ fun SettingsScreen(
                                     .testTag("btn_restore_data"),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Text("Pulihkan Data", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(com.example.util.AppStrings.t("Pulihkan Data", "Restore Data"), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    portableBackupPassword = ""
-                                    portableBackupConfirmPassword = ""
-                                    portableBackupError = null
-                                    isPortableBackupDialogOpen = true
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("btn_portable_backup"),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp), tint = FinSmartPrimary)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Cadangan Portabel", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                            }
-
-                            OutlinedButton(
-                                onClick = {
-                                    portableRestorePassword = ""
-                                    portableRestoreError = null
-                                    selectedRestoreFileName = null
-                                    selectedRestoreFileContent = null
-                                    isPortableRestoreDialogOpen = true
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("btn_portable_restore"),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Pulihkan Portabel", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Row(
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Backup Otomatis Google Drive",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (driveAutoSync) "Aktif (Latar belakang via WorkManager)" else "Nonaktif",
+                                            fontSize = 10.sp,
+                                            color = if (driveAutoSync) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Switch(
+                                        checked = driveAutoSync,
+                                        onCheckedChange = onToggleAutoSync,
+                                        modifier = Modifier.testTag("switch_auto_sync")
+                                    )
+                                }
+
+                                if (driveAutoSync) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Interval Unggah:",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        listOf(3L, 6L, 12L, 24L).forEach { hours ->
+                                            val isSelected = driveAutoBackupInterval == hours
+                                            OutlinedButton(
+                                                onClick = { onUpdateAutoBackupInterval(hours) },
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(8.dp),
+                                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+                                                colors = if (isSelected) {
+                                                    ButtonDefaults.outlinedButtonColors(
+                                                        containerColor = FinSmartPrimary.copy(alpha = 0.15f),
+                                                        contentColor = FinSmartPrimary
+                                                    )
+                                                } else {
+                                                    ButtonDefaults.outlinedButtonColors(
+                                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                },
+                                                border = androidx.compose.foundation.BorderStroke(
+                                                    1.dp,
+                                                    if (isSelected) FinSmartPrimary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                                )
+                                            ) {
+                                                Text(
+                                                    text = "${hours}j",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    val nextBackupTime = com.example.util.GoogleDriveService.getNextBackupTime(context)
+                                    if (nextBackupTime != null) {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Perkiraan jadwal berikutnya: $nextBackupTime",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "Backup Otomatis Mingguan", fontSize = 12.sp)
-                            Switch(
-                                checked = driveAutoSync,
-                                onCheckedChange = onToggleAutoSync,
-                                modifier = Modifier.testTag("switch_auto_sync")
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 12.dp)
+                            ) {
+                                Text(
+                                    text = "Cadangan Terakhir:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (driveLastBackup.isBlank()) "Belum ada cadangan" else driveLastBackup,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = onDisconnectDrive,
+                                modifier = Modifier.testTag("btn_disconnect_drive"),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                            ) {
+                                Text(
+                                    text = "Putuskan",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                     } else {
                         Button(
@@ -689,7 +958,7 @@ fun SettingsScreen(
                                 .testTag("btn_connect_drive"),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Hubungkan ke Google Drive", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(com.example.util.AppStrings.t("Hubungkan ke Google Drive", "Connect to Google Drive"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
@@ -712,41 +981,11 @@ fun SettingsScreen(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
 
-                    if (!isGooglePlayInstalled) {
-                        SettingsRowItem(
-                            icon = Icons.Default.SystemUpdate,
-                            title = "Cek Pembaruan Versi",
-                            subtitle = if (isCheckingUpdate) "Memeriksa ke Google Drive..." else "FinSmart v${AppConfig.APP_VERSION_NAME} (Build ${AppConfig.APP_VERSION_CODE}) • Cek Pembaruan Drive",
-                            onClick = {
-                                updateViewModel.checkForUpdates(context, showFeedbackIfLatest = true)
-                            }
-                        )
-
-                        Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-
-                        SettingsRowItem(
-                            icon = Icons.Default.Description,
-                            title = "Catatan Rilis / Changelog (v1.0.3)",
-                            subtitle = "Lihat pembaruan fitur & log perubahan terbaru",
-                            onClick = { isChangelogOpen = true }
-                        )
-
-                        Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                    }
-
-                    SettingsRowItem(
-                        icon = Icons.Default.Feedback,
-                        title = "Kirim Masukan & Saran (Feedback)",
-                        subtitle = "Saran fitur, kritik, atau laporkan kendala ke developer",
-                        onClick = onOpenFeedback
-                    )
-
-                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     SettingsRowItem(
                         icon = Icons.Default.Print,
-                        title = "Ekspor Laporan Keuangan",
-                        subtitle = "PDF formal atau Excel Spreadsheet (.csv)",
+                        title = AppStrings.t("Ekspor Laporan Keuangan", "Export Financial Report"),
+                        subtitle = AppStrings.t("PDF formal atau Excel Spreadsheet (.csv)", "Formal PDF or Excel Spreadsheet (.csv)"),
                         onClick = onOpenExportReport
                     )
 
@@ -754,8 +993,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Tune,
-                        title = "Kelola Format Ekspor",
-                        subtitle = "Atur kolom kustom, pemisah CSV, dan format laporan",
+                        title = AppStrings.t("Kelola Format Ekspor", "Manage Export Formats"),
+                        subtitle = AppStrings.t("Atur kolom kustom, pemisah CSV, dan format laporan", "Configure custom columns, CSV delimiter, and report format"),
                         onClick = { isManageExportFormatsOpen = true }
                     )
 
@@ -763,37 +1002,49 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Shield,
-                        title = "Kebijakan Privasi & GDPR",
-                        subtitle = "Transparansi data lokal & izin perangkat",
+                        title = if (LocaleHelper.isEnglish()) "Privacy Policy & Disclosures" else "Kebijakan Privasi & GDPR",
+                        subtitle = if (LocaleHelper.isEnglish()) "Local data transparency & device permissions" else "Transparansi data lokal & izin perangkat",
                         onClick = onOpenProminentDisclosure
                     )
+
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                    SettingsRowItem(
+                        icon = Icons.Default.Feedback,
+                        title = if (LocaleHelper.isEnglish()) "Feedback & Suggestions" else "Kritik & Saran",
+                        subtitle = if (LocaleHelper.isEnglish()) "Send feedback to improve DompetNalar" else "Kirim masukan untuk perbaikan DompetNalar",
+                        onClick = onOpenFeedback
+                    )
+
+                    if (role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(currentUser?.email)) {
+                        Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                        SettingsRowItem(
+                            icon = Icons.Default.AdminPanelSettings,
+                            title = if (LocaleHelper.isEnglish()) "Feedback Cloud Viewer (Admin)" else "Viewer Feedback Cloud (Admin)",
+                            subtitle = if (LocaleHelper.isEnglish()) "Inspect cloud feedback submissions" else "Pantau masukan pengguna di Firestore",
+                            onClick = onOpenDevFeedbackViewer
+                        )
+                    }
 
                     Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     if (currentUser != null && !currentUser.isGuest) {
                         SettingsRowItem(
                             icon = Icons.Default.Key,
-                            title = "Ubah Kata Sandi",
-                            subtitle = "Ganti kata sandi akun ${currentUser.username}",
+                            title = AppStrings.t("Ubah Kata Sandi", "Change Password"),
+                            subtitle = AppStrings.t("Ganti kata sandi akun ", "Change password for ") + currentUser.username,
                             onClick = onOpenChangePassword
                         )
 
                         Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                     }
 
-                    SettingsRowItem(
-                        icon = Icons.AutoMirrored.Filled.Logout,
-                        title = "Keluar dari Akun",
-                        subtitle = "Keluar dari sesi saat ini",
-                        onClick = onLogout
-                    )
-
-                    Divider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
                     SettingsRowItem(
                         icon = Icons.Default.DeleteForever,
-                        title = "Hapus Akun & Data Permanen",
-                        subtitle = "Hapus seluruh riwayat dan database lokal",
+                        title = AppStrings.t("Hapus Akun & Data Permanen", "Delete Account & Data Permanently"),
+                        subtitle = AppStrings.t("Hapus seluruh riwayat dan database lokal", "Delete all local history and database"),
                         titleColor = ExpenseRed,
                         iconTint = ExpenseRed,
                         onClick = onOpenDeleteAccount
@@ -802,8 +1053,8 @@ fun SettingsScreen(
             }
         }
 
-        // CARD 5: Developer Tools & Update Publisher (MasterDev / Lukas only - hidden on Google Play)
-        if (!isGooglePlayInstalled && (role == UserRole.MASTER_DEV || currentUser?.username.equals("Lukas", ignoreCase = true) || currentUser?.email.equals("lunachroc07@gmail.com", ignoreCase = true))) {
+        // CARD 5: Developer Tools & Update Publisher (MasterDev only - strictly DEBUG only, hidden on Google Play and Release)
+        if (BuildConfig.DEBUG && !isGooglePlayInstalled && (role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(currentUser?.email))) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -870,25 +1121,12 @@ fun SettingsScreen(
                             Text("Buka Master Dev User Manager", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedButton(
-                            onClick = onOpenDevFeedbackViewer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("btn_dev_feedback_viewer"),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Feedback, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Lihat Feedback Pengguna (Dev Viewer)", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                        }
                     }
                 }
             }
         }
 
-        // Footer Info: © 2026 Lukas
+        // Footer Info: © 2026 SleepyKoala
         item {
             Column(
                 modifier = Modifier
@@ -919,13 +1157,13 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Aksi Goyang HP (Shake Gesture)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Aksi Goyang HP (Shake Gesture)", "Shake Phone Action (Shake Gesture)"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Pilih aksi pintas saat perangkat digoyangkan secara mantap (> 2.5g):",
+                        text = AppStrings.t("Pilih aksi pintas saat perangkat digoyangkan secara mantap (> 2.5g):", "Choose shortcut action when device is shaken firmly (> 2.5g):"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -934,7 +1172,7 @@ fun SettingsScreen(
                     val options = listOf(
                         Triple("OFF", "Nonaktif", "Sensor mati, tidak ada aksi goyangan (Bawaan)"),
                         Triple("TRANSACTION", "Catat Cepat", "Buka lembar input transaksi baru"),
-                        Triple("STEALTH", "Mode Stealth Darurat", "Samarkan antarmuka seketika ke Mode Kalkulator")
+                        Triple("STEALTH", "Mode Stealth Darurat", "Samarkan antarmuka seketika ke mode stealth")
                     )
 
                     options.forEach { (actionKey, title, desc) ->
@@ -998,7 +1236,7 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pilih Tema Tampilan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Pilih Tema Tampilan", "Select Theme"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -1070,13 +1308,13 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.ColorLens, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Warna Aksen Aplikasi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Warna Aksen Aplikasi", "App Accent Color"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Pilih skema warna utama untuk tombol, highlight, dan indikator tab:",
+                        text = AppStrings.t("Pilih skema warna utama untuk tombol, highlight, dan indikator tab:", "Choose primary color scheme for buttons, highlights, and tab indicators:"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1146,16 +1384,32 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Latar Belakang Galeri", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Latar Belakang Galeri", "Gallery Background"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
+                val isWallpaperUnlocked = role == UserRole.MASTER_DEV || role == UserRole.SMART_MASTER || com.example.util.EntitlementManager.evaluate(currentUser).isPremiumUnlocked
+
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = "Pasang foto dari galeri HP sebagai latar belakang layar dasbor Anda:",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (!isWallpaperUnlocked) {
+                        Surface(
+                            color = Color(0xFFD97706).copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "🔒 Fitur Smart Master: Fitur ganti wallpaper dasbor ini terbuka otomatis bagi pengguna berstatus Smart Master 👑 (dapat diperoleh dari Reward Streak 30 Hari, Langganan, atau Hak Master Dev).",
+                                fontSize = 11.sp,
+                                color = Color(0xFFD97706),
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
 
                     Button(
                         onClick = {
@@ -1165,12 +1419,13 @@ fun SettingsScreen(
                                 )
                             )
                         },
+                        enabled = isWallpaperUnlocked,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Pilih Gambar dari Galeri", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isWallpaperUnlocked) "Pilih Gambar dari Galeri" else "Terkunci (Butuh Streak 30 Hari)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
                     if (!customWallpaperUri.isNullOrEmpty()) {
@@ -1185,7 +1440,7 @@ fun SettingsScreen(
                             value = tempOpacity,
                             onValueChange = {
                                 tempOpacity = it
-                                ThemeEngine.setCustomWallpaper(context, customWallpaperUri, it)
+                                ThemeEngine.setCustomWallpaperForUser(context, currentUser, customWallpaperUri, it)
                             },
                             valueRange = 0.1f..0.85f,
                             modifier = Modifier.fillMaxWidth()
@@ -1193,22 +1448,67 @@ fun SettingsScreen(
 
                         OutlinedButton(
                             onClick = {
-                                ThemeEngine.clearCustomWallpaper(context)
-                                Toast.makeText(context, "Latar belakang dikembalikan ke default", Toast.LENGTH_SHORT).show()
+                                ThemeEngine.setCustomWallpaperForUser(context, currentUser, null, 0.35f)
+                                Toast.makeText(context, if (LocaleHelper.isEnglish()) "Background reset to default" else "Latar belakang dikembalikan ke default", Toast.LENGTH_SHORT).show()
                                 isWallpaperDialogOpen = false
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = ExpenseRed)
                         ) {
-                            Text("Hapus Wallpaper / Kembalikan Default", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text(if (LocaleHelper.isEnglish()) "Remove Wallpaper / Reset Default" else "Hapus Wallpaper / Kembalikan Default", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { isWallpaperDialogOpen = false }) {
-                    Text("Selesai")
+                    Text(if (LocaleHelper.isEnglish()) "Done" else "Selesai")
+                }
+            }
+        )
+    }
+
+    // Logout Confirmation Dialog (Yes/No requirement)
+    if (isLogoutConfirmDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isLogoutConfirmDialogOpen = false },
+            title = {
+                Text(
+                    text = if (LocaleHelper.isEnglish()) "Confirm Logout" else "Konfirmasi Keluar",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = if (LocaleHelper.isEnglish()) {
+                        "Are you sure you want to log out? Your transaction history and financial records will remain safely saved."
+                    } else {
+                        "Apakah Anda yakin ingin keluar dari akun ini? Seluruh riwayat transaksi dan data finansial Anda tetap tersimpan dengan aman."
+                    }
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (!isLoggingOut) {
+                            isLoggingOut = true
+                            isLogoutConfirmDialogOpen = false
+                            onLogout()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(if (LocaleHelper.isEnglish()) "Yes" else "Ya")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { isLogoutConfirmDialogOpen = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(if (LocaleHelper.isEnglish()) "No" else "Tidak")
                 }
             }
         )
@@ -1228,7 +1528,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Ubah ikon aplikasi di homescreen HP secara dinamis. Streak harian saat ini: $dailyStreak Hari",
+                        text = AppStrings.t("Ubah ikon aplikasi di homescreen HP secara dinamis. Streak harian saat ini: ", "Dynamically change app home screen icon. Current daily streak: ") + "$dailyStreak " + AppStrings.t("Hari", "Days"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1327,12 +1627,12 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Language, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pilih Bahasa Aplikasi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(if (LocaleHelper.isEnglish()) "Select App Language" else "Pilih Bahasa Aplikasi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AppLanguage.values().forEach { lang ->
+                    AppLanguage.entries.forEach { lang ->
                         val isSelected = selectedLanguage == lang
                         Surface(
                             shape = RoundedCornerShape(12.dp),
@@ -1341,8 +1641,8 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    LocaleHelper.setLanguage(lang)
                                     isLanguageDialogOpen = false
+                                    LocaleHelper.setLanguage(context, lang)
                                 }
                         ) {
                             Row(
@@ -1378,7 +1678,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { isLanguageDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(if (LocaleHelper.isEnglish()) "Close" else "Tutup")
                 }
             }
         )
@@ -1392,15 +1692,59 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Paid, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pilih Mata Uang Global", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(AppStrings.t("Pilih Mata Uang Global", "Select Global Currency"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Format angka & simbol mata uang akan otomatis diperbarui secara global di seluruh UI:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val currentMode by CurrencyFormatter.currencyMode.collectAsState()
+                    Text(if (LocaleHelper.isEnglish()) "Select currency display format:" else "Format angka & simbol mata uang akan otomatis diperbarui secara global di seluruh UI:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(4.dp))
+
+                    // Option: Follow Device Region
+                    val isFollowDevice = currentMode == com.example.util.CurrencyMode.FOLLOW_DEVICE
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isFollowDevice) FinSmartPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        border = if (isFollowDevice) androidx.compose.foundation.BorderStroke(1.5.dp, FinSmartPrimary) else null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                CurrencyFormatter.setMode(context, com.example.util.CurrencyMode.FOLLOW_DEVICE)
+                                isCurrencyDialogOpen = false
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (isFollowDevice) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                                contentDescription = null,
+                                tint = if (isFollowDevice) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = if (LocaleHelper.isEnglish()) "Follow Device Region (Automatic)" else "Ikuti Region Perangkat (Otomatis)",
+                                    fontWeight = if (isFollowDevice) FontWeight.Bold else FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (LocaleHelper.isEnglish()) "Automatically matches device locale region" else "Menyesuaikan otomatis dengan negara/wilayah perangkat",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     AppCurrency.values().forEach { curr ->
-                        val isSelected = selectedCurrency == curr
+                        val isSelected = !isFollowDevice && selectedCurrency == curr
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = if (isSelected) FinSmartPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -1408,7 +1752,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    CurrencyFormatter.setCurrency(curr)
+                                    CurrencyFormatter.setCurrency(curr, context)
                                     isCurrencyDialogOpen = false
                                 }
                         ) {
@@ -1467,53 +1811,6 @@ fun SettingsScreen(
     }
 
     // 3. Check Update Dialog
-    if (isCheckUpdateDialogOpen) {
-        AlertDialog(
-            onDismissRequest = { isCheckUpdateDialogOpen = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = FinSmartPrimary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pembaruan Aplikasi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            },
-            text = {
-                Column {
-                    Text("Versi Terpasang: v${AppConfig.APP_VERSION_NAME} (Build ${AppConfig.APP_VERSION_CODE})", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Status: Aplikasi Anda sudah menggunakan versi rilis terbaru!\n\nFolder Google Drive: FinSmart/App Updates\nServer Build: GitHub Actions CI/CD Automated Workflow",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        isCheckUpdateDialogOpen = false
-                        isChangelogOpen = true
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
-                ) {
-                    Text("Lihat Changelog")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { isCheckUpdateDialogOpen = false }) {
-                    Text("Tutup")
-                }
-            }
-        )
-    }
-
-    // 4. Changelog Bottom Sheet
-    if (isChangelogOpen) {
-        ChangelogBottomSheet(
-            onDismiss = { isChangelogOpen = false }
-        )
-    }
-
     // 4b. Export Format Management Dialog
     if (isManageExportFormatsOpen) {
         ExportFormatManagementDialog(
@@ -1554,16 +1851,38 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pilihan Pencadangan Data", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Pilihan Pencadangan Data", "Data Backup Options"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Pilih metode pencadangan yang sesuai dengan kebutuhan Anda:",
+                        text = AppStrings.t("Pilih metode pencadangan yang sesuai dengan kebutuhan Anda:", "Choose the backup method that suits your needs:"),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (SessionManager.isStealthModeActive()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth().testTag("stealth_backup_warning")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Mode Stealth Aktif: Operasi pencadangan dinonaktifkan demi perlindungan privasi data.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
 
                     // Option A: Device Local Backup
                     Surface(
@@ -1592,7 +1911,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Cadangan Perangkat (Otomatis)", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(com.example.util.AppStrings.t("Cadangan Perangkat (Otomatis)", "Device Backup (Automatic)"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     "Menggunakan Android Keystore. Cepat, otomatis & tanpa perlu kata sandi.",
@@ -1633,7 +1952,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Cadangan Portabel (Kata Sandi)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
+                                Text(com.example.util.AppStrings.t("Cadangan Portabel (Kata Sandi)", "Portable Backup (Password)"), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     "Terenkripsi AES-256-GCM dengan kata sandi khusus. Dapat dipindahkan ke perangkat lain.",
@@ -1648,7 +1967,7 @@ fun SettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { isBackupChoiceDialogOpen = false }) {
-                    Text("Batal")
+                    Text(AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -1669,7 +1988,7 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Key, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buat Cadangan Portabel", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Buat Cadangan Portabel", "Create Portable Backup"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -1686,8 +2005,8 @@ fun SettingsScreen(
                             portableBackupPassword = it
                             portableBackupError = null
                         },
-                        label = { Text("Kata Sandi Cadangan") },
-                        placeholder = { Text("Minimal 6 karakter") },
+                        label = { Text(com.example.util.AppStrings.t("Kata Sandi Cadangan", "Backup Password")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Minimal 6 karakter", "Minimum 6 characters")) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { portableBackupPasswordVisible = !portableBackupPasswordVisible }) {
@@ -1712,8 +2031,8 @@ fun SettingsScreen(
                             portableBackupConfirmPassword = it
                             portableBackupError = null
                         },
-                        label = { Text("Konfirmasi Kata Sandi") },
-                        placeholder = { Text("Ketik ulang kata sandi") },
+                        label = { Text(com.example.util.AppStrings.t("Konfirmasi Kata Sandi", "Confirm Password")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Ketik ulang kata sandi", "Retype password")) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { portableBackupConfirmVisible = !portableBackupConfirmVisible }) {
@@ -1747,7 +2066,7 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "Catatan: Jangan lupakan kata sandi ini. FinSmart tidak menyimpannya di server demi keamanan privasi Anda.",
+                            text = AppStrings.t("Catatan: Jangan lupakan kata sandi ini. DompetNalar tidak menyimpannya di server demi keamanan privasi Anda.", "Note: Do not forget this password. DompetNalar does not store it on servers for your privacy."),
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(8.dp)
@@ -1789,8 +2108,8 @@ fun SettingsScreen(
                                                     type = "application/json"
                                                     putExtra(Intent.EXTRA_STREAM, uri)
                                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                    putExtra(Intent.EXTRA_SUBJECT, "FinSmart Portable Backup")
-                                                    putExtra(Intent.EXTRA_TEXT, "File cadangan portabel FinSmart terenkripsi.")
+                                                    putExtra(Intent.EXTRA_SUBJECT, "DompetNalar Portable Backup")
+                                                    putExtra(Intent.EXTRA_TEXT, "File cadangan portabel DompetNalar terenkripsi.")
                                                 }
                                                 context.startActivity(Intent.createChooser(shareIntent, "Bagikan / Simpan File Cadangan Portabel"))
                                             } catch (e: Exception) {
@@ -1822,7 +2141,7 @@ fun SettingsScreen(
                     },
                     enabled = !isCreatingPortableBackup
                 ) {
-                    Text("Batal")
+                    Text(AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -1836,16 +2155,38 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pilihan Pemulihan Data", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Pilihan Pemulihan Data", "Data Restore Options"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Pilih sumber data cadangan yang ingin dipulihkan ke aplikasi ini:",
+                        text = AppStrings.t("Pilih sumber data cadangan yang ingin dipulihkan ke aplikasi ini:", "Select the backup data source you want to restore to this app:"),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (SessionManager.isStealthModeActive()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth().testTag("stealth_restore_warning")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Mode Stealth Aktif: Operasi pemulihan dinonaktifkan demi perlindungan privasi data.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
 
                     // Option A: Device Local Restore
                     Surface(
@@ -1874,7 +2215,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Pulihkan Cadangan Perangkat", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(com.example.util.AppStrings.t("Pulihkan Cadangan Perangkat", "Restore Device Backup"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     "Pulihkan dari cadangan lokal / Google Drive sandbox perangkat ini.",
@@ -1916,10 +2257,10 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Pulihkan Cadangan Portabel (Kata Sandi)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
+                                Text(com.example.util.AppStrings.t("Pulihkan Cadangan Portabel (Kata Sandi)", "Restore Portable Backup (Password)"), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    "Pilih file cadangan (.json) dan dekripsi menggunakan kata sandi Anda.",
+                                    AppStrings.t("Pilih file cadangan (.json) dan dekripsi menggunakan kata sandi Anda.", "Select the backup file (.json) and decrypt using your password."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1931,7 +2272,7 @@ fun SettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { isRestoreChoiceDialogOpen = false }) {
-                    Text("Batal")
+                    Text(AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -1953,13 +2294,13 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Key, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pulihkan Cadangan Portabel", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Pulihkan Cadangan Portabel", "Restore Portable Backup"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Pilih file cadangan dan masukkan kata sandi yang digunakan saat pencadangan:",
+                        text = AppStrings.t("Pilih file cadangan dan masukkan kata sandi yang digunakan saat pencadangan:", "Select the backup file and enter the password used during backup:"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1973,7 +2314,7 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
                             Text(
-                                text = if (selectedRestoreFileName != null) "File Terpilih: $selectedRestoreFileName" else "Sumber: finsmart_portable_backup.json (Sandbox/Lokal)",
+                                text = if (selectedRestoreFileName != null) "File Terpilih: $selectedRestoreFileName" else "Sumber: dompetnalar_backup.json (Sandbox/Lokal)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -1988,7 +2329,7 @@ fun SettingsScreen(
                             ) {
                                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Pilih File Cadangan Lain (.json)", fontSize = 11.sp)
+                                Text(com.example.util.AppStrings.t("Pilih File Cadangan Lain (.json)", "Select Another Backup File (.json)"), fontSize = 11.sp)
                             }
                         }
                     }
@@ -1999,8 +2340,8 @@ fun SettingsScreen(
                             portableRestorePassword = it
                             portableRestoreError = null
                         },
-                        label = { Text("Kata Sandi Cadangan") },
-                        placeholder = { Text("Masukkan kata sandi") },
+                        label = { Text(com.example.util.AppStrings.t("Kata Sandi Cadangan", "Backup Password")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Masukkan kata sandi", "Enter password")) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { portableRestorePasswordVisible = !portableRestorePasswordVisible }) {
@@ -2076,7 +2417,7 @@ fun SettingsScreen(
                     },
                     enabled = !isRestoringPortableBackup
                 ) {
-                    Text("Batal")
+                    Text(AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -2196,3 +2537,12 @@ fun SettingsRowToggle(
         )
     }
 }
+
+private data class SmartMemberStatusUI(
+    val title: String,
+    val detail: String,
+    val badge: String,
+    val color: Color,
+    val bgColor: Color,
+    val icon: ImageVector
+)

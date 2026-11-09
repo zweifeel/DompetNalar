@@ -160,27 +160,49 @@ object EncryptionUtils {
         val iv = Base64Compat.decode(envelope.iv)
         val cipherBytes = Base64Compat.decode(envelope.ciphertext)
 
-        val secretKey = if (envelope.keyProtection == "PBKDF2") {
+        if (envelope.keyProtection == "PBKDF2") {
             val salt = envelope.salt?.let { Base64Compat.decode(it) }
                 ?: throw IllegalArgumentException("Garam (salt) kriptografi tidak ditemukan pada cadangan terproteksi sandi")
             val pass = customPassphrase
                 ?: throw IllegalArgumentException("Kata sandi cadangan diperlukan untuk memulihkan file ini")
-            deriveKeyFromPassphrase(pass, salt)
-        } else {
-            getSecretKeyForLocal()
+            val secretKey = deriveKeyFromPassphrase(pass, salt)
+            val cipher = Cipher.getInstance(V2_ALGORITHM)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+            val decryptedBytes = cipher.doFinal(cipherBytes)
+            return String(decryptedBytes, Charsets.UTF_8)
         }
 
-        val cipher = Cipher.getInstance(V2_ALGORITHM)
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
-        val decryptedBytes = cipher.doFinal(cipherBytes)
-        return String(decryptedBytes, Charsets.UTF_8)
+        // For non-PBKDF2 backups (LOCAL_KEY):
+        // Try deterministic fallback key and keystore key with automatic cross-fallback
+        val keysToTry = mutableListOf<SecretKey>()
+        try {
+            keysToTry.add(getLocalFallbackSecretKey())
+        } catch (_: Throwable) {}
+        try {
+            keysToTry.add(getOrCreateKeystoreKey())
+        } catch (_: Throwable) {}
+
+        var lastException: Exception? = null
+        for (candidateKey in keysToTry) {
+            try {
+                val cipher = Cipher.getInstance(V2_ALGORITHM)
+                cipher.init(Cipher.DECRYPT_MODE, candidateKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+                val decryptedBytes = cipher.doFinal(cipherBytes)
+                return String(decryptedBytes, Charsets.UTF_8)
+            } catch (e: Exception) {
+                lastException = e
+            }
+        }
+        throw lastException ?: IllegalStateException("Gagal memulihkan cadangan v2")
     }
 
     private fun getSecretKeyForLocal(): SecretKey {
+        // Use deterministic cross-device/cross-reinstall key for local/drive auto backups so that
+        // data backed up survives app uninstall & re-install
         return try {
-            getOrCreateKeystoreKey()
-        } catch (e: Throwable) {
             getLocalFallbackSecretKey()
+        } catch (e: Throwable) {
+            getOrCreateKeystoreKey()
         }
     }
 

@@ -1,4 +1,6 @@
 package com.example.ui.components
+import com.example.util.LocaleHelper
+import com.example.util.AppStrings
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.FinSmartPrimary
+import com.example.ui.theme.IncomeGreen
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import com.example.data.model.DebtItem
@@ -99,15 +102,7 @@ enum class DebtPayoffStrategy(val title: String, val description: String) {
 }
 
 private fun calculateDaysUntilDue(dueDateStr: String): Int {
-    val digits = Regex("\\d+").find(dueDateStr)?.value?.toIntOrNull() ?: 15
-    val now = Calendar.getInstance()
-    val today = now.get(Calendar.DAY_OF_MONTH)
-    val maxDays = now.getActualMaximum(Calendar.DAY_OF_MONTH)
-    return if (digits >= today) {
-        digits - today
-    } else {
-        (maxDays - today) + digits
-    }
+    return InstallmentDateHelper.calculateDaysUntilDue(dueDateStr)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -117,6 +112,7 @@ fun DebtPlannerModalDialog(
     installmentPlans: List<InstallmentPlanItem> = emptyList(),
     wallets: List<Wallet> = emptyList(),
     transactions: List<TransactionItem> = emptyList(),
+    budgetLimits: List<com.example.data.model.BudgetLimitItem> = emptyList(),
     currentUserId: Long? = SessionManager.getActiveUserId(),
     onSaveDebt: (DebtItem) -> Unit = {},
     onDeleteDebt: (DebtItem) -> Unit = {},
@@ -154,21 +150,29 @@ fun DebtPlannerModalDialog(
 
     // PayLater AI OCR Import States
     var isScanningPayLater by remember { mutableStateOf(false) }
+    var payLaterScanProgress by remember { mutableStateOf("") }
     var payLaterScanError by remember { mutableStateOf<String?>(null) }
-    var scannedPayLaterResult by remember { mutableStateOf<PayLaterBillScanResult?>(null) }
+    var scannedPayLaterBatch by remember { mutableStateOf<List<PayLaterBillScanResult>>(emptyList()) }
     var isSampleSelectionDialogOpen by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        if (!uris.isNullOrEmpty()) {
             isScanningPayLater = true
             payLaterScanError = null
+            payLaterScanProgress = "Memproses 1 dari ${uris.size} screenshot..."
             scope.launch {
                 try {
-                    val result = PayLaterAiOcrScanner.scanPayLaterScreenshot(context, uri)
+                    val batchResult = PayLaterAiOcrScanner.scanMultipleScreenshots(context, uris) { cur, tot ->
+                        payLaterScanProgress = "Memproses $cur dari $tot screenshot..."
+                    }
                     isScanningPayLater = false
-                    scannedPayLaterResult = result
+                    if (batchResult.bills.isNotEmpty()) {
+                        scannedPayLaterBatch = batchResult.bills
+                    } else {
+                        payLaterScanError = "Teks tagihan tidak terdeteksi dari screenshot yang dipilih."
+                    }
                 } catch (e: Exception) {
                     isScanningPayLater = false
                     payLaterScanError = e.message ?: "Gagal memproses screenshot tagihan."
@@ -177,8 +181,36 @@ fun DebtPlannerModalDialog(
         }
     }
 
+    val configuredDebtBudgetLimit = remember(budgetLimits) {
+        budgetLimits.firstOrNull { it.id == "Tagihan & Utilitas" }?.limitAmount
+            ?: budgetLimits.firstOrNull { it.id == "total_monthly" }?.limitAmount
+    }
+
+    val activeInstallmentPlans = remember(installmentPlans) {
+        installmentPlans.filter { it.isActive }
+    }
+
+    val monthlyInstallmentObligation = remember(activeInstallmentPlans) {
+        activeInstallmentPlans.sumOf { it.installmentAmount }
+    }
+
+    val monthlyDebtObligation = remember(debtList) {
+        debtList.sumOf { if (it.minMonthlyPayment > 0.0) it.minMonthlyPayment else (it.amount * 0.1).coerceAtMost(it.amount) }
+    }
+
+    val totalObligationThisMonth = monthlyInstallmentObligation + monthlyDebtObligation
+
+    val totalKnownRemainingDebt = remember(debtList, activeInstallmentPlans) {
+        debtList.sumOf { it.amount } + activeInstallmentPlans.sumOf { it.totalRemainingPrincipal ?: (it.installmentAmount * it.remainingTenor) }
+    }
+
     var selectedStrategy by remember { mutableStateOf(DebtPayoffStrategy.DUE_DATE) }
-    var monthlyBudgetInput by remember { mutableStateOf("3000000") }
+    var monthlyBudgetInput by remember(configuredDebtBudgetLimit, totalObligationThisMonth) {
+        mutableStateOf(
+            configuredDebtBudgetLimit?.let { if (it > 0.0) it.toLong().toString() else "" }
+                ?: if (totalObligationThisMonth > 0.0) totalObligationThisMonth.toLong().toString() else ""
+        )
+    }
 
     // Form states
     var editingDebtId by remember { mutableStateOf<String?>(null) }
@@ -194,22 +226,37 @@ fun DebtPlannerModalDialog(
     var categoryToDelete by remember { mutableStateOf<String?>(null) }
     var debtItemToDelete by remember { mutableStateOf<DebtItem?>(null) }
 
-    val sortedDebts = remember(debtList.toList(), selectedStrategy) {
+    val budgetDouble = monthlyBudgetInput.toDoubleOrNull()
+        ?: configuredDebtBudgetLimit
+        ?: totalObligationThisMonth
+
+    val priorityPlan = remember(debtList.toList(), installmentPlans.toList(), budgetDouble) {
+        com.example.util.DebtPriorityEngine.calculatePlan(
+            debts = debtList,
+            installmentPlans = installmentPlans,
+            totalMonthlyBudget = if (budgetDouble > 0.0) budgetDouble else totalObligationThisMonth
+        )
+    }
+
+    val sortedDebts = remember(debtList.toList(), selectedStrategy, priorityPlan) {
         when (selectedStrategy) {
             DebtPayoffStrategy.DUE_DATE -> debtList.sortedBy { calculateDaysUntilDue(it.dueDate) }
-            DebtPayoffStrategy.AVALANCHE -> debtList.sortedByDescending { it.interestRatePercent }
+            DebtPayoffStrategy.AVALANCHE -> {
+                val rankMap = priorityPlan.prioritizedItems.associate { it.debt.id to it.rank }
+                debtList.sortedBy { rankMap[it.id] ?: 999 }
+            }
             DebtPayoffStrategy.SNOWBALL -> debtList.sortedBy { it.amount }
         }
     }
 
     val totalDebt = debtList.sumOf { it.amount }
-    val budgetDouble = monthlyBudgetInput.toDoubleOrNull() ?: 3000000.0
-    val estimatedMonths = if (budgetDouble > 0) (totalDebt / budgetDouble).toInt() + 1 else 0
+    val effectiveBudget = if (budgetDouble > 0.0) budgetDouble else totalObligationThisMonth
+    val estimatedMonths = priorityPlan.estimatedMonthsToDebtFree ?: if (effectiveBudget > 0) (totalDebt / effectiveBudget).toInt() + 1 else 0
 
     val freeDate = Calendar.getInstance().apply {
         add(Calendar.MONTH, estimatedMonths)
     }
-    val dateFormatter = SimpleDateFormat("MMMM yyyy", Locale("id", "ID"))
+    val dateFormatter = SimpleDateFormat("MMMM yyyy", com.example.util.LocaleHelper.getActiveLocale())
     val debtFreeDateString = dateFormatter.format(freeDate.time)
 
     ModalBottomSheet(
@@ -286,13 +333,13 @@ fun DebtPlannerModalDialog(
                 Tab(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
-                    text = { Text("Hutang & Pinjaman (${debtList.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    text = { Text(AppStrings.t("Hutang & Pinjaman", "Debts & Loans") + " (${debtList.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
                     modifier = Modifier.testTag("tab_debts")
                 )
                 Tab(
                     selected = selectedTabIndex == 1,
                     onClick = { selectedTabIndex = 1 },
-                    text = { Text("Cicilan Berjangka (${installmentPlans.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    text = { Text("${com.example.util.AppStrings.t("Cicilan Berjangka", "Term Installments")} (${installmentPlans.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
                     modifier = Modifier.testTag("tab_installments")
                 )
             }
@@ -300,52 +347,482 @@ fun DebtPlannerModalDialog(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (selectedTabIndex == 0) {
-                // Debt Summary Banner
+                val currentCal = Calendar.getInstance()
+                val nextCal = Calendar.getInstance().apply { add(Calendar.MONTH, 1) }
+                val currentMonthName = SimpleDateFormat("MMMM yyyy", com.example.util.LocaleHelper.getActiveLocale()).format(currentCal.time)
+                val nextMonthName = SimpleDateFormat("MMMM yyyy", com.example.util.LocaleHelper.getActiveLocale()).format(nextCal.time)
+                val todayDayOfMonth = currentCal.get(Calendar.DAY_OF_MONTH)
+
+                // 1. Debt & Monthly Obligation Summary Banner (BUG 5 & 6)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Total Beban Hutang Aktif", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        text = com.example.util.CurrencyFormatter.formatRupiah(totalDebt),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ExpenseRed
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1.2f)) {
                                 Text(
-                                    text = if (totalDebt > 0) "Estimasi Bebas Hutang: $debtFreeDateString" else "Selamat! Anda Bebas Hutang 🎉",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = FinSmartPrimary
-                                )
-                                Text(
-                                    text = if (totalDebt > 0) "Dengan alokasi $estimatedMonths bulan cicilan rutin ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/bulan." else "Tidak ada beban hutang aktif.",
+                                    text = AppStrings.t("Kewajiban Pembayaran Bulan Berjalan", "Current Month Payment Obligations"),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                Text(
+                                    text = com.example.util.CurrencyFormatter.formatRupiah(totalObligationThisMonth),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ExpenseRed
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(0.8f)) {
+                                Text(
+                                    text = "Total Sisa Pokok",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = com.example.util.CurrencyFormatter.formatRupiah(totalKnownRemainingDebt),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Perbandingan Kewajiban vs Batas Anggaran Pengguna (Kanonis)
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = AppStrings.t("Batas Anggaran Cicilan / Tagihan:", "Installment / Bill Budget Limit:"),
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = if (configuredDebtBudgetLimit != null && configuredDebtBudgetLimit > 0.0) {
+                                            com.example.util.CurrencyFormatter.formatRupiah(configuredDebtBudgetLimit)
+                                        } else {
+                                            AppStrings.t("Belum diatur", "Not set")
+                                        },
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = FinSmartPrimary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = AppStrings.t("Status Terhadap Anggaran:", "Budget Status:"),
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    if (configuredDebtBudgetLimit != null && configuredDebtBudgetLimit > 0.0) {
+                                        val diff = totalObligationThisMonth - configuredDebtBudgetLimit
+                                        if (diff > 0.0) {
+                                            Text(
+                                                text = "${com.example.util.CurrencyFormatter.formatRupiah(diff)} di atas limit (Defisit) ⚠️",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = ExpenseRed
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "${com.example.util.CurrencyFormatter.formatRupiah(Math.abs(diff))} di bawah limit (Aman) ✅",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = IncomeGreen
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = AppStrings.t("Sesuaikan di menu Anggaran", "Adjust in Budget menu"),
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = if (totalKnownRemainingDebt > 0) {
+                                            if (priorityPlan.isDeficit) "Perhatian: Defisit Anggaran Bulanan ⚠️" else "Estimasi Bebas Hutang: $debtFreeDateString"
+                                        } else "Selamat! Anda Bebas Hutang 🎉",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = if (priorityPlan.isDeficit) ExpenseRed else FinSmartPrimary
+                                    )
+                                    Text(
+                                        text = if (totalKnownRemainingDebt > 0) {
+                                            if (priorityPlan.isDeficit) {
+                                                "Alokasi bulanan (${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}) belum menutup cicilan minimum (Defisit: ${com.example.util.CurrencyFormatter.formatRupiah(priorityPlan.monthlyShortfall)}/bln)."
+                                            } else {
+                                                "Dengan simulasi alokasi ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/bulan (Metode Avalanche: $estimatedMonths bulan)."
+                                            }
+                                        } else "Tidak ada beban hutang aktif.",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 2. Jadwal Pembayaran Bulanan (BUG 6: Transparansi Jadwal & Sumber Data)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = AppStrings.t("Jadwal Pembayaran Bulanan", "Monthly Payment Schedule"),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Rincian kewajiban periode berjalan dan estimasi periode berikutnya.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // --- BULAN BERJALAN ---
+                        Surface(
+                            color = FinSmartPrimary.copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Bulan Berjalan ($currentMonthName)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = FinSmartPrimary
+                                )
+                                Text(
+                                    text = com.example.util.CurrencyFormatter.formatRupiah(totalObligationThisMonth),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = ExpenseRed
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        if (activeInstallmentPlans.isEmpty() && debtList.isEmpty()) {
+                            Text(
+                                text = AppStrings.t("Belum ada jadwal pembayaran bulan ini.", "No payments scheduled for this month."),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        } else {
+                            // Active installments
+                            activeInstallmentPlans.forEach { plan ->
+                                val isOverdue = !plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate.ifBlank { "Tgl ${plan.anchorDay} tiap bulan" })
+                                val dataSource = if (plan.notes.contains("Shopee", ignoreCase = true) || plan.notes.contains("DANA", ignoreCase = true) || plan.notes.contains("GoPay", ignoreCase = true) || plan.notes.contains("impor", ignoreCase = true)) "Impor Tagihan AI" else "Catatan Manual"
+
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = plan.name,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp
+                                                )
+                                                Text(
+                                                    text = "${plan.provider.ifBlank { "Cicilan" }} • Jatuh Tempo: Tgl ${plan.anchorDay}",
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text(
+                                                    text = com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount),
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp,
+                                                    color = ExpenseRed
+                                                )
+                                                Surface(
+                                                    color = if (isOverdue) ExpenseRed.copy(alpha = 0.15f) else Color(0xFFF59E0B).copy(alpha = 0.15f),
+                                                    shape = RoundedCornerShape(4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (isOverdue) "Terlambat ⚠️" else "Belum Bayar",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isOverdue) ExpenseRed else Color(0xFFD97706),
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Tenor: Ke-${plan.currentPeriod}/${plan.totalTenor} • Sisa: ${com.example.util.CurrencyFormatter.formatRupiah(plan.totalRemainingPrincipal ?: (plan.installmentAmount * plan.remainingTenor))}",
+                                                fontSize = 9.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "Sumber: $dataSource",
+                                                fontSize = 9.sp,
+                                                color = FinSmartPrimary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Debts
+                            debtList.forEach { debt ->
+                                val minDue = if (debt.minMonthlyPayment > 0.0) debt.minMonthlyPayment else (debt.amount * 0.1).coerceAtMost(debt.amount)
+                                val days = calculateDaysUntilDue(debt.dueDate)
+                                val isOverdue = InstallmentDateHelper.isOverdue(debt.dueDate)
+
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = debt.name,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp
+                                                )
+                                                Text(
+                                                    text = "${debt.category} • ${debt.dueDate}",
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text(
+                                                    text = com.example.util.CurrencyFormatter.formatRupiah(minDue),
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp,
+                                                    color = ExpenseRed
+                                                )
+                                                Surface(
+                                                    color = if (isOverdue) ExpenseRed.copy(alpha = 0.15f) else Color(0xFFF59E0B).copy(alpha = 0.15f),
+                                                    shape = RoundedCornerShape(4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (isOverdue) "Terlambat ⚠️" else "Belum Bayar",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isOverdue) ExpenseRed else Color(0xFFD97706),
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Sisa Pokok: ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)}",
+                                                fontSize = 9.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = AppStrings.t("Sumber: Catatan Manual", "Source: Manual Entry"),
+                                                fontSize = 9.sp,
+                                                color = FinSmartPrimary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // --- BULAN BERIKUTNYA ---
+                        val nextMonthInstallments = activeInstallmentPlans.filter { it.remainingTenor > 1 }
+                        val nextMonthDebts = debtList.filter { it.amount > (if (it.minMonthlyPayment > 0.0) it.minMonthlyPayment else (it.amount * 0.1)) }
+                        val nextMonthEstimatedTotal = nextMonthInstallments.sumOf { it.installmentAmount } +
+                            nextMonthDebts.sumOf { if (it.minMonthlyPayment > 0.0) it.minMonthlyPayment else (it.amount * 0.1) }
+
+                        Surface(
+                            color = Color(0xFF6366F1).copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Estimasi",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF6366F1)
+                                    )
+                                    Text(
+                                        text = "Bulan Berikutnya ($nextMonthName)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF4F46E5)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = com.example.util.CurrencyFormatter.formatRupiah(nextMonthEstimatedTotal),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF4F46E5)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        if (nextMonthInstallments.isEmpty() && nextMonthDebts.isEmpty()) {
+                            Text(
+                                text = "Tidak ada tagihan yang dijadwalkan untuk bulan berikutnya.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        } else {
+                            nextMonthInstallments.forEach { plan ->
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(text = plan.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                                            Text(
+                                                text = "Estimasi Tgl ${plan.anchorDay} $nextMonthName • Tenor ke-${plan.currentPeriod + 1}/${plan.totalTenor}",
+                                                fontSize = 9.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Text(
+                                            text = com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+
+                            nextMonthDebts.forEach { debt ->
+                                val estPay = if (debt.minMonthlyPayment > 0.0) debt.minMonthlyPayment else (debt.amount * 0.1).coerceAtMost(debt.amount)
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(text = debt.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                                            Text(
+                                                text = "Estimasi ${debt.dueDate} • Sisa: ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount - estPay)}",
+                                                fontSize = 9.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Text(
+                                            text = com.example.util.CurrencyFormatter.formatRupiah(estPay),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -401,7 +878,7 @@ fun DebtPlannerModalDialog(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Pilih Gambar", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text(com.example.util.AppStrings.t("Pilih Gambar", "Select Image"), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         OutlinedButton(
@@ -409,7 +886,7 @@ fun DebtPlannerModalDialog(
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(0.9f).testTag("btn_sample_paylater_screenshot")
                         ) {
-                            Text("Contoh", fontSize = 11.sp)
+                            Text(com.example.util.AppStrings.t("Contoh", "Sample"), fontSize = 11.sp)
                         }
                     }
                 }
@@ -418,7 +895,7 @@ fun DebtPlannerModalDialog(
             Spacer(modifier = Modifier.height(14.dp))
 
             // Strategy Selector Chips
-            Text(text = "Pilih Strategi Pelunasan Otomatis:", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+            Text(text = com.example.util.AppStrings.t("Pilih Strategi Pelunasan Otomatis:", "Select Automatic Payoff Strategy:"), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -434,11 +911,17 @@ fun DebtPlannerModalDialog(
                 }
             }
 
-            Text(
-                text = selectedStrategy.description,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.Start)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = monthlyBudgetInput,
+                onValueChange = { monthlyBudgetInput = it.filter { ch -> ch.isDigit() } },
+                label = { Text(com.example.util.AppStrings.t("Simulasi Alokasi Pelunasan Rutin per Bulan (Rp)", "Monthly Payoff Allocation Simulation")) },
+                placeholder = { Text("Contoh: 2000000") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().testTag("input_debt_monthly_budget"),
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -450,14 +933,14 @@ fun DebtPlannerModalDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Daftar & Prioritas Pelunasan AI (${debtList.size}):",
+                    text = AppStrings.t("Daftar & Prioritas Pelunasan AI", "AI Repayment Priorities") + " (${debtList.size}):",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
 
                 if (debtList.isNotEmpty()) {
                     TextButton(onClick = { isDeleteCategoryDialogOpen = true }) {
-                        Text("Kelola Kategori", fontSize = 11.sp, color = FinSmartPrimary)
+                        Text(com.example.util.AppStrings.t("Kelola Kategori", "Manage Categories"), fontSize = 11.sp, color = FinSmartPrimary)
                     }
                 }
             }
@@ -466,7 +949,7 @@ fun DebtPlannerModalDialog(
 
             if (debtList.isEmpty()) {
                 Text(
-                    text = "Belum ada catatan pinjaman/hutang. Gunakan form di bawah untuk menambah.",
+                    text = AppStrings.t("Belum ada catatan pinjaman/hutang. Gunakan form di bawah untuk menambah.", "No debt/loan records yet. Use the form below to add one."),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp)
@@ -623,7 +1106,7 @@ fun DebtPlannerModalDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Category selection chips
-                    Text(text = "Kategori Pinjaman:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = AppStrings.t("Kategori Pinjaman:", "Loan Category:"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(4.dp))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -647,7 +1130,7 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputDebtName,
                         onValueChange = { inputDebtName = it },
-                        label = { Text("Nama Pinjaman (Misal: Kartu Kredit Mandiri)") },
+                        label = { Text(com.example.util.AppStrings.t("Nama Pinjaman (Misal: Kartu Kredit Mandiri)", "Loan Name (e.g., Credit Card)")) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -659,7 +1142,7 @@ fun DebtPlannerModalDialog(
                         OutlinedTextField(
                             value = inputDebtAmount,
                             onValueChange = { inputDebtAmount = it },
-                            label = { Text("Nominal (Rp)") },
+                            label = { Text(com.example.util.AppStrings.t("Nominal (Rp)", "Amount")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -669,7 +1152,7 @@ fun DebtPlannerModalDialog(
                         OutlinedTextField(
                             value = inputDebtInterest,
                             onValueChange = { inputDebtInterest = it },
-                            label = { Text("Bunga (%)") },
+                            label = { Text(com.example.util.AppStrings.t("Bunga (%)", "Interest (%)")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -683,7 +1166,7 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputDebtDueDate,
                         onValueChange = { inputDebtDueDate = it },
-                        label = { Text("Tanggal Jatuh Tempo (Due Date)") },
+                        label = { Text(com.example.util.AppStrings.t("Tanggal Jatuh Tempo (Due Date)", "Due Date")) },
                         leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -731,7 +1214,7 @@ fun DebtPlannerModalDialog(
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Batal Edit")
+                                Text(com.example.util.AppStrings.t("Batal Edit", "Cancel Edit"))
                             }
                         }
 
@@ -797,7 +1280,7 @@ fun DebtPlannerModalDialog(
             }
         } else {
             // Cicilan Berjangka Content
-            val activePlans = installmentPlans.filter { it.status == "ACTIVE" }
+            val activePlans = installmentPlans.filter { it.isActive }
             val completedPlans = installmentPlans.filter { it.isCompleted }
             val totalMonthlyInstallment = activePlans.sumOf { it.installmentAmount }
 
@@ -809,7 +1292,7 @@ fun DebtPlannerModalDialog(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Total Kewajiban Angsuran Bulanan",
+                        text = AppStrings.t("Total Kewajiban Angsuran Bulanan", "Total Monthly Installment Obligation"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -832,7 +1315,7 @@ fun DebtPlannerModalDialog(
                             modifier = Modifier.weight(1f)
                         ) {
                             Column(modifier = Modifier.padding(8.dp)) {
-                                Text("Cicilan Aktif", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(com.example.util.AppStrings.t("Cicilan Aktif", "Active Installments"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("${activePlans.size} Kontrak", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
                             }
                         }
@@ -843,7 +1326,7 @@ fun DebtPlannerModalDialog(
                             modifier = Modifier.weight(1f)
                         ) {
                             Column(modifier = Modifier.padding(8.dp)) {
-                                Text("Sudah Lunas", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(com.example.util.AppStrings.t("Sudah Lunas", "Paid Off"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("${completedPlans.size} Kontrak", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF047857))
                             }
                         }
@@ -873,7 +1356,7 @@ fun DebtPlannerModalDialog(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Buat Rencana Cicilan Baru", fontWeight = FontWeight.Bold)
+                Text(com.example.util.AppStrings.t("Buat Rencana Cicilan Baru", "Create New Installment Plan"), fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -891,13 +1374,13 @@ fun DebtPlannerModalDialog(
                         Icon(Icons.Default.CreditCard, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(36.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Belum Ada Rencana Cicilan Berjangka",
+                            text = AppStrings.t("Belum Ada Rencana Cicilan Berjangka", "No Installment Plans Yet"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Catat cicilan motor, mobil, barang elektronik, atau pinjaman dengan tenor tetap agar progres pembayaran dan tanggal jatuh tempo bulanan terpantau rapi tanpa membuat tagihan manual tiap bulan.",
+                            text = AppStrings.t("Catat cicilan motor, mobil, barang elektronik, atau pinjaman dengan tenor tetap agar progres pembayaran dan tanggal jatuh tempo bulanan terpantau rapi tanpa membuat tagihan manual tiap bulan.", "Record vehicle, electronics, or fixed-term loans to track repayment progress and monthly due dates automatically."),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -996,7 +1479,7 @@ fun DebtPlannerModalDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Column {
-                                    Text("Angsuran:", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(com.example.util.AppStrings.t("Angsuran:", "Installment:"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
                                         text = "${com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount)} / bln",
                                         fontWeight = FontWeight.Bold,
@@ -1005,7 +1488,7 @@ fun DebtPlannerModalDialog(
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text("Jatuh Tempo:", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(com.example.util.AppStrings.t("Jatuh Tempo:", "Due Date:"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
                                         text = if (plan.isCompleted) "Lunas" else plan.nextDueDate,
                                         fontWeight = FontWeight.SemiBold,
@@ -1032,10 +1515,10 @@ fun DebtPlannerModalDialog(
                             }
 
                             if (plan.lastPaymentDate != null && plan.lastPaymentDate > 0L) {
-                                val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")).format(Date(plan.lastPaymentDate))
+                                val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", com.example.util.LocaleHelper.getActiveLocale()).format(Date(plan.lastPaymentDate))
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "Pembayaran Terakhir: $dateStr",
+                                    text = AppStrings.t("Pembayaran Terakhir: ", "Last Payment: ") + dateStr,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1055,13 +1538,13 @@ fun DebtPlannerModalDialog(
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
                                         Text(
-                                            text = "Histori Transaksi Terkait (${linkedPayments.size}):",
+                                            text = AppStrings.t("Histori Transaksi Terkait", "Related Transaction History") + " (${linkedPayments.size}):",
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = FinSmartPrimary
                                         )
                                         linkedPayments.take(3).forEach { tx ->
-                                            val txDate = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID")).format(Date(tx.timestamp))
+                                            val txDate = SimpleDateFormat("dd/MM/yyyy", com.example.util.LocaleHelper.getActiveLocale()).format(Date(tx.timestamp))
                                             Text(
                                                 text = "• $txDate: ${com.example.util.CurrencyFormatter.formatRupiah(tx.amount)} (${tx.walletName})",
                                                 fontSize = 10.sp,
@@ -1118,7 +1601,7 @@ fun DebtPlannerModalDialog(
                                         modifier = Modifier.testTag("btn_pay_installment_${plan.id}")
                                     ) {
                                         Text(
-                                            text = "Bayar Angsuran ke-${plan.currentPeriod}",
+                                            text = AppStrings.t("Bayar Angsuran ke-", "Pay Installment #") + "${plan.currentPeriod}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -1134,34 +1617,35 @@ fun DebtPlannerModalDialog(
 
     // 1. Reset Semua Hutang Confirmation Dialog
     if (isResetConfirmDialogOpen) {
+        val totalAffectedCount = debtList.size + activeInstallmentPlans.size
         AlertDialog(
             onDismissRequest = { isResetConfirmDialogOpen = false },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.RestartAlt, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Reset Semua Hutang?", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Reset Semua Hutang?", "Reset All Debts?"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
-                Text("Apakah Anda yakin ingin menghapus seluruh catatan pinjaman/hutang (Fresh Start Bebas Hutang)? Tindakan ini tidak dapat dibatalkan.")
+                Text(AppStrings.t("Apakah Anda yakin ingin menghapus seluruh catatan pinjaman/hutang dan rencana cicilan ($totalAffectedCount item)?\n\nTransaksi dompet dan riwayat pengeluaran umum Anda akan tetap aman. Tindakan ini tidak dapat dibatalkan.", "Are you sure you want to delete all loan/debt records and installment plans ($totalAffectedCount items)?\n\nYour wallets and general expense records will remain safe. This action cannot be undone."))
             },
             confirmButton = {
                 Button(
                     onClick = {
                         onClearAllDebts()
                         isResetConfirmDialogOpen = false
-                        Toast.makeText(context, "Seluruh daftar hutang telah di-reset (Fresh Start)! 🧹", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Seluruh daftar hutang & cicilan ($totalAffectedCount item) telah di-reset! 🧹", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                     modifier = Modifier.testTag("btn_confirm_reset_debts")
                 ) {
-                    Text("Reset Semua", color = Color.White)
+                    Text(com.example.util.AppStrings.t("Reset Semua", "Reset All"), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isResetConfirmDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.cancel)
                 }
             }
         )
@@ -1175,16 +1659,16 @@ fun DebtPlannerModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hapus Kategori Hutang", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Hapus Kategori Hutang", "Delete Debt Category"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column {
-                    Text("Pilih kategori yang ingin dihapus seluruh itemnya dari planner:")
+                    Text(com.example.util.AppStrings.t("Pilih kategori yang ingin dihapus seluruh itemnya dari planner:", "Select category to delete all its items from planner:"))
                     Spacer(modifier = Modifier.height(10.dp))
                     val availableCategories = debtList.map { it.category }.distinct()
                     if (availableCategories.isEmpty()) {
-                        Text("Tidak ada kategori hutang aktif.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text(com.example.util.AppStrings.t("Tidak ada kategori hutang aktif.", "No active debt categories."), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     } else {
                         availableCategories.forEach { cat ->
                             val count = debtList.count { it.category == cat }
@@ -1205,7 +1689,7 @@ fun DebtPlannerModalDialog(
                                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
-                                    Text("Hapus", fontSize = 10.sp, color = Color.White)
+                                    Text(AppStrings.t("Hapus", "Delete"), fontSize = 10.sp, color = Color.White)
                                 }
                             }
                         }
@@ -1228,11 +1712,11 @@ fun DebtPlannerModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hapus Pinjaman?", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Hapus Pinjaman?", "Delete Loan?"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
-                Text("Hapus pinjaman '${debt.name}' senilai ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)} dari planner?")
+                Text(com.example.util.AppStrings.t("Hapus pinjaman", "Delete loan") + " '${debt.name}' senilai ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)} dari planner?")
             },
             confirmButton = {
                 Button(
@@ -1243,34 +1727,38 @@ fun DebtPlannerModalDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(AppStrings.t("Hapus", "Delete"), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { debtItemToDelete = null }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.cancel)
                 }
             }
         )
     }
 
     // 4. PayLater AI Bill Review & Confirmation Dialog
-    scannedPayLaterResult?.let { result ->
+    if (scannedPayLaterBatch.isNotEmpty()) {
         PayLaterBillReviewDialog(
-            scanResult = result,
+            batchScanResults = scannedPayLaterBatch,
             existingDebts = debtList,
             existingInstallmentPlans = installmentPlans,
             currentUserId = currentUserId,
             onConfirmSave = { debtToSave ->
                 onSaveDebt(debtToSave)
-                scannedPayLaterResult = null
             },
             onSaveAsInstallmentPlan = { planToSave ->
                 onSaveInstallmentPlan(planToSave)
-                scannedPayLaterResult = null
+            },
+            onSaveBatch = { debtsToSave, plansToSave ->
+                debtsToSave.forEach { onSaveDebt(it) }
+                plansToSave.forEach { (plan, _) ->
+                    onSaveInstallmentPlan(plan)
+                }
             },
             onDismiss = {
-                scannedPayLaterResult = null
+                scannedPayLaterBatch = emptyList()
             }
         )
     }
@@ -1283,7 +1771,7 @@ fun DebtPlannerModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Memproses Tagihan AI", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Memproses Tagihan AI", "Processing AI Bill"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -1294,7 +1782,7 @@ fun DebtPlannerModalDialog(
                 ) {
                     CircularProgressIndicator(color = FinSmartPrimary, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Membaca screenshot tagihan...", fontSize = 13.sp)
+                    Text(com.example.util.AppStrings.t("Membaca screenshot tagihan...", "Reading bill screenshot..."), fontSize = 13.sp)
                 }
             },
             confirmButton = {}
@@ -1309,7 +1797,7 @@ fun DebtPlannerModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Warning, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Gagal Scan Tagihan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Gagal Scan Tagihan", "Bill Scan Failed"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -1340,19 +1828,19 @@ fun DebtPlannerModalDialog(
         AlertDialog(
             onDismissRequest = { isSampleSelectionDialogOpen = false },
             title = {
-                Text("Pilih Contoh Tagihan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(com.example.util.AppStrings.t("Pilih Contoh Tagihan", "Select Sample Bill"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Pilih contoh tagihan untuk mencoba fitur tanpa screenshot fisik:",
+                        text = AppStrings.t("Pilih contoh tagihan untuk mencoba fitur tanpa screenshot fisik:", "Select sample bill to test feature without physical screenshot:"),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedButton(
                         onClick = {
                             isSampleSelectionDialogOpen = false
-                            scannedPayLaterResult = PayLaterAiOcrScanner.getSamplePayLaterBill("shopee")
+                            scannedPayLaterBatch = listOf(PayLaterAiOcrScanner.getSamplePayLaterBill("shopee"))
                         },
                         modifier = Modifier.fillMaxWidth().testTag("btn_sample_shopee")
                     ) {
@@ -1361,7 +1849,7 @@ fun DebtPlannerModalDialog(
                     OutlinedButton(
                         onClick = {
                             isSampleSelectionDialogOpen = false
-                            scannedPayLaterResult = PayLaterAiOcrScanner.getSamplePayLaterBill("dana")
+                            scannedPayLaterBatch = listOf(PayLaterAiOcrScanner.getSamplePayLaterBill("dana"))
                         },
                         modifier = Modifier.fillMaxWidth().testTag("btn_sample_dana")
                     ) {
@@ -1370,7 +1858,7 @@ fun DebtPlannerModalDialog(
                     OutlinedButton(
                         onClick = {
                             isSampleSelectionDialogOpen = false
-                            scannedPayLaterResult = PayLaterAiOcrScanner.getSamplePayLaterBill("gopay")
+                            scannedPayLaterBatch = listOf(PayLaterAiOcrScanner.getSamplePayLaterBill("gopay"))
                         },
                         modifier = Modifier.fillMaxWidth().testTag("btn_sample_gopay")
                     ) {
@@ -1380,7 +1868,7 @@ fun DebtPlannerModalDialog(
             },
             confirmButton = {
                 TextButton(onClick = { isSampleSelectionDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.cancel)
                 }
             }
         )
@@ -1408,8 +1896,8 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputPlanName,
                         onValueChange = { inputPlanName = it },
-                        label = { Text("Nama Cicilan (wajib)") },
-                        placeholder = { Text("Contoh: Cicilan Motor Vario") },
+                        label = { Text(com.example.util.AppStrings.t("Nama Cicilan (wajib)", "Installment Name (Required)")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Contoh: Cicilan Motor Vario", "e.g. Motorcycle Installment")) },
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_name"),
                         singleLine = true
                     )
@@ -1437,7 +1925,7 @@ fun DebtPlannerModalDialog(
                         OutlinedTextField(
                             value = inputPlanPaidCount,
                             onValueChange = { inputPlanPaidCount = it.filter { ch -> ch.isDigit() } },
-                            label = { Text("Sudah Bayar") },
+                            label = { Text(AppStrings.t("Sudah Bayar", "Paid")) },
                             placeholder = { Text("0") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f).testTag("input_plan_paid_count"),
@@ -1448,7 +1936,7 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputPlanAmount,
                         onValueChange = { inputPlanAmount = it.filter { ch -> ch.isDigit() } },
-                        label = { Text("Angsuran per Bulan (Rp)") },
+                        label = { Text(com.example.util.AppStrings.t("Angsuran per Bulan (Rp)", "Installment per Month (Rp)")) },
                         placeholder = { Text("Contoh: 850000") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_amount"),
@@ -1458,7 +1946,7 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputPlanAnchorDay,
                         onValueChange = { inputPlanAnchorDay = it.filter { ch -> ch.isDigit() } },
-                        label = { Text("Tanggal Jatuh Tempo (1-31)") },
+                        label = { Text(com.example.util.AppStrings.t("Tanggal Jatuh Tempo (1-31)", "Due Date (1-31)")) },
                         placeholder = { Text("15") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_anchor_day"),
@@ -1478,7 +1966,7 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputPlanNotes,
                         onValueChange = { inputPlanNotes = it },
-                        label = { Text("Catatan (opsional)") },
+                        label = { Text(com.example.util.AppStrings.t("Catatan (opsional)", "Notes (Optional)")) },
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_notes"),
                         singleLine = false
                     )
@@ -1509,7 +1997,6 @@ fun DebtPlannerModalDialog(
 
                         val remaining = tenor - paid
                         val isComplete = remaining <= 0
-                        val status = if (isComplete) "COMPLETED" else "ACTIVE"
 
                         val planItem = InstallmentPlanItem(
                             id = editingPlan?.id ?: UUID.randomUUID().toString(),
@@ -1545,7 +2032,7 @@ fun DebtPlannerModalDialog(
                     isCreatePlanDialogOpen = false
                     editingPlan = null
                 }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.cancel)
                 }
             }
         )
@@ -1559,7 +2046,7 @@ fun DebtPlannerModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CreditCard, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Konfirmasi Bayar Angsuran", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Konfirmasi Bayar Angsuran", "Confirm Installment Payment"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -1570,24 +2057,24 @@ fun DebtPlannerModalDialog(
                         fontSize = 14.sp
                     )
                     Text(
-                        text = "Pembayaran Angsuran ke-${plan.currentPeriod} dari ${plan.totalTenor}",
+                        text = AppStrings.t("Pembayaran Angsuran ke-", "Payment of Installment #") + "${plan.currentPeriod} " + AppStrings.t("dari", "of") + " ${plan.totalTenor}",
                         fontSize = 13.sp
                     )
                     Text(
-                        text = "Nominal: ${com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount)}",
+                        text = AppStrings.t("Nominal: ", "Amount: ") + com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount),
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         color = ExpenseRed
                     )
                     Text(
-                        text = "Jatuh Tempo: ${plan.nextDueDate}",
+                        text = AppStrings.t("Jatuh Tempo: ", "Due Date: ") + plan.nextDueDate,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Pilih Dompet Sumber (Opsional):",
+                        text = AppStrings.t("Pilih Dompet Sumber (Opsional):", "Select Source Wallet (Optional):"),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp
                     )
@@ -1595,7 +2082,7 @@ fun DebtPlannerModalDialog(
                     FilterChip(
                         selected = selectedWalletIdForPayment == null,
                         onClick = { selectedWalletIdForPayment = null },
-                        label = { Text("Tanpa potong saldo dompet", fontSize = 11.sp) },
+                        label = { Text(com.example.util.AppStrings.t("Tanpa potong saldo dompet", "Without deducting wallet balance"), fontSize = 11.sp) },
                         modifier = Modifier.testTag("chip_wallet_none")
                     )
 
@@ -1628,12 +2115,12 @@ fun DebtPlannerModalDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
                     modifier = Modifier.testTag("btn_confirm_pay_installment")
                 ) {
-                    Text("Konfirmasi Bayar")
+                    Text(com.example.util.AppStrings.t("Konfirmasi Bayar", "Confirm Payment"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { payingPlan = null }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.cancel)
                 }
             }
         )
@@ -1647,11 +2134,11 @@ fun DebtPlannerModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hapus Rencana Cicilan?", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Hapus Rencana Cicilan?", "Delete Installment Plan?"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
-                Text("Apakah Anda yakin ingin menghapus rencana cicilan '${plan.name}'? Catatan progres (${plan.paidCount}/${plan.totalTenor}) akan dihapus.")
+                Text(AppStrings.t("Apakah Anda yakin ingin menghapus rencana cicilan", "Are you sure you want to delete installment plan") + " '${plan.name}'? " + AppStrings.t("Catatan progres", "Progress records") + " (${plan.paidCount}/${plan.totalTenor}) " + AppStrings.t("akan dihapus.", "will be deleted."))
             },
             confirmButton = {
                 Button(
@@ -1662,16 +2149,15 @@ fun DebtPlannerModalDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(AppStrings.t("Hapus", "Delete"), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { planToDelete = null }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.cancel)
                 }
             }
         )
     }
 }
 }
-

@@ -95,7 +95,7 @@ object NotificationDataHelper {
 
         // 2B. Installment Plans Due-Date & Overdue Reminders
         installmentPlans.forEach { plan ->
-            if (plan.isCompleted || plan.remainingTenor <= 0 || (!plan.status.equals("AKTIF", ignoreCase = true) && !plan.status.equals("ACTIVE", ignoreCase = true))) return@forEach
+            if (!plan.isActive) return@forEach
 
             val dueDay = Regex("\\d+").find(plan.nextDueDate)?.value?.toIntOrNull()
             val formattedAmount = CurrencyFormatter.formatRupiah(plan.installmentAmount)
@@ -195,7 +195,7 @@ object NotificationDataHelper {
                 notifications.add(
                     NotificationItem(
                         title = "🔥 Pencapaian Legendaris: Streak 365 Hari!",
-                        message = "Luar biasa! Konsistensi finansial 1 tahun penuh. Gelar Centurion FinSmart aktif!",
+                        message = "Luar biasa! Konsistensi finansial 1 tahun penuh. Gelar Centurion DompetNalar aktif!",
                         timeAgo = "Aktif",
                         isWarning = false
                     )
@@ -215,7 +215,7 @@ object NotificationDataHelper {
                 notifications.add(
                     NotificationItem(
                         title = "🔥 Milestone Budget Master: Streak $dailyStreak Hari!",
-                        message = "Hebat! Streak 30 hari tercapai. Fitur Custom Background telah terbuka di Gamification Hub.",
+                        message = "Hebat! Streak 30 hari tercapai. Klaim Akses Smart Master Gratis 24 Jam di Gamification Hub!",
                         timeAgo = "Aktif",
                         isWarning = false
                     )

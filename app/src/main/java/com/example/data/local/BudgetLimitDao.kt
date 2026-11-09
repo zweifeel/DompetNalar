@@ -40,7 +40,39 @@ interface BudgetLimitDao {
     @Query("SELECT COUNT(*) FROM budget_limits WHERE userId = :userId")
     suspend fun getBudgetLimitCount(userId: Long): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertBudgetLimit(item: BudgetLimitItem)
+
+    @androidx.room.Update
+    suspend fun updateBudgetLimit(item: BudgetLimitItem)
+
+    @Query("""
+        INSERT INTO budget_limits (categoryOrTotalId, limitAmount, isCategory, userId)
+        VALUES (:categoryOrTotalId, :limitAmount, :isCategory, :userId)
+        ON CONFLICT(userId, categoryOrTotalId) DO UPDATE SET 
+            limitAmount = :limitAmount,
+            isCategory = :isCategory
+    """)
+    suspend fun upsertBudgetLimitByKey(
+        categoryOrTotalId: String,
+        limitAmount: Double,
+        isCategory: Boolean,
+        userId: Long
+    )
+
+    @Query("SELECT * FROM budget_limits WHERE userId IS NULL ORDER BY localId ASC")
+    suspend fun getLegacyNullOwnerBudgetLimits(): List<BudgetLimitItem>
+
+    @Query("UPDATE budget_limits SET userId = :userId WHERE localId = :localId AND userId IS NULL")
+    suspend fun claimLegacyBudgetLimit(localId: Long, userId: Long): Int
+
+    @Query("UPDATE budget_limits SET userId = :userId WHERE userId IS NULL")
+    suspend fun claimLegacyBudgetLimits(userId: Long): Int
+
+    @Query("UPDATE budget_limits SET limitAmount = :newAmount WHERE localId = :activeLocalId AND userId = :userId")
+    suspend fun updateLimitAmount(activeLocalId: Long, userId: Long, newAmount: Double): Int
+
+    @Query("DELETE FROM budget_limits WHERE localId = :localId AND userId IS NULL")
+    suspend fun retireLegacyBudgetLimit(localId: Long): Int
 
 }

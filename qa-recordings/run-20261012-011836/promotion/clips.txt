@@ -1,0 +1,7 @@
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/01_startup_dashboard.mp4'
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/02_transaksi_pemasukan.mp4'
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/03_transaksi_pengeluaran.mp4'
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/04_mutasi_banner.mp4'
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/05_analisis_banner.mp4'
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/06_paywall_rewarded.mp4'
+file 'E:/FinSmart/qa-recordings/run-20261012-011836/raw/07_gamifikasi_streak.mp4'

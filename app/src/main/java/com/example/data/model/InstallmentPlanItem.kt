@@ -1,5 +1,6 @@
 package com.example.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -42,7 +43,11 @@ data class InstallmentPlanItem(
     val notes: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val lastPaymentDate: Long? = null,
-    val userId: Long? = null
+    val userId: Long? = null,
+    @ColumnInfo(name = "totalAmountMinorUnits", defaultValue = "NULL")
+    val totalAmountMinorUnits: Long? = null,
+    @ColumnInfo(name = "currencyCode", defaultValue = "IDR")
+    val currencyCode: String = "IDR"
 ) {
     /**
      * Sisa angsuran = Total tenor - Jumlah angsuran yang sudah dikonfirmasi lunas
@@ -51,7 +56,10 @@ data class InstallmentPlanItem(
         get() = (totalTenor - paidCount).coerceAtLeast(0)
 
     val isCompleted: Boolean
-        get() = paidCount >= totalTenor || status.equals("SELESAI", ignoreCase = true)
+        get() = paidCount >= totalTenor || status.equals("SELESAI", ignoreCase = true) || status.equals("COMPLETED", ignoreCase = true)
+
+    val isActive: Boolean
+        get() = !isCompleted && (status.equals("AKTIF", ignoreCase = true) || status.equals("ACTIVE", ignoreCase = true))
 
     val currentRunningInstallment: Int
         get() = if (isCompleted) totalTenor else (paidCount + 1).coerceAtMost(totalTenor)

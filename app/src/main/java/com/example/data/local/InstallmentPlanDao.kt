@@ -17,17 +17,26 @@ interface InstallmentPlanDao {
     @Query("SELECT * FROM installment_plans WHERE id = :id AND userId = :userId LIMIT 1")
     suspend fun getInstallmentPlanById(id: String, userId: Long): InstallmentPlanItem?
 
-    @Query("SELECT * FROM installment_plans WHERE status = 'AKTIF' AND userId = :userId ORDER BY nextDueDate ASC")
+    @Query("SELECT * FROM installment_plans WHERE (status = 'AKTIF' OR status = 'ACTIVE') AND paidCount < totalTenor AND userId = :userId ORDER BY nextDueDate ASC")
     fun getActiveInstallmentPlans(userId: Long): Flow<List<InstallmentPlanItem>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertInstallmentPlan(plan: InstallmentPlanItem)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertInstallmentPlans(plans: List<InstallmentPlanItem>)
 
     @Update
     suspend fun updateInstallmentPlan(plan: InstallmentPlanItem)
+
+    @Query("SELECT * FROM installment_plans WHERE userId IS NULL ORDER BY createdAt ASC")
+    suspend fun getLegacyNullOwnerInstallmentPlans(): List<InstallmentPlanItem>
+
+    @Query("UPDATE installment_plans SET userId = :userId WHERE id = :id AND userId IS NULL")
+    suspend fun claimLegacyInstallmentPlan(id: String, userId: Long): Int
+
+    @Query("UPDATE installment_plans SET userId = :userId WHERE userId IS NULL")
+    suspend fun claimLegacyInstallments(userId: Long): Int
 
     @Query("DELETE FROM installment_plans WHERE id = :id AND userId = :userId")
     suspend fun deleteInstallmentPlan(id: String, userId: Long): Int

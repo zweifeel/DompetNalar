@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -153,7 +154,7 @@ fun DuressPinModalDialog(
             OutlinedTextField(
                 value = mainPinInput,
                 onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) mainPinInput = it },
-                label = { Text("PIN Utama (Akun Asli)") },
+                label = { Text(AppStrings.t("PIN Utama (Akun Asli)", "Main PIN (Real Account)")) },
                 visualTransformation = if (showPins) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 singleLine = true,
@@ -168,7 +169,7 @@ fun DuressPinModalDialog(
             OutlinedTextField(
                 value = duressPinInput,
                 onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) duressPinInput = it },
-                label = { Text("Duress PIN (Mode Stealth / Dummy)") },
+                label = { Text("Duress PIN (Mode Stealth / Kamuflase)") },
                 visualTransformation = if (showPins) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 singleLine = true,
@@ -218,7 +219,7 @@ fun DuressPinModalDialog(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
             ) {
-                Text("Simpan Pengaturan PIN", fontWeight = FontWeight.Bold)
+                Text(com.example.util.AppStrings.t("Simpan Pengaturan PIN", "Save PIN Settings"), fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -245,7 +246,7 @@ fun DuressPinModalDialog(
                         OutlinedTextField(
                             value = testInputPin,
                             onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) testInputPin = it },
-                            placeholder = { Text("Masukkan PIN...") },
+                            placeholder = { Text(AppStrings.t("Masukkan PIN...", "Enter PIN...")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                             visualTransformation = PasswordVisualTransformation(),
                             singleLine = true,

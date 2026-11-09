@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kebijakan Privasi - FinSmart</title>
+    <title>Kebijakan Privasi - DompetNalar</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -23,7 +23,7 @@
         }
         h1 {
             color: #0B57D0;
-            font-size: 26px;
+            font-size: 24px;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 12px;
             margin-top: 0;
@@ -33,6 +33,14 @@
             font-size: 18px;
             margin-top: 24px;
             margin-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 6px;
+        }
+        h3 {
+            color: #1e293b;
+            font-size: 15px;
+            margin-top: 16px;
+            margin-bottom: 6px;
         }
         p, li {
             font-size: 14px;
@@ -48,12 +56,14 @@
             font-weight: 600;
             margin-bottom: 16px;
         }
-        .highlight-box {
+        .info-box {
             background-color: #f0fdf4;
             border-left: 4px solid #16a34a;
             padding: 12px 16px;
             border-radius: 0 8px 8px 0;
             margin: 16px 0;
+            font-size: 13px;
+            color: #166534;
         }
         .warning-box {
             background-color: #fffbeb;
@@ -61,9 +71,26 @@
             padding: 12px 16px;
             border-radius: 0 8px 8px 0;
             margin: 16px 0;
+            font-size: 13px;
+            color: #92400e;
         }
-        ul {
+        ul, ol {
             padding-left: 20px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        code {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        a {
+            color: #0B57D0;
+            text-decoration: underline;
         }
         footer {
             margin-top: 32px;
@@ -77,57 +104,115 @@
 </head>
 <body>
 <div class="container">
-    <div class="badge">Kebijakan Privasi Resmi & Standar Google Play Store / GDPR</div>
-    <h1>Kebijakan Privasi Aplikasi FinSmart</h1>
-    <p><em>Terakhir diperbarui: 27 September 2026</em></p>
+    <div class="badge">Kebijakan Privasi Aplikasi DompetNalar</div>
+    <h1>Kebijakan Privasi Aplikasi DompetNalar</h1>
+    <p><em>Terakhir diperbarui: 10 Oktober 2026</em></p>
 
-    <div class="highlight-box">
-        <strong>Komitmen Privasi Utama:</strong> FinSmart memprioritaskan privasi dan kedaulatan data pengguna. Seluruh data keuangan, riwayat mutasi, dan saldo akun Anda disimpan dan dienkripsi secara lokal di perangkat Anda (AES-256).
+    <div class="info-box">
+        <strong>Pemberitahuan Transparansi:</strong> Aplikasi <strong>DompetNalar</strong> dikembangkan oleh <strong>SleepyKoala</strong>. Dokumen ini menjelaskan secara transparan bagaimana data pengguna dikelola, disimpan, diproses, dan dilindungi saat menggunakan aplikasi DompetNalar sesuai implementasi teknis aktual aplikasi. DompetNalar tidak menjual data pribadi pengguna, dan pengiriman data ke layanan pihak ketiga hanya berlangsung sesuai fitur yang Anda gunakan.
     </div>
 
-    <h2>1. Identitas Aplikasi & Pengembang</h2>
-    <p>Aplikasi <strong>FinSmart</strong> (Manajemen Keuangan Cerdas & Komprehensif) dikembangkan secara independen oleh <strong>Lukas</strong>. Hubungi tim kami di <a href="mailto:lunachroc07@gmail.com">lunachroc07@gmail.com</a> untuk pertanyaan dan dukungan teknis.</p>
-
-    <h2>2. Pengumpulan & Penggunaan Data</h2>
+    <h2>1. Identitas Pengembang & Aplikasi</h2>
     <ul>
-        <li><strong>Penyimpanan Lokal:</strong> Semua data saldo, catatan mutasi pemasukan/pengeluaran, kategori, anggaran, dan hutang piutang diproses dan disimpan di database lokal perangkat Anda.</li>
-        <li><strong>Enkripsi:</strong> Kami menerapkan standar enkripsi AES-256 pada penyimpanan data lokal untuk melindungi kerahasiaan Anda.</li>
-        <li><strong>Tanpa Penjualan Data:</strong> Kami tidak pernah menjual, menyewakan, atau mendistribusikan data transaksi atau profil keuangan Anda kepada pihak ketiga mana pun.</li>
+        <li><strong>Nama Aplikasi:</strong> DompetNalar</li>
+        <li><strong>Pengembang:</strong> SleepyKoala</li>
+        <li><strong>Email Dukungan:</strong> <a href="mailto:lunachroc01@gmail.com">lunachroc01@gmail.com</a></li>
+        <li><strong>Status Dokumen:</strong> Dokumen Kebijakan Privasi Aplikasi (Offline-First Architecture)</li>
     </ul>
 
-    <h2>3. Akses Izin Sensitif (Prominent Disclosures)</h2>
-    <p>FinSmart hanya meminta izin saat fitur terkait diaktifkan secara kontekstual (Just-In-Time):</p>
+    <h2>2. Penyimpanan & Keamanan Data Lokal</h2>
+    <ol>
+        <li><strong>Penyimpanan Privat Aplikasi (<em>App-Private Storage</em>):</strong> Semua data keuangan pengguna (saldo akun/dompet, catatan mutasi transaksi, kategori, anggaran, daftar hutang/piutang, aset, dan riwayat split bill) disimpan secara lokal di basis data SQLite (Room Database) pada penyimpanan privat perangkat Anda.</li>
+        <li><strong>Perlindungan Sandbox Sistem Operasi:</strong> Data lokal tersebut dilindungi oleh arsitektur keamanan <em>sandbox</em> sistem operasi Android (<em>Linux Application UID isolation</em>), yang mencegah aplikasi lain pada perangkat membaca basis data privat DompetNalar secara langsung.</li>
+        <li><strong>Klarifikasi Enkripsi Database:</strong> Basis data aktif yang beroperasi di perangkat tidak menggunakan enkripsi database saat istirahat (<em>at-rest database encryption</em> seperti SQLCipher), melainkan mengandalkan perlindungan penyimpanan privat sistem operasi Android.</li>
+        <li><strong>Enkripsi Berkas Cadangan (AES-256-GCM):</strong> Standar enkripsi tingkat tinggi <strong>AES-256-GCM</strong> terautentikasi (Format v2) diterapkan secara spesifik pada pembuatan berkas cadangan (<em>backup file</em>) dan ekspor data, baik saat disimpan sebagai berkas portabel lokal maupun saat diunggah ke Google Drive pengguna.</li>
+        <li><strong>Kedaulatan & Pengendalian Data:</strong> DompetNalar tidak menjual data pribadi pengguna kepada pihak mana pun. Pengembang tidak mengoperasikan server basis data terpusat untuk menampung data keuangan pengguna. Data keuangan Anda secara bawaan tersimpan di perangkat lokal, dan data tertentu hanya dikirim ke layanan pihak ketiga (seperti Google Drive atau Google AdMob) ketika Anda menggunakan fitur terkait sebagaimana diuraikan dalam Bagian 5.</li>
+    </ol>
+
+    <h2>3. Fitur Pencadangan & Google Drive</h2>
     <ul>
-        <li><strong>Auto-Read Notification Listener & SMS (Pencatatan Otomatis):</strong> Akses membaca notifikasi transaksi SMS/Bank digunakan <em>HANYA</em> untuk pencatatan nominal dan kategori mutasi secara lokal di HP Anda tanpa memerlukan API perbankan langsung atau izin OJK. Data notifikasi <strong>TIDAK PERNAH</strong> dikirim ke server luar.</li>
-        <li><strong>Kamera (Camera Access):</strong> Digunakan <em>HANYA</em> saat Anda mengambil foto nota/struk belanja fisik untuk diekstrak oleh AI Gemini OCR secara otomatis.</li>
-        <li><strong>Mikrofon (Audio Record):</strong> Digunakan <em>HANYA</em> saat Anda menekan tombol mikrofon pada fitur Voice-to-Text Expense Logging untuk mendiktekan transaksi.</li>
-        <li><strong>Google Drive Sync & OAuth:</strong> Digunakan <em>HANYA</em> untuk menyimpan dan mengunduh file cadangan terenkripsi pengguna di folder pribadi <code>FinSmart/Backup Data</code> pada akun Google Drive pengguna.</li>
+        <li><strong>Pencadangan Mandiri:</strong> DompetNalar menyediakan fitur pencadangan (<em>backup</em>) dan pemulihan (<em>restore</em>) data yang dijalankan atas inisiatif pengguna atau melalui jadwal pengingat lokal yang dikonfigurasi pengguna. Aplikasi tidak menyinkronkan data keuangan secara otomatis atau <em>real-time</em> ke server cloud pihak ketiga.</li>
+        <li><strong>Enkripsi Sebelum Pengunggahan:</strong> Seluruh data yang dicadangkan dienkripsi terlebih dahulu di perangkat menggunakan algoritma AES-256-GCM terautentikasi sebelum berkas cadangan dibuat atau diunggah.</li>
+        <li><strong>Akses Google Drive (OAuth Least-Privilege):</strong> Jika pengguna memilih untuk menghubungkan Google Drive, aplikasi meminta izin akses terbatas (<em>scope</em>) <code>https://www.googleapis.com/auth/drive.file</code>. DompetNalar hanya memiliki akses ke berkas dan folder yang dibuatnya sendiri di akun Google Drive pribadi pengguna pada folder bernama <code>FinSmart_Backups</code>. DompetNalar tidak dapat melihat atau membaca berkas lain di Google Drive pengguna.</li>
     </ul>
 
-    <h2>4. Penggunaan Layanan Pihak Ketiga (Third-Party Services)</h2>
-    <p>Aplikasi ini dapat berinteraksi dengan layanan pihak ketiga resmi berikut:</p>
+    <h2>4. Izin Akses Perangkat (Device Permissions)</h2>
+    <p>DompetNalar meminta izin perangkat hanya saat fitur terkait digunakan secara langsung oleh pengguna:</p>
     <ul>
-        <li><strong>Google Gemini AI API:</strong> Digunakan untuk pemrosesan teks dan analisis OCR gambar nota saat pengguna menggunakan fitur AI.</li>
-        <li><strong>Google Play Billing / In-App Purchases:</strong> Digunakan untuk memproses transaksi langganan pada versi Google Play Store resmi.</li>
-        <li><strong>Google AdMob:</strong> Menampilkan iklan non-intrusif khusus untuk pengguna paket gratis (FinSmart Member), dan dinonaktifkan sepenuhnya untuk pelanggan Smart Master 👑.</li>
+        <li><strong>Kamera (<code>android.permission.CAMERA</code>):</strong> Digunakan saat pengguna mengaktifkan fitur pemindaian struk belanja fisik (Scan Nota) untuk mengambil foto nota yang akan dianalisis.</li>
+        <li><strong>Mikrofon (<code>android.permission.RECORD_AUDIO</code>):** Digunakan saat pengguna menekan tombol mikrofon pada fitur pencatatan pengeluaran berbasis suara (<em>Voice-to-Text Expense Logging</em>). Fitur ini memanfaatkan antarmuka pengenalan suara (<em>SpeechRecognizer</em>) pada sistem operasi Android. Pemrosesan suara bergantung pada konfigurasi mesin pengenalan suara yang aktif di perangkat pengguna (layanan sistem atau layanan ucapan Google).</li>
+        <li><strong>Notifikasi (<code>android.permission.POST_NOTIFICATIONS</code>):</strong> Digunakan untuk menampilkan pengingat jatuh tempo tagihan, pengingat pencatatan, dan peringatan batas anggaran secara lokal di perangkat.</li>
+        <li><strong>Transparansi Fitur SMS:</strong> Aplikasi DompetNalar saat ini <strong>tidak</strong> menggunakan atau meminta izin pembacaan SMS (<code>RECEIVE_SMS</code>, <code>READ_SMS</code>) maupun layanan pendengar notifikasi sistem (<em>Notification Listener Service</em>).</li>
     </ul>
 
-    <h2>5. Hak Pengguna & Penghapusan Data Permanen (Account Deletion)</h2>
+    <h2>5. Layanan Pihak Ketiga & Transmisi Data</h2>
+    <p>DompetNalar berinteraksi dengan layanan pihak ketiga resmi berikut untuk mendukung fungsionalitas tertentu. Data tertentu hanya dikirimkan atau diproses oleh pihak ketiga ketika fitur terkait digunakan:</p>
+    <ul>
+        <li>
+            <strong>Pemrosesan Kecerdasan Buatan & OCR Lokal di Perangkat (On-Device Local AI & ML Kit OCR):</strong>
+            <ul>
+                <li><strong>Kondisi Penggunaan:</strong> Digunakan saat pengguna memanfaatkan fitur cerdas: foto struk belanja fisik (Scan Nota OCR), tangkapan layar (<em>screenshot</em>) tagihan PayLater, teks pesan input transaksi (Pencatatan Transaksi Chatbot), dan ringkasan analitik data keuangan beserta pertanyaan pengguna (Konsultasi Keuangan Chatbot).</li>
+                <li><strong>Tujuan Pemrosesan:</strong> Untuk mengekstrak nominal, tanggal, dan kategori transaksi secara deterministik, serta menghitung analisis kesehatan keuangan personal.</li>
+                <li><strong>Pemrosesan On-Device & Tanpa Transmisi Cloud:</strong> Seluruh pemrosesan teks percakapan chatbot dan kueri analitik keuangan dilakukan 100% secara lokal di perangkat pengguna. Pemindaian OCR nota dan tagihan menggunakan model pengenalan teks Google ML Kit yang berjalan langsung di perangkat (<em>on-device</em>). Gambar nota, tagihan, teks percakapan, dan data keuangan Anda <strong>TIDAK</strong> pernah dikirimkan ke Google Gemini API (<code>generativelanguage.googleapis.com</code>) atau server AI eksternal manapun.</li>
+                <li><strong>Komponen Model:</strong> Pustaka Google ML Kit Text Recognition memanfaatkan modul pengenalan teks lokal yang dikelola secara aman oleh Google Play Services di perangkat tanpa memerlukan pengunggahan data gambar pengguna ke internet.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Google Play Billing:</strong>
+            <p>Digunakan untuk memproses transaksi pembelian produk digital atau langganan dalam aplikasi (<em>In-App Purchases</em>) seperti Smart Master. Seluruh transaksi diproses langsung oleh sistem Google Play Store. Pengembang tidak mengumpulkan atau menyimpan detail metode pembayaran atau informasi perbankan pengguna.</p>
+        </li>
+        <li>
+            <strong>Google AdMob (Google Mobile Ads SDK):</strong>
+            <p>Ditampilkan pada versi gratis aplikasi. SDK pihak ketiga Google Mobile Ads dapat memproses data teknis (seperti pengenal perangkat semu/Advertising ID sesuai konfigurasi perangkat, alamat IP, dan data diagnostik) untuk penayangan iklan, pengukuran kinerja, keamanan, serta pencegahan penipuan (<em>fraud prevention</em>). Kebijakan Privasi Google AdMob dapat dipelajari di <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">https://policies.google.com/privacy</a>. Penayangan iklan dinonaktifkan untuk pelanggan paket Smart Master hanya apabila hak kepemilikan langganan (<em>valid entitlement</em>) terdeteksi oleh aplikasi.</p>
+        </li>
+        <li>
+            <strong>Firebase Authentication & Cloud Firestore:</strong>
+            <p><strong>Firebase Authentication:</strong> Digunakan untuk otentikasi identitas akun Google secara aman melalui Android Credential Manager / Google Sign-In. Pengembang hanya menerima identitas dasar terverifikasi (ID unik akun Google, alamat email, dan nama tampilan) untuk mengasosiasikan sesi pengguna.</p>
+            <p><strong>Cloud Firestore:</strong> Digunakan secara terbatas dan selektif hanya untuk: (1) Pengiriman umpan balik pengguna (<em>Feedback/Rating</em>) yang dikirimkan secara eksplisit tanpa menyertakan riwayat transaksi keuangan privat; dan (2) Verifikasi status hak akses pengujian (<em>Remote Tester / Developer Grant</em>) oleh administrator resmi. Kebijakan Privasi Firebase tunduk pada ketentuan Google Firebase di <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">https://firebase.google.com/support/privacy</a>.</p>
+        </li>
+        <li>
+            <strong>Google Drive (Cadangan Data Terenkripsi):</strong>
+            <p>Fitur pencadangan awan (<em>Cloud Backup</em>) bersifat sepenuhnya opsional dan hanya berjalan atas perintah eksplisit pengguna. Seluruh arsip data keuangan dienkripsi secara ketat di perangkat sebelum dikirim menggunakan algoritma standar industri AES-256-GCM dengan kunci turunan unik berbasis sandi pengguna (PBKDF2). File arsip terenkripsi disimpan langsung di folder penyimpanan privat akun Google Drive pengguna sendiri (<code>appDataFolder</code>) dan tidak dapat diakses atau diintip oleh pengembang maupun pihak ketiga lainnya.</p>
+        </li>
+    </ul>
+
+    <h2>6. Hak Pengguna & Penghapusan Akun/Data (Account & Data Deletion)</h2>
+
+    <h3>A. Penghapusan Melalui Aplikasi (<em>In-App Deletion</em>)</h3>
+    <p>Pengguna dapat menghapus akun dan seluruh data lokal secara permanen kapan saja langsung dari dalam aplikasi:</p>
+    <ol>
+        <li>Buka menu <strong>Pengaturan & Akun</strong> di DompetNalar.</li>
+        <li>Pilih menu <strong>Hapus Akun & Data Permanen</strong>.</li>
+        <li>Masukkan kata sandi akun untuk verifikasi (atau konfirmasi langsung bagi sesi Akun Tamu).</li>
+        <li>Setelah dikonfirmasi, seluruh catatan transaksi, dompet, hutang, anggaran, dan data profil pengguna akan segera dimusnahkan secara permanen dari basis data lokal perangkat, tugas terjadwal <em>WorkManager</em> dibatalkan, dan koneksi sesi diputuskan.</li>
+    </ol>
+
+    <h3>B. Permintaan Bantuan Penghapusan Eksternal (<em>External Deletion Request</em>)</h3>
     <div class="warning-box">
-        <strong>Penghapusan Akun & Data:</strong> Sesuai kebijakan Google Play Store dan GDPR, pengguna memiliki hak mutlak untuk menghapus akun dan seluruh data keuangan secara instan.
+        <strong>Pemberitahuan Penghapusan di Luar Aplikasi:</strong> Bagian ini disediakan bagi pengguna yang ingin mengajukan permohonan bantuan penghapusan atau yang tidak lagi memiliki akses ke aplikasi.
     </div>
-    <p>Anda dapat menghapus seluruh data kapan saja dengan membuka menu <strong>Pengaturan & Akun &rarr; Hapus Akun & Data Permanen</strong>, lalu mengonfirmasi kata sandi/PIN Anda. Seluruh catatan transaksi dan database lokal akan segera dimusnahkan.</p>
-
-    <h2>6. Kontak Pengembang</h2>
-    <p>Jika Anda memiliki pertanyaan mengenai kebijakan privasi ini atau pengelolaan data Anda, silakan hubungi:</p>
     <ul>
-        <li><strong>Nama Pengembang:</strong> Lukas</li>
-        <li><strong>Email Dukungan:</strong> <a href="mailto:lunachroc07@gmail.com">lunachroc07@gmail.com</a></li>
-        <li><strong>Aplikasi:</strong> FinSmart (Dual-Mode Architecture Edition)</li>
+        <li><strong>Karakteristik Data:</strong> Karena DompetNalar beroperasi dengan arsitektur <em>offline-first</em> dan pengembang tidak menyimpan salinan data keuangan Anda di server cloud milik pengembang, data yang tersimpan di dalam perangkat Anda berada di bawah kendali fisik Anda sendiri dan <strong>tidak dapat dihapus secara jarak jauh oleh pengembang</strong>.</li>
+        <li><strong>Penghapusan Mandiri di Perangkat:</strong> Menghapus data aplikasi melalui menu pengaturan sistem Android atau menghapus instalasi (<em>uninstall</em>) aplikasi DompetNalar akan menghapus seluruh data lokal yang ada pada perangkat Anda.</li>
+        <li><strong>Berkas Cadangan di Google Drive:</strong> Berkas cadangan yang pernah diunggah ke Google Drive tersimpan di penyimpanan cloud pribadi Anda pada folder <code>FinSmart_Backups</code>. Anda dapat menghapus berkas cadangan tersebut secara mandiri kapan saja melalui aplikasi atau situs Google Drive. Pengembang tidak dapat menghapus berkas di Google Drive pribadi Anda dari jarak jauh.</li>
+        <li><strong>Pengajuan Bantuan Melalui Email Dukungan:</strong> Pengguna dapat mengirimkan permohonan ke email dukungan kami:
+            <ul>
+                <li><strong>Alamat Email:</strong> <a href="mailto:lunachroc01@gmail.com">lunachroc01@gmail.com</a></li>
+                <li><strong>Subjek Email:</strong> <code>Permintaan Penghapusan Akun DompetNalar</code></li>
+                <li><strong>Pemberitahuan Keamanan Penting:</strong> Jangan pernah menyertakan kata sandi, PIN, API Key, atau informasi sensitif lainnya dalam email Anda. Tim dukungan kami akan memandu langkah-langkah penghapusan data atau membantu memastikan bahwa data sesi Anda telah bersih.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>7. Kontak Pengembang</h2>
+    <p>Jika Anda memiliki pertanyaan mengenai dokumen kebijakan privasi ini atau membutuhkan bantuan terkait data Anda, hubungi kami melalui:</p>
+    <ul>
+        <li><strong>Nama Pengembang:</strong> SleepyKoala</li>
+        <li><strong>Email Dukungan:</strong> <a href="mailto:lunachroc01@gmail.com">lunachroc01@gmail.com</a></li>
     </ul>
 
     <footer>
-        &copy; 2026 Lukas. FinSmart Application. All Rights Reserved.
+        &copy; 2026 SleepyKoala. DompetNalar Application. All Rights Reserved.
     </footer>
 </div>
 </body>

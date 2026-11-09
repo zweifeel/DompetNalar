@@ -68,10 +68,22 @@ interface DebtDao {
     @Query("SELECT COUNT(*) FROM debts WHERE userId = :userId")
     suspend fun getDebtCount(userId: Long): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDebt(debt: DebtItem)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertDebts(debts: List<DebtItem>)
+
+    @androidx.room.Update
+    suspend fun updateDebt(debt: DebtItem): Int
+
+    @Query("SELECT * FROM debts WHERE userId IS NULL ORDER BY id ASC")
+    suspend fun getLegacyNullOwnerDebts(): List<DebtItem>
+
+    @Query("UPDATE debts SET userId = :userId WHERE id = :id AND userId IS NULL")
+    suspend fun claimLegacyDebt(id: String, userId: Long): Int
+
+    @Query("UPDATE debts SET userId = :userId WHERE userId IS NULL")
+    suspend fun claimLegacyDebts(userId: Long): Int
 
 }

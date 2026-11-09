@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -115,8 +116,8 @@ fun ExportFormatManagementDialog(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
-                            Text("Kelola Format Ekspor", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("Atur format bawaan & kustom laporan", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(AppStrings.t("Kelola Format Ekspor", "Manage Export Formats"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(AppStrings.t("Atur format bawaan & kustom laporan", "Configure default & custom report formats"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     IconButton(onClick = onDismiss) {
@@ -137,7 +138,7 @@ fun ExportFormatManagementDialog(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Tambah Format Kustom Baru", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(AppStrings.t("Tambah Format Kustom Baru", "Add New Custom Format"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -335,7 +336,7 @@ fun EditExportFormatDialog(
                             value = name,
                             onValueChange = { name = it },
                             label = { Text("Nama Format") },
-                            placeholder = { Text("Contoh: CSV Analisis Akuntansi") },
+                            placeholder = { Text(AppStrings.t("Contoh: CSV Analisis Akuntansi", "Example: Accounting Analysis CSV")) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             singleLine = true
@@ -407,7 +408,7 @@ fun EditExportFormatDialog(
                     }
 
                     item {
-                        Text("Pilih Kolom Data:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(AppStrings.t("Pilih Kolom Data:", "Select Data Columns:"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Spacer(modifier = Modifier.height(6.dp))
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -462,7 +463,7 @@ fun EditExportFormatDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Batal")
+                        Text(AppStrings.t("Batal", "Cancel"))
                     }
                     Button(
                         onClick = {
@@ -486,7 +487,7 @@ fun EditExportFormatDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
                     ) {
-                        Text("Simpan", fontWeight = FontWeight.Bold)
+                        Text(AppStrings.t("Simpan", "Save"), fontWeight = FontWeight.Bold)
                     }
                 }
             }

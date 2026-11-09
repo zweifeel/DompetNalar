@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -275,7 +276,7 @@ fun PersonalityQuizModalDialog(
                             Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Penyesuaian Tone AI Gemini:",
+                                text = AppStrings.t("Penyesuaian Gaya Bahasa AI DompetNalar:", "DompetNalar AI Tone Customization:"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 color = GoldAccent

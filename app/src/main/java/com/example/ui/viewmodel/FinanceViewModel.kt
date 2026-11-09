@@ -1,5 +1,9 @@
 package com.example.ui.viewmodel
 
+import android.content.Context
+
+
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +25,7 @@ import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
+import com.example.data.model.WalletType
 import com.example.data.model.BackupDataPayload
 import com.example.data.repository.FinanceRepository
 import com.example.data.session.SessionManager
@@ -34,15 +39,56 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-enum class TimeframeFilter(val label: String) {
-    DAILY("Harian"),
-    WEEKLY("Mingguan"),
-    MONTHLY("Bulanan"),
-    YEARLY("Tahunan"),
-    ALL("Semua")
+data class CurrencyBalanceSummary(
+    val currencyCode: String,
+    val totalBalanceMinorUnits: Long = 0L,
+    val walletCount: Int = 0,
+    val totalBalance: Double = com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(totalBalanceMinorUnits, currencyCode)
+) {
+    constructor(currencyCode: String, totalBalance: Double, walletCount: Int) : this(
+        currencyCode = currencyCode,
+        totalBalanceMinorUnits = com.example.util.CurrencyRegistry.displayToCanonicalMinorUnits(totalBalance, currencyCode),
+        walletCount = walletCount,
+        totalBalance = totalBalance
+    )
+}
+
+data class CurrencyCashflowSummary(
+    val currencyCode: String,
+    val totalIncomeMinorUnits: Long = 0L,
+    val totalExpenseMinorUnits: Long = 0L,
+    val netCashflowMinorUnits: Long = totalIncomeMinorUnits - totalExpenseMinorUnits,
+    val transactionCount: Int = 0,
+    val totalIncome: Double = com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(totalIncomeMinorUnits, currencyCode),
+    val totalExpense: Double = com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(totalExpenseMinorUnits, currencyCode),
+    val netCashflow: Double = com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(netCashflowMinorUnits, currencyCode)
+) {
+    constructor(currencyCode: String, totalIncome: Double, totalExpense: Double, netCashflow: Double, transactionCount: Int) : this(
+        currencyCode = currencyCode,
+        totalIncomeMinorUnits = com.example.util.CurrencyRegistry.displayToCanonicalMinorUnits(totalIncome, currencyCode),
+        totalExpenseMinorUnits = com.example.util.CurrencyRegistry.displayToCanonicalMinorUnits(totalExpense, currencyCode),
+        netCashflowMinorUnits = com.example.util.CurrencyRegistry.displayToCanonicalMinorUnits(netCashflow, currencyCode),
+        transactionCount = transactionCount,
+        totalIncome = totalIncome,
+        totalExpense = totalExpense,
+        netCashflow = netCashflow
+    )
+}
+
+enum class TimeframeFilter(val idLabel: String, val enLabel: String) {
+    DAILY("Harian", "Daily"),
+    WEEKLY("Mingguan", "Weekly"),
+    MONTHLY("Bulanan", "Monthly"),
+    YEARLY("Tahunan", "Yearly"),
+    ALL("Semua", "All");
+
+    val label: String
+        get() = if (com.example.util.LocaleHelper.isEnglish()) enLabel else idLabel
 }
 
 data class CashflowDataPoint(
@@ -54,6 +100,7 @@ data class CashflowDataPoint(
 
 class FinanceViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val database: FinSmartDatabase
     private val repository: FinanceRepository
     private val splitBillHistoryDao: SplitBillHistoryDao
     private val budgetLimitDao: BudgetLimitDao
@@ -79,6 +126,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     private val _selectedWalletFilter = MutableStateFlow<Long?>(null)
     val selectedWalletFilter: StateFlow<Long?> = _selectedWalletFilter.asStateFlow()
 
+    // FEAT-20 Stealth Mode & Duress Camouflage State
+    val isStealthMode: StateFlow<Boolean> = SessionManager.isStealthMode
+
+    fun setStealthMode(enabled: Boolean) {
+        SessionManager.setStealthMode(enabled)
+    }
+
     // Dialog & Sheet States
     private val _isAddTransactionOpen = MutableStateFlow(false)
     val isAddTransactionOpen: StateFlow<Boolean> = _isAddTransactionOpen.asStateFlow()
@@ -100,11 +154,12 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     val selectedReceiptTransaction: StateFlow<TransactionItem?> = _selectedReceiptTransaction.asStateFlow()
 
     init {
-        val database = FinSmartDatabase.getDatabase(application, viewModelScope)
+        database = FinSmartDatabase.getDatabase(application, viewModelScope)
         repository = FinanceRepository(
             database.walletDao(),
             database.transactionDao(),
-            database.categoryDao()
+            database.categoryDao(),
+            database
         )
         splitBillHistoryDao = database.splitBillHistoryDao()
         budgetLimitDao = database.budgetLimitDao()
@@ -127,25 +182,33 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    val debts: StateFlow<List<DebtItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
-        if (userId != null && userId > 0L) debtDao.getAllDebts(userId) else flowOf(emptyList())
+    val debts: StateFlow<List<DebtItem>> = combine(SessionManager.activeUserId, isStealthMode) { userId, isStealth ->
+        userId to isStealth
+    }.flatMapLatest { (userId, isStealth) ->
+        if (isStealth) flowOf(emptyList())
+        else if (userId != null && userId > 0L) debtDao.getAllDebts(userId)
+        else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val installmentPlans: StateFlow<List<InstallmentPlanItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
-        if (userId != null && userId > 0L) installmentPlanDao.getAllInstallmentPlans(userId) else flowOf(emptyList())
+    val installmentPlans: StateFlow<List<InstallmentPlanItem>> = combine(SessionManager.activeUserId, isStealthMode) { userId, isStealth ->
+        userId to isStealth
+    }.flatMapLatest { (userId, isStealth) ->
+        if (isStealth) flowOf(emptyList())
+        else if (userId != null && userId > 0L) installmentPlanDao.getAllInstallmentPlans(userId)
+        else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveDebt(debt: DebtItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            debtDao.insertDebt(debt.copy(userId = userId))
+            repository.saveDebt(debt, userId)
         }
     }
 
     fun deleteDebt(debt: DebtItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            debtDao.deleteDebt(debt, userId)
+            repository.deleteDebt(debt, userId)
         }
     }
 
@@ -153,7 +216,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
             debts.value.filter { it.category == category }.forEach {
-                debtDao.deleteDebt(it, userId)
+                repository.deleteDebt(it, userId)
             }
         }
     }
@@ -161,22 +224,82 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun clearAllDebts() {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            debtDao.clearAllDebts(userId)
+            repository.resetAllDebtsAndPlans(userId)
         }
     }
 
-    fun saveInstallmentPlan(plan: InstallmentPlanItem) {
+    fun resetAllDebtsAndPlans(onSuccess: ((Pair<Int, Int>) -> Unit)? = null) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            installmentPlanDao.insertInstallmentPlan(plan.copy(userId = userId))
+            val res = repository.resetAllDebtsAndPlans(userId)
+            onSuccess?.invoke(res)
+        }
+    }
+
+    fun saveInstallmentPlan(
+        plan: InstallmentPlanItem,
+        explicitPeriods: List<com.example.data.model.InstallmentPeriod> = emptyList()
+    ) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            repository.saveInstallmentPlan(plan, userId, explicitPeriods)
+        }
+    }
+
+    fun updateInstallmentPeriodDueDate(
+        periodId: String,
+        newDueDate: String,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            val success = repository.updateInstallmentPeriodDueDate(periodId, newDueDate, userId)
+            onComplete?.invoke(success)
+        }
+    }
+
+    fun saveBatchPayLaterBills(
+        debtsToSave: List<DebtItem>,
+        plansWithPeriods: List<Pair<InstallmentPlanItem, List<com.example.data.model.InstallmentPeriod>>>,
+        onComplete: ((Result<Int>) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: run {
+                onComplete?.invoke(Result.failure(IllegalStateException("Pengguna belum login")))
+                return@launch
+            }
+            val result = repository.saveBatchPayLaterBills(debtsToSave, plansWithPeriods, userId)
+            onComplete?.invoke(result)
         }
     }
 
     fun deleteInstallmentPlan(plan: InstallmentPlanItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            installmentPlanDao.deleteInstallmentPlan(plan.id, userId)
+            repository.deleteInstallmentPlan(plan.id, userId)
         }
+    }
+
+    fun getDebtPriorityPlan(monthlyBudget: Double): com.example.util.DebtPriorityEngine.DebtPriorityPlan {
+        return com.example.util.DebtPriorityEngine.calculatePlan(
+            debts = debts.value,
+            installmentPlans = installmentPlans.value,
+            totalMonthlyBudget = monthlyBudget
+        )
+    }
+
+    fun getDebtFreedomPlan(
+        monthlyIncome: Double,
+        essentialExpenses: Double,
+        emergencyCushion: Double = 0.0
+    ): com.example.util.DebtFreedomPlanner.FreedomPlanResult {
+        return com.example.util.DebtFreedomPlanner.calculateFreedomPlan(
+            monthlyIncome = monthlyIncome,
+            essentialExpenses = essentialExpenses,
+            emergencyCushion = emergencyCushion,
+            debts = debts.value,
+            installmentPlans = installmentPlans.value
+        )
     }
 
     private val activePaymentPlanIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
@@ -194,73 +317,37 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             if (!activePaymentPlanIds.add(plan.id)) return@launch
 
             try {
-                // Fetch fresh authoritative state from DAO
-                val currentPlan = installmentPlanDao.getInstallmentPlanById(plan.id, userId) ?: plan
-                if (currentPlan.remainingTenor <= 0 || currentPlan.isCompleted) return@launch
-
-                val newPaidCount = currentPlan.paidCount + 1
-                val newRemaining = currentPlan.totalTenor - newPaidCount
-                val isNowCompleted = newRemaining <= 0
-                val newStatus = if (isNowCompleted) "SELESAI" else "AKTIF"
-
-                val nextDue = if (!isNowCompleted) {
-                    InstallmentDateHelper.calculateNextDueDate(currentPlan.nextDueDate, currentPlan.anchorDay)
-                } else {
-                    currentPlan.nextDueDate
+                val result = repository.payInstallmentAuthoritative(userId, plan.id, walletId, notes)
+                if (result.isFailure) {
+                    android.util.Log.e("FinanceViewModel", "Failed to process installment payment", result.exceptionOrNull())
                 }
-
-                val newRemainingPrincipal = currentPlan.totalRemainingPrincipal?.let {
-                    val updated = it - currentPlan.installmentAmount
-                    if (updated < 0.0) 0.0 else updated
-                }
-
-                val updatedPlan = currentPlan.copy(
-                    paidCount = newPaidCount,
-                    status = newStatus,
-                    nextDueDate = nextDue,
-                    totalRemainingPrincipal = newRemainingPrincipal,
-                    lastPaymentDate = System.currentTimeMillis()
-                )
-
-                if (walletId != null && walletId > 0L) {
-                    val walletName = wallets.value.firstOrNull { it.id == walletId }?.name ?: "Dompet"
-                    val paymentTx = TransactionItem(
-                        title = "Angsuran ${currentPlan.name} (${newPaidCount}/${currentPlan.totalTenor})",
-                        amount = currentPlan.installmentAmount,
-                        type = TransactionType.EXPENSE,
-                        category = "Cicilan & Hutang",
-                        walletId = walletId,
-                        walletName = walletName,
-                        timestamp = System.currentTimeMillis(),
-                        note = notes ?: "Pembayaran angsuran ke-$newPaidCount dari ${currentPlan.totalTenor}",
-                        tags = "installment_plan_id:${currentPlan.id},period:$newPaidCount",
-                        userId = userId
-                    )
-                    repository.insertTransaction(userId, paymentTx)
-                }
-
-                installmentPlanDao.insertInstallmentPlan(updatedPlan)
+            } catch (e: Exception) {
+                android.util.Log.e("FinanceViewModel", "Failed to process installment payment", e)
             } finally {
                 activePaymentPlanIds.remove(plan.id)
             }
         }
     }
 
-    val assets: StateFlow<List<AssetItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
-        if (userId != null && userId > 0L) assetDao.getAllAssets(userId) else flowOf(emptyList())
+    val assets: StateFlow<List<AssetItem>> = combine(SessionManager.activeUserId, isStealthMode) { userId, isStealth ->
+        userId to isStealth
+    }.flatMapLatest { (userId, isStealth) ->
+        if (isStealth) flowOf(emptyList())
+        else if (userId != null && userId > 0L) assetDao.getAllAssets(userId)
+        else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveAsset(asset: AssetItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            assetDao.insertAsset(asset.copy(userId = userId))
+            repository.saveAsset(asset, userId)
         }
     }
 
     fun deleteAsset(asset: AssetItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            assetDao.deleteAsset(asset, userId)
+            repository.deleteAsset(asset, userId)
         }
     }
 
@@ -268,7 +355,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
             assets.value.filter { it.category == category }.forEach {
-                assetDao.deleteAsset(it, userId)
+                repository.deleteAsset(it, userId)
             }
         }
     }
@@ -276,43 +363,51 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun clearAllAssets() {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            assetDao.clearAllAssets(userId)
+            repository.clearAllAssets(userId)
         }
     }
 
-    val budgetLimits: StateFlow<List<BudgetLimitItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
-        if (userId != null && userId > 0L) budgetLimitDao.getAllBudgetLimits(userId) else flowOf(emptyList())
+    val budgetLimits: StateFlow<List<BudgetLimitItem>> = combine(SessionManager.activeUserId, isStealthMode) { userId, isStealth ->
+        userId to isStealth
+    }.flatMapLatest { (userId, isStealth) ->
+        if (isStealth) flowOf(emptyList())
+        else if (userId != null && userId > 0L) budgetLimitDao.getAllBudgetLimits(userId)
+        else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveBudgetLimit(id: String, amount: Double, isCategory: Boolean) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            budgetLimitDao.insertBudgetLimit(BudgetLimitItem(id = id, limitAmount = amount, isCategory = isCategory, userId = userId))
+            repository.saveBudgetLimit(BudgetLimitItem(id = id, limitAmount = amount, isCategory = isCategory, userId = userId))
         }
     }
 
     fun deleteBudgetLimit(item: BudgetLimitItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            budgetLimitDao.deleteBudgetLimit(item, userId)
+            repository.deleteBudgetLimit(item, userId)
         }
     }
 
     fun resetAllBudgetLimits() {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            budgetLimitDao.clearAllBudgetLimits(userId)
+            repository.clearAllBudgetLimits(userId)
         }
     }
 
-    val splitBillHistory: StateFlow<List<SplitBillHistoryItem>> = SessionManager.activeUserId.flatMapLatest { userId ->
-        if (userId != null && userId > 0L) splitBillHistoryDao.getAllSplitBillHistory(userId) else flowOf(emptyList())
+    val splitBillHistory: StateFlow<List<SplitBillHistoryItem>> = combine(SessionManager.activeUserId, isStealthMode) { userId, isStealth ->
+        userId to isStealth
+    }.flatMapLatest { (userId, isStealth) ->
+        if (isStealth) flowOf(emptyList())
+        else if (userId != null && userId > 0L) splitBillHistoryDao.getAllSplitBillHistory(userId)
+        else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveSplitBillHistory(merchantName: String, date: String, totalAmount: Double, formattedText: String) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            splitBillHistoryDao.insertSplitBillHistory(
+            repository.saveSplitBillHistory(
                 SplitBillHistoryItem(
                     merchantName = merchantName,
                     date = date,
@@ -327,31 +422,106 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     fun deleteSplitBillHistory(item: SplitBillHistoryItem) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            splitBillHistoryDao.deleteSplitBillHistory(item, userId)
+            repository.deleteSplitBillHistory(item, userId)
         }
     }
 
     fun clearAllSplitBillHistory() {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            splitBillHistoryDao.clearAllHistory(userId)
+            repository.clearAllSplitBillHistory(userId)
         }
     }
 
-    val wallets: StateFlow<List<Wallet>> = combine(SessionManager.activeUserId, _accountMode) { userId, mode ->
-        userId to mode
-    }.flatMapLatest { (userId, mode) ->
-        if (userId != null && userId > 0L) repository.getWallets(userId, mode) else flowOf(emptyList())
+    val wallets: StateFlow<List<Wallet>> = combine(SessionManager.activeUserId, _accountMode, isStealthMode) { userId, mode, isStealth ->
+        Triple(userId, mode, isStealth)
+    }.flatMapLatest { (userId, mode, isStealth) ->
+        if (isStealth) {
+            flowOf(
+                listOf(
+                    Wallet(
+                        id = -999L,
+                        name = "Uang Saku",
+                        balance = 25000.0,
+                        type = WalletType.CASH,
+                        colorHex = "#10B981",
+                        iconName = "cash",
+                        accountMode = mode.name,
+                        isDefault = true,
+                        userId = userId ?: 0L
+                    )
+                )
+            )
+        } else if (userId != null && userId > 0L) {
+            repository.getWallets(userId, mode)
+        } else {
+            flowOf(emptyList())
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allWallets: StateFlow<List<Wallet>> = SessionManager.activeUserId.flatMapLatest { userId ->
-        if (userId != null && userId > 0L) repository.getAllWallets(userId) else flowOf(emptyList())
+    val allWallets: StateFlow<List<Wallet>> = combine(SessionManager.activeUserId, isStealthMode) { userId, isStealth ->
+        userId to isStealth
+    }.flatMapLatest { (userId, isStealth) ->
+        if (isStealth) {
+            flowOf(
+                listOf(
+                    Wallet(
+                        id = -999L,
+                        name = "Uang Saku",
+                        balance = 25000.0,
+                        type = WalletType.CASH,
+                        colorHex = "#10B981",
+                        iconName = "cash",
+                        accountMode = AccountMode.PERSONAL.name,
+                        isDefault = true,
+                        userId = userId ?: 0L
+                    )
+                )
+            )
+        } else if (userId != null && userId > 0L) {
+            repository.getAllWallets(userId)
+        } else {
+            flowOf(emptyList())
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allTransactions: StateFlow<List<TransactionItem>> = combine(SessionManager.activeUserId, _accountMode) { userId, mode ->
-        userId to mode
-    }.flatMapLatest { (userId, mode) ->
-        if (userId != null && userId > 0L) repository.getTransactions(userId, mode) else flowOf(emptyList())
+    val allTransactions: StateFlow<List<TransactionItem>> = combine(SessionManager.activeUserId, _accountMode, isStealthMode) { userId, mode, isStealth ->
+        Triple(userId, mode, isStealth)
+    }.flatMapLatest { (userId, mode, isStealth) ->
+        if (isStealth) {
+            flowOf(
+                listOf(
+                    TransactionItem(
+                        id = -998L,
+                        title = "Makan Siang Warteg",
+                        amount = 15000.0,
+                        type = TransactionType.EXPENSE,
+                        category = "Makanan & Minuman",
+                        walletId = -999L,
+                        walletName = "Uang Saku",
+                        timestamp = System.currentTimeMillis() - 7200000L,
+                        note = "Nasi rames",
+                        userId = userId ?: 0L
+                    ),
+                    TransactionItem(
+                        id = -999L,
+                        title = "Parkir Motor",
+                        amount = 2000.0,
+                        type = TransactionType.EXPENSE,
+                        category = "Transportasi",
+                        walletId = -999L,
+                        walletName = "Uang Saku",
+                        timestamp = System.currentTimeMillis() - 14400000L,
+                        note = "Parkir",
+                        userId = userId ?: 0L
+                    )
+                )
+            )
+        } else if (userId != null && userId > 0L) {
+            repository.getTransactions(userId, mode)
+        } else {
+            flowOf(emptyList())
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val currentMonthExpensesList: StateFlow<List<TransactionItem>> = allTransactions.map { txList ->
@@ -369,16 +539,100 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         if (userId != null && userId > 0L) repository.getAllCategories(userId) else flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totalBalance: StateFlow<Double> = wallets.combine(_accountMode) { list, _ ->
-        list.sumOf { it.balance }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+
+    private val _aggregationError = MutableStateFlow<String?>(null)
+    val aggregationError: StateFlow<String?> = _aggregationError.asStateFlow()
+
+    val unassignedCurrencyWallets: StateFlow<List<Wallet>> = wallets.map { list ->
+        list.filter { !it.hasAssignedCurrency }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val unresolvedCurrencyTransactions: StateFlow<List<TransactionItem>> = allTransactions.map { list ->
+        list.filter { it.currencyCode.isNullOrBlank() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _selectedDashboardCurrency = MutableStateFlow<String?>(null)
+    val selectedDashboardCurrency: StateFlow<String?> = _selectedDashboardCurrency.asStateFlow()
+
+    fun setSelectedDashboardCurrency(currencyCode: String?) {
+        _selectedDashboardCurrency.value = currencyCode
+    }
+
+    val activeDashboardCurrency: StateFlow<String?> = combine(
+        _selectedDashboardCurrency,
+        wallets
+    ) { explicitCurrency, walletList ->
+        if (explicitCurrency != null) {
+            explicitCurrency
+        } else {
+            val assignedCurrencies = walletList
+                .filter { it.hasAssignedCurrency && !it.isArchived }
+                .mapNotNull { it.currencyCode }
+                .distinct()
+            if (assignedCurrencies.size == 1) {
+                assignedCurrencies.first()
+            } else {
+                null // Multi-currency or unassigned requires explicit user selection
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val totalBalanceMinorUnits: StateFlow<Long?> = combine(
+        wallets,
+        activeDashboardCurrency,
+        _accountMode
+    ) { list, activeCurr, _ ->
+        if (activeCurr.isNullOrBlank()) null
+        else {
+            try {
+                val matching = list.asSequence()
+                    .filter { it.hasAssignedCurrency && !it.isArchived && it.currencyCode == activeCurr }
+                    .map { it.balanceMinorUnits }
+                val res = safeSumMinorUnits(matching)
+                _aggregationError.value = null
+                res
+            } catch (e: ArithmeticException) {
+                _aggregationError.value = "Kalkulasi saldo melampaui batas numerik 64-bit (Overflow)"
+                null
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val totalBalance: StateFlow<Double?> = combine(
+        totalBalanceMinorUnits,
+        activeDashboardCurrency
+    ) { minorUnits, curr ->
+        if (minorUnits == null || curr.isNullOrBlank()) null
+        else com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(minorUnits, curr)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val multiCurrencyBalances: StateFlow<List<CurrencyBalanceSummary>> = wallets.map { list ->
+        list.filter { it.hasAssignedCurrency && !it.isArchived && !it.currencyCode.isNullOrBlank() }
+            .groupBy { it.currencyCode!! }
+            .map { (code, wList) ->
+                val sumMinor = safeSumMinorUnits(wList.asSequence().map { it.balanceMinorUnits })
+                CurrencyBalanceSummary(
+                    currencyCode = code,
+                    totalBalanceMinorUnits = sumMinor,
+                    walletCount = wList.size
+                )
+            }.sortedByDescending { it.totalBalanceMinorUnits }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val totalAssetsValue: StateFlow<Double> = assets.map { list ->
         list.sumOf { it.currentValue }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
-    val totalDebtsAmount: StateFlow<Double> = debts.map { list ->
-        list.sumOf { it.amount }
+    val totalDebtsAmount: StateFlow<Double> = combine(
+        debts,
+        installmentPlans
+    ) { debtList, planList ->
+        val standardDebts = debtList.sumOf { it.amount }
+        val installmentDebts = planList
+            .filter { it.isActive }
+            .sumOf { it.totalRemainingPrincipal ?: 0.0 }
+        standardDebts + installmentDebts
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val netWorth: StateFlow<Double> = combine(
@@ -386,7 +640,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         totalAssetsValue,
         totalDebtsAmount
     ) { balance, assetsValue, debtsValue ->
-        balance + assetsValue - debtsValue
+        (balance ?: 0.0) + assetsValue - debtsValue
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val filteredTransactions: StateFlow<List<TransactionItem>> = combine(
@@ -453,13 +707,99 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totalIncome: StateFlow<Double> = filteredTransactions.combine(_selectedTimeframe) { txList, _ ->
-        txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val totalIncomeMinorUnits: StateFlow<Long?> = combine(
+        filteredTransactions,
+        activeDashboardCurrency,
+        _selectedTimeframe
+    ) { txList, activeCurr, _ ->
+        if (activeCurr.isNullOrBlank()) null
+        else {
+            try {
+                val matching = txList.asSequence()
+                    .filter { it.type == TransactionType.INCOME && it.currencyCode == activeCurr }
+                    .map { it.amountMinorUnits }
+                safeSumMinorUnits(matching)
+            } catch (e: ArithmeticException) {
+                _aggregationError.value = "Kalkulasi pemasukan melampaui batas numerik 64-bit (Overflow)"
+                null
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val totalExpense: StateFlow<Double> = filteredTransactions.combine(_selectedTimeframe) { txList, _ ->
-        txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val totalIncome: StateFlow<Double?> = combine(
+        totalIncomeMinorUnits,
+        activeDashboardCurrency
+    ) { minorUnits, curr ->
+        if (minorUnits == null || curr.isNullOrBlank()) null
+        else com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(minorUnits, curr)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val totalExpenseMinorUnits: StateFlow<Long?> = combine(
+        filteredTransactions,
+        activeDashboardCurrency,
+        _selectedTimeframe
+    ) { txList, activeCurr, _ ->
+        if (activeCurr.isNullOrBlank()) null
+        else {
+            try {
+                val matching = txList.asSequence()
+                    .filter { it.type == TransactionType.EXPENSE && it.currencyCode == activeCurr }
+                    .map { it.amountMinorUnits }
+                safeSumMinorUnits(matching)
+            } catch (e: ArithmeticException) {
+                _aggregationError.value = "Kalkulasi pengeluaran melampaui batas numerik 64-bit (Overflow)"
+                null
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val totalExpense: StateFlow<Double?> = combine(
+        totalExpenseMinorUnits,
+        activeDashboardCurrency
+    ) { minorUnits, curr ->
+        if (minorUnits == null || curr.isNullOrBlank()) null
+        else com.example.util.CurrencyRegistry.canonicalMinorUnitsToDisplay(minorUnits, curr)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val netCashflowMinorUnits: StateFlow<Long?> = combine(
+        totalIncomeMinorUnits,
+        totalExpenseMinorUnits
+    ) { inc, exp ->
+        if (inc == null || exp == null) null
+        else {
+            try {
+                java.math.BigInteger.valueOf(inc)
+                    .subtract(java.math.BigInteger.valueOf(exp))
+                    .longValueExact()
+            } catch (e: ArithmeticException) {
+                _aggregationError.value = "Kalkulasi arus kas bersih melampaui batas numerik 64-bit (Overflow)"
+                null
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val multiCurrencyCashflows: StateFlow<List<CurrencyCashflowSummary>> = filteredTransactions.map { txList ->
+        txList.filter { !it.currencyCode.isNullOrBlank() }
+            .groupBy { it.currencyCode!! }
+            .map { (curr, list) ->
+                val incMinor = safeSumMinorUnits(list.asSequence().filter { it.type == TransactionType.INCOME }.map { it.amountMinorUnits })
+                val expMinor = safeSumMinorUnits(list.asSequence().filter { it.type == TransactionType.EXPENSE }.map { it.amountMinorUnits })
+                val netMinor = try {
+                    java.math.BigInteger.valueOf(incMinor)
+                        .subtract(java.math.BigInteger.valueOf(expMinor))
+                        .longValueExact()
+                } catch (e: ArithmeticException) {
+                    0L
+                }
+                CurrencyCashflowSummary(
+                    currencyCode = curr,
+                    totalIncomeMinorUnits = incMinor,
+                    totalExpenseMinorUnits = expMinor,
+                    netCashflowMinorUnits = netMinor,
+                    transactionCount = list.size
+                )
+            }.sortedByDescending { it.transactionCount }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val chartData: StateFlow<List<CashflowDataPoint>> = combine(
         allTransactions,
@@ -543,28 +883,67 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         targetWalletName: String? = null,
         timestamp: Long = System.currentTimeMillis(),
         note: String = "",
-        tags: String = ""
+        tags: String = "",
+        onSuccess: (() -> Unit)? = null,
+        onError: ((String) -> Unit)? = null
     ) {
         viewModelScope.launch {
-            val userId = SessionManager.getActiveUserId() ?: return@launch
-            val item = TransactionItem(
-                title = title,
-                amount = amount,
-                type = type,
-                category = category,
-                categoryIcon = categoryIcon,
-                walletId = walletId,
-                walletName = walletName,
-                targetWalletId = targetWalletId,
-                targetWalletName = targetWalletName,
-                timestamp = timestamp,
-                note = note,
-                tags = tags,
-                accountMode = _accountMode.value.name,
-                userId = userId
-            )
-            repository.insertTransaction(userId, item)
-            _isAddTransactionOpen.value = false
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                onError?.invoke("Sesi login tidak aktif. Silakan masuk akun terlebih dahulu.")
+                return@launch
+            }
+            if (amount <= 0.0) {
+                onError?.invoke("Nominal transaksi harus lebih dari Rp 0.")
+                return@launch
+            }
+
+            if (type == TransactionType.TRANSFER) {
+                if (targetWalletId == null || targetWalletId <= 0L) {
+                    onError?.invoke("Dompet tujuan transfer harus dipilih.")
+                    return@launch
+                }
+                if (walletId == targetWalletId) {
+                    onError?.invoke("Dompet sumber dan dompet tujuan transfer tidak boleh sama.")
+                    return@launch
+                }
+            }
+
+            var wallet = repository.getWalletById(userId, walletId)
+            if (wallet == null) {
+                // If wallet is missing (e.g. newly registered user with zero wallets), provision defaults and check again
+                repository.provisionDefaultWalletsIfEmpty(userId)
+                wallet = repository.getWalletById(userId, walletId) ?: repository.getAllWallets(userId).first().firstOrNull()
+            }
+
+            if (wallet == null) {
+                onError?.invoke(com.example.util.AppStrings.t("Dompet tidak ditemukan atau bukan milik akun ini.", "Wallet not found or does not belong to this account."))
+                return@launch
+            }
+
+            try {
+                val item = TransactionItem(
+                    title = title.ifBlank { "Transaksi" },
+                    amount = amount,
+                    type = type,
+                    category = category.ifBlank { "Umum" },
+                    categoryIcon = categoryIcon.ifBlank { "payments" },
+                    walletId = wallet.id,
+                    walletName = wallet.name,
+                    targetWalletId = targetWalletId,
+                    targetWalletName = targetWalletName,
+                    timestamp = timestamp,
+                    note = note,
+                    tags = tags,
+                    accountMode = _accountMode.value.name,
+                    userId = userId
+                )
+                repository.insertTransaction(userId, item)
+                _isAddTransactionOpen.value = false
+                onSuccess?.invoke()
+            } catch (e: Exception) {
+                onError?.invoke("Gagal menyimpan transaksi: ${e.message ?: "Kesalahan database"}")
+            }
         }
     }
 
@@ -582,11 +961,13 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         initialBalance: Double,
         colorHex: String,
         iconName: String,
-        existingId: Long? = null
+        existingId: Long? = null,
+        currencyCode: String? = null
     ) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
             if (existingId == null || existingId == 0L) {
+                val resolvedCurrency = currencyCode ?: com.example.util.DeviceRegionResolver.resolveDeviceCurrencyCode()
                 val newWallet = Wallet(
                     name = name,
                     type = type,
@@ -594,6 +975,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     balance = initialBalance,
                     colorHex = colorHex,
                     iconName = iconName,
+                    currencyCode = resolvedCurrency,
                     accountMode = _accountMode.value.name,
                     isDefault = wallets.value.isEmpty(),
                     userId = userId
@@ -616,11 +998,153 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun deleteWallet(wallet: Wallet) {
+    fun claimLegacyWallet(walletId: Long, onResult: (Result<Int>) -> Unit = {}) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: return@launch
-            repository.deleteWallet(userId, wallet)
-            closeDeleteWalletConfirm()
+            val result = repository.claimLegacyWalletAtomically(walletId, userId)
+            onResult(result)
+        }
+    }
+
+    fun assignWalletCurrency(walletId: Long, currencyCode: String, onResult: (Result<Unit>) -> Unit = {}) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            val result = repository.assignWalletCurrency(walletId, currencyCode, userId)
+            onResult(result)
+        }
+    }
+
+    suspend fun getLegacyUnownedWallets(): List<Wallet> {
+        return repository.getLegacyUnownedWallets()
+    }
+
+    val deleteWalletErrorMessage = MutableStateFlow<String?>(null)
+
+    fun clearDeleteWalletError() {
+        deleteWalletErrorMessage.value = null
+    }
+
+    fun deleteWallet(wallet: Wallet, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            try {
+                repository.deleteWallet(userId, wallet)
+                closeDeleteWalletConfirm()
+            } catch (e: Exception) {
+                val msg = e.message ?: "Gagal menghapus dompet."
+                deleteWalletErrorMessage.value = msg
+                onError(msg)
+            }
+        }
+    }
+
+    fun archiveWallet(walletId: Long, context: Context? = null, onResult: (Result<Int>) -> Unit = {}) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            val res = repository.archiveWallet(userId, walletId, context)
+            onResult(res)
+        }
+    }
+
+    fun unarchiveWallet(walletId: Long, onResult: (Result<Unit>) -> Unit = {}) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            val res = repository.unarchiveWallet(userId, walletId)
+            onResult(res)
+        }
+    }
+
+    fun transferArchivedWalletBalance(
+        sourceWalletId: Long,
+        targetWalletId: Long,
+        onResult: (Result<Long>) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val userId = SessionManager.getActiveUserId() ?: return@launch
+            val res = repository.transferArchivedWalletBalance(userId, sourceWalletId, targetWalletId)
+            onResult(res)
+        }
+    }
+
+    fun confirmWalletDraft(
+        draftId: String,
+        isEntitlementUnlocked: () -> Boolean,
+        onSuccess: (com.example.data.model.Wallet) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val isUnlocked = try {
+                isEntitlementUnlocked()
+            } catch (e: Exception) {
+                false
+            }
+            if (!isUnlocked) {
+                onError("Akses SmartMaster diperlukan untuk membuat dompet via AI.")
+                return@launch
+            }
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                onError("Sesi login tidak aktif.")
+                return@launch
+            }
+            val existingDraft = com.example.data.chatbot.parser.WalletDraftManager.getDraft(draftId)
+            if (existingDraft == null || existingDraft.ownerUserId <= 0L || existingDraft.ownerUserId != userId) {
+                onError("Akses ditolak: Draft dompet ini tidak memiliki pemilik sah atau bukan milik sesi aktif.")
+                return@launch
+            }
+            val result = com.example.data.chatbot.parser.WalletDraftManager.confirmAndSave(
+                draftId = draftId,
+                repository = repository,
+                userId = userId,
+                accountMode = _accountMode.value.name,
+                isEntitlementUnlocked = isEntitlementUnlocked
+            )
+            result.onSuccess { wallet ->
+                onSuccess(wallet)
+            }.onFailure { err ->
+                onError(err.localizedMessage ?: "Gagal membuat dompet.")
+            }
+        }
+    }
+
+    fun confirmTransactionDraft(
+        draftId: String,
+        isEntitlementUnlocked: () -> Boolean,
+        onSuccess: (Long) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val isUnlocked = try {
+                isEntitlementUnlocked()
+            } catch (e: Exception) {
+                false
+            }
+            if (!isUnlocked) {
+                onError(if (com.example.util.LocaleHelper.isEnglish()) "SmartMaster access required to record transaction via AI." else "Akses SmartMaster diperlukan untuk menyimpan transaksi via AI.")
+                return@launch
+            }
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                onError("Sesi login tidak aktif.")
+                return@launch
+            }
+            val existingDraft = com.example.data.chatbot.parser.TransactionDraftManager.getDraft(draftId)
+            if (existingDraft == null || existingDraft.ownerUserId <= 0L || existingDraft.ownerUserId != userId) {
+                onError("Akses ditolak: Draft transaksi ini tidak memiliki pemilik sah atau bukan milik sesi aktif.")
+                return@launch
+            }
+            val result = com.example.data.chatbot.parser.TransactionDraftManager.confirmAndSave(
+                draftId = draftId,
+                repository = repository,
+                userId = userId,
+                accountMode = _accountMode.value.name,
+                isEntitlementUnlocked = isEntitlementUnlocked
+            )
+            result.onSuccess { txId ->
+                onSuccess(txId)
+            }.onFailure { err ->
+                onError(err.localizedMessage ?: "Gagal menyimpan transaksi.")
+            }
         }
     }
 
@@ -666,11 +1190,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 val dayTx = transactions.filter { it.timestamp in start..end }
                 val inc = dayTx.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
                 val exp = dayTx.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-                result.add(CashflowDataPoint("Hari Ini", inc, exp, start))
+                result.add(CashflowDataPoint(if (com.example.util.LocaleHelper.isEnglish()) "Today" else "Hari Ini", inc, exp, start))
             }
             TimeframeFilter.WEEKLY -> {
                 // Last 7 days
-                val dayFormat = java.text.SimpleDateFormat("EEE", java.util.Locale("id", "ID"))
+                val dayFormat = java.text.SimpleDateFormat("EEE", com.example.util.LocaleHelper.getActiveLocale())
                 for (i in 6 downTo 0) {
                     val dayCal = Calendar.getInstance().apply {
                         add(Calendar.DAY_OF_YEAR, -i)
@@ -698,7 +1222,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             }
             TimeframeFilter.MONTHLY -> {
                 // 4 weeks of the current month
-                val monthName = java.text.SimpleDateFormat("MMM", java.util.Locale("id", "ID")).format(cal.time)
+                val monthName = java.text.SimpleDateFormat("MMM", com.example.util.LocaleHelper.getActiveLocale()).format(cal.time)
                 for (week in 1..4) {
                     cal.set(Calendar.DAY_OF_MONTH, (week - 1) * 7 + 1)
                     cal.set(Calendar.HOUR_OF_DAY, 0)
@@ -713,7 +1237,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
                     result.add(
                         CashflowDataPoint(
-                            label = "M$week $monthName",
+                            label = "${if (com.example.util.LocaleHelper.isEnglish()) "W" else "M"}$week $monthName",
                             income = inc,
                             expense = exp,
                             timestamp = start
@@ -723,7 +1247,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             }
             TimeframeFilter.YEARLY, TimeframeFilter.ALL -> {
                 // Last 6 months
-                val monthFormat = java.text.SimpleDateFormat("MMM", java.util.Locale("id", "ID"))
+                val monthFormat = java.text.SimpleDateFormat("MMM", com.example.util.LocaleHelper.getActiveLocale())
                 for (i in 5 downTo 0) {
                     val monthCal = Calendar.getInstance().apply {
                         add(Calendar.MONTH, -i)
@@ -759,6 +1283,22 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
     companion object {
         /**
+         * P0-1: Exact BigInteger Accumulation with Strict Overflow Rejection.
+         * Accumulates using BigInteger and converts using longValueExact().
+         * Throws ArithmeticException fail-closed if total exceeds Long.MAX_VALUE or is less than Long.MIN_VALUE.
+         * Saturation to Long.MAX_VALUE / Long.MIN_VALUE is strictly prohibited.
+         */
+        fun safeSumMinorUnits(values: Iterable<Long>): Long {
+            var sum = java.math.BigInteger.ZERO
+            for (v in values) {
+                sum = sum.add(java.math.BigInteger.valueOf(v))
+            }
+            return sum.longValueExact()
+        }
+
+        fun safeSumMinorUnits(values: Sequence<Long>): Long = safeSumMinorUnits(values.asIterable())
+
+        /**
          * DEF-04: Multi-User Scoped Restore.
          * Replaces ONLY the financial records belonging to [targetUserId].
          * Never invokes clearAllTables().
@@ -784,23 +1324,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 throw IllegalArgumentException("Versi data cadangan tidak didukung: ${payload.version}")
             }
 
-            // Validasi keunikan ID wallet dalam payload
-            val rawWalletIds = payload.wallets.map { it.id }
-            if (rawWalletIds.size != rawWalletIds.distinct().size) {
-                throw IllegalArgumentException("Data cadangan memiliki dompet dengan ID duplikat.")
-            }
-            val payloadWalletIdSet = rawWalletIds.toSet()
-
-            // Validasi relasi transaksi terhadap dompet
+            // Validasi nilai transaksi
             for (tx in payload.transactions) {
                 if (tx.amount.isNaN() || tx.amount.isInfinite() || tx.amount < 0.0) {
                     throw IllegalArgumentException("Jumlah transaksi '${tx.title}' tidak valid.")
-                }
-                if (tx.walletId !in payloadWalletIdSet) {
-                    throw IllegalArgumentException("Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan.")
-                }
-                if (tx.targetWalletId != null && tx.targetWalletId > 0L && tx.targetWalletId !in payloadWalletIdSet) {
-                    throw IllegalArgumentException("Transaksi transfer '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam data cadangan.")
                 }
             }
 
@@ -826,10 +1353,47 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
 
-            // 3. Eksekusi mutasi dalam satu transaksi atomik Room dengan dukungan rollback penuh
-            database.withTransaction {
-                // A. Scoped deletion: Hapus hanya data finansial milik akun aktif
+            // Validasi integritas relasi dompet sebelum mutasi basis data lokal (Zero Synthetic Wallets Rule)
+            if (payload.wallets.isEmpty() && payload.transactions.isNotEmpty()) {
+                throw IllegalArgumentException("Data cadangan tidak valid: Ditemukan transaksi tetapi tidak ada dompet dalam cadangan.")
+            }
+            if (payload.wallets.isEmpty() && payload.recurringSchedules.isNotEmpty()) {
+                throw IllegalArgumentException("Data cadangan tidak valid: Ditemukan jadwal berulang tetapi tidak ada dompet dalam cadangan.")
+            }
+
+            val payloadWalletIdSet = payload.wallets.map { it.id }.toSet()
+            for (tx in payload.transactions) {
+                if (tx.walletId !in payloadWalletIdSet) {
+                    throw IllegalArgumentException("Integritas data cadangan tidak valid: Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan.")
+                }
+                if (tx.type == com.example.data.model.TransactionType.TRANSFER) {
+                    if (tx.targetWalletId == null || tx.targetWalletId !in payloadWalletIdSet) {
+                        throw IllegalArgumentException("Transaksi transfer '${tx.title}' tidak memiliki dompet tujuan yang valid dalam cadangan.")
+                    }
+                    if (tx.targetWalletId == tx.walletId) {
+                        throw IllegalArgumentException("Transaksi transfer '${tx.title}' memiliki dompet asal dan tujuan yang sama.")
+                    }
+                } else if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
+                    if (tx.targetWalletId !in payloadWalletIdSet) {
+                        throw IllegalArgumentException("Transaksi '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam cadangan.")
+                    }
+                }
+            }
+            for (rs in payload.recurringSchedules) {
+                if (rs.amount.isNaN() || rs.amount.isInfinite() || rs.amount < 0.0) {
+                    throw IllegalArgumentException("Nominal jadwal berulang '${rs.title}' tidak valid.")
+                }
+                if (rs.walletId !in payloadWalletIdSet) {
+                    throw IllegalArgumentException("Jadwal berulang '${rs.title}' merujuk dompet (ID: ${rs.walletId}) yang tidak ditemukan dalam cadangan.")
+                }
+            }
+
+            // 3. Eksekusi mutasi dalam satu transaksi atomik Room di bawah Exclusive Maintenance permit
+            database.writeCoordinator.withExclusiveMaintenance {
+                database.withTransaction {
+                // A. Scoped deletion: Hapus data finansial milik akun aktif (Child-First Scoped Deletion)
                 database.transactionDao().clearAllTransactions(targetUserId)
+                database.recurringScheduleDao().clearAllSchedules(targetUserId)
                 database.splitBillHistoryDao().clearAllHistory(targetUserId)
                 database.budgetLimitDao().clearAllBudgetLimits(targetUserId)
                 database.debtDao().clearAllDebts(targetUserId)
@@ -838,15 +1402,17 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 database.categoryDao().clearCustomCategories(targetUserId)
                 database.walletDao().clearAllWallets(targetUserId)
 
-                // B. Insert Wallets & Susun Peta Remapping ID
+                // B. Insert Wallets & Susun Peta Remapping ID (Parent-First, Zero Synthetic Wallets)
                 val walletIdMap = mutableMapOf<Long, Long>()
                 val walletNameMap = mutableMapOf<Long, String>()
+
                 for (wallet in payload.wallets) {
                     val oldId = wallet.id
                     val insertedId = database.walletDao().insertWallet(
                         wallet.copy(
                             id = 0L, // Auto-generate primary key baru di SQLite
-                            userId = targetUserId
+                            userId = targetUserId,
+                            currencyCode = wallet.currencyCode ?: com.example.util.DeviceRegionResolver.resolveDeviceCurrencyCode()
                         )
                     )
                     walletIdMap[oldId] = insertedId
@@ -871,19 +1437,18 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     )
                 }
 
-                // D. Insert Transactions dengan ID Dompet yang Terpetakan Secara Ketat
+                // D. Insert Transactions dengan Peta Remapping yang Terverifikasi
                 for (tx in payload.transactions) {
                     val mappedWalletId = walletIdMap[tx.walletId]
-                        ?: throw IllegalStateException("Pemetaan dompet gagal untuk transaksi '${tx.title}'.")
+                        ?: throw IllegalStateException("Pemetaan dompet gagal untuk ID: ${tx.walletId}")
                     val mappedTargetWalletId = if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
                         walletIdMap[tx.targetWalletId]
-                            ?: throw IllegalStateException("Pemetaan dompet tujuan transfer gagal untuk transaksi '${tx.title}'.")
                     } else null
 
                     val mappedWalletName = walletNameMap[tx.walletId] ?: tx.walletName
-                    val mappedTargetWalletName = if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
+                    val mappedTargetWalletName = if (mappedTargetWalletId != null) {
                         walletNameMap[tx.targetWalletId] ?: tx.targetWalletName
-                    } else tx.targetWalletName
+                    } else null
 
                     database.transactionDao().insertTransaction(
                         tx.copy(
@@ -892,6 +1457,20 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                             walletName = mappedWalletName,
                             targetWalletId = mappedTargetWalletId,
                             targetWalletName = mappedTargetWalletName,
+                            userId = targetUserId
+                        )
+                    )
+                }
+
+                // Insert Recurring Schedules
+                for (rs in payload.recurringSchedules) {
+                    val mappedWalletId = walletIdMap[rs.walletId]
+                        ?: throw IllegalStateException("Pemetaan dompet jadwal berulang gagal untuk ID: ${rs.walletId}")
+                    val scheduleId = if (rs.id.isBlank()) java.util.UUID.randomUUID().toString() else rs.id
+                    database.recurringScheduleDao().insertSchedule(
+                        rs.copy(
+                            id = scheduleId,
+                            walletId = mappedWalletId,
                             userId = targetUserId
                         )
                     )
@@ -953,6 +1532,11 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                         )
                     )
                 }
+                }
+
+                // Phase 1G.6: Ensure target developer account cannot be reintroduced via restore,
+                // executed under continuous exclusive maintenance lock (Reentrant via MaintenancePermitElement)
+                FinSmartDatabase.purgeTargetDeveloperAccountAtomically(database)
             }
         }
 

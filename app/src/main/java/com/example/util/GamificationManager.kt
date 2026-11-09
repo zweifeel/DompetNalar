@@ -108,7 +108,7 @@ object GamificationManager {
             ),
             GamificationBadge(
                 id = "centurion_finsmart",
-                title = "Centurion FinSmart 👑",
+                title = "Centurion DompetNalar 👑",
                 description = "Pencapaian legendaris! Streak 365 hari penuh.",
                 iconName = "Diamond",
                 isUnlocked = streak >= 365 || unlockedSet.contains("centurion_finsmart")

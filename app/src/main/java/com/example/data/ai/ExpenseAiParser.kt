@@ -1,255 +1,130 @@
 package com.example.data.ai
 
+import com.example.data.chatbot.parser.LocalFinancialIntentParser
+import com.example.data.chatbot.parser.TransactionDraftManager
+import com.example.data.chatbot.parser.WalletDraftManager
 import com.example.data.model.CategoryItem
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
-import com.example.util.CurrencyFormatter
-import com.example.util.TransactionDateParser
+import com.example.data.session.SessionManager
+import com.example.util.LocaleHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.util.Locale
-import java.util.regex.Pattern
 
+/**
+ * Adaptor Intent & Eksekusi Finansial DompetNalar (100% Local-First).
+ *
+ * Mengalihkan seluruh parsing input teks pengguna ke [LocalFinancialIntentParser],
+ * [TransactionDraftManager], dan [WalletDraftManager] tanpa memerlukan Gemini API Key atau koneksi internet.
+ *
+ * Menerapkan Strict Fail-Closed Draft Ownership:
+ * - Menolak pembuatan draft jika sesi aktif tidak valid (userId <= 0L).
+ */
 object ExpenseAiParser {
 
     suspend fun parseExpenseMessage(
         userMessage: String,
         availableWallets: List<Wallet>,
-        availableCategories: List<CategoryItem>
+        availableCategories: List<CategoryItem> = emptyList(),
+        userId: Long = SessionManager.getActiveUserId() ?: 0L
     ): ParsedTransactionResult = withContext(Dispatchers.IO) {
-        val dateResult = TransactionDateParser.parseDateFromMessage(userMessage)
-        val apiKey = GeminiClient.getApiKey()
-
-        if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
-            try {
-                val geminiResult = callGeminiApi(
-                    userMessage = userMessage,
-                    cleanedMessage = dateResult.cleanedText,
-                    parsedTimestamp = dateResult.timestamp,
-                    detectedDateText = dateResult.detectedDateText,
-                    wallets = availableWallets,
-                    categories = availableCategories,
-                    apiKey = apiKey
-                )
-                if (geminiResult != null) {
-                    return@withContext geminiResult
-                }
-            } catch (e: Exception) {
-                // Fallback to local offline parser if network fails
-            }
-        }
-
-        // Offline / Fast NLP Local Parser Fallback
-        parseLocally(
-            rawInput = userMessage,
-            cleanedInput = dateResult.cleanedText,
-            timestamp = dateResult.timestamp,
-            detectedDateText = dateResult.detectedDateText,
-            wallets = availableWallets,
-            categories = availableCategories
-        )
-    }
-
-    private suspend fun callGeminiApi(
-        userMessage: String,
-        cleanedMessage: String,
-        parsedTimestamp: Long,
-        detectedDateText: String?,
-        wallets: List<Wallet>,
-        categories: List<CategoryItem>,
-        apiKey: String
-    ): ParsedTransactionResult? {
-        val walletNames = wallets.joinToString(", ") { it.name }
-        val categoryNames = categories.joinToString(", ") { "${it.name} (${it.type.name})" }
-
-        val prompt = """
-            Anda adalah asisten AI keuangan FinSmart Indonesia.
-            Tugas Anda adalah mengekstrak data transaksi dari kalimat input pengguna berikut:
-            "$userMessage"
-            
-            Daftar dompet tersedia: [$walletNames]
-            Daftar kategori tersedia: [$categoryNames]
-            ${if (detectedDateText != null) "Konteks waktu/tanggal yang terdeteksi: $detectedDateText" else ""}
-            
-            Kembalikan HANYA JSON murni (tanpa markdown backtick ```json) dengan format:
-            {
-              "title": "Judul singkat transaksi (contoh: Beli Nasi Padang)",
-              "amount": 35000,
-              "type": "EXPENSE" atau "INCOME" atau "TRANSFER",
-              "category": "Nama kategori yang paling cocok",
-              "categoryIcon": "restaurant / commute / shopping_bag / receipt / payments / etc.",
-              "suggestedWalletName": "Nama dompet sumber yang paling cocok",
-              "suggestedTargetWalletName": "Nama dompet tujuan (hanya jika type TRANSFER, selain itu null)",
-              "note": "Catatan tambahan jika ada",
-              "tags": "#tag1 #tag2",
-              "aiExplanation": "Kalimat penjelasan ramah 1 kalimat dalam bahasa Indonesia"
-            }
-        """.trimIndent()
-
-        val request = GeminiGenerateRequest(
-            contents = listOf(
-                GeminiContent(
-                    parts = listOf(GeminiPart(text = prompt))
-                )
-            ),
-            generationConfig = GeminiGenerationConfig(
-                temperature = 0.1f
+        val activeUserId = if (userId > 0L) userId else (SessionManager.getActiveUserId() ?: 0L)
+        if (activeUserId <= 0L) {
+            return@withContext ParsedTransactionResult(
+                title = "",
+                amount = 0.0,
+                type = "UNKNOWN",
+                category = "Umum",
+                categoryIcon = "payments",
+                suggestedWalletName = "Pilih Dompet",
+                suggestedTargetWalletName = null,
+                note = "",
+                tags = "",
+                aiExplanation = if (LocaleHelper.isEnglish()) "Active login session required to process AI financial commands." else "Sesi login aktif diperlukan untuk memproses perintah finansial AI.",
+                timestamp = System.currentTimeMillis(),
+                detectedDateText = null,
+                isValid = false,
+                draftId = null,
+                isWalletCreation = false,
+                walletDraftId = null
             )
-        )
-
-        val response = GeminiClient.apiService.generateContent(apiKey, request)
-        val responseText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: return null
-
-        val cleanJson = responseText
-            .replace("```json", "")
-            .replace("```", "")
-            .trim()
-
-        val json = JSONObject(cleanJson)
-        return ParsedTransactionResult(
-            title = json.optString("title", cleanedMessage),
-            amount = json.optDouble("amount", 0.0),
-            type = json.optString("type", "EXPENSE"),
-            category = json.optString("category", "Lain-lain"),
-            categoryIcon = json.optString("categoryIcon", "category"),
-            suggestedWalletName = json.optString("suggestedWalletName", wallets.firstOrNull()?.name ?: "Dompet Utama"),
-            suggestedTargetWalletName = if (json.isNull("suggestedTargetWalletName")) null else json.optString("suggestedTargetWalletName"),
-            note = json.optString("note", if (detectedDateText != null) "Tanggal: $detectedDateText" else ""),
-            tags = json.optString("tags", ""),
-            aiExplanation = json.optString("aiExplanation", "Transaksi berhasil diekstrak oleh Gemini AI."),
-            timestamp = parsedTimestamp,
-            detectedDateText = detectedDateText
-        )
-    }
-
-    private fun parseLocally(
-        rawInput: String,
-        cleanedInput: String,
-        timestamp: Long,
-        detectedDateText: String?,
-        wallets: List<Wallet>,
-        categories: List<CategoryItem>
-    ): ParsedTransactionResult {
-        val lower = rawInput.lowercase(Locale("id", "ID"))
-
-        // 1. Determine Type
-        val isTransfer = lower.contains("transfer") || lower.contains("kirim uang") || lower.contains("topup") || lower.contains("top up")
-        val isIncome = !isTransfer && (lower.contains("gaji") || lower.contains("bonus") || lower.contains("dapat") ||
-                lower.contains("terima") || lower.contains("masuk") || lower.contains("omset") || lower.contains("penjualan") || lower.contains("cair"))
-        val type = when {
-            isTransfer -> "TRANSFER"
-            isIncome -> "INCOME"
-            else -> "EXPENSE"
         }
 
-        // 2. Extract Amount
-        var amount = 0.0
+        val command = LocalFinancialIntentParser.parse(
+            userMessage = userMessage,
+            availableWallets = availableWallets,
+            availableCategories = availableCategories
+        )
 
-        // Regex for "50rb", "50k", "50.000", "50 ribu", "1.5 juta", "2jt", "100000"
-        val jutaPattern = Pattern.compile("(\\d+([.,]\\d+)?)\\s*(juta|jt)")
-        val jutaMatcher = jutaPattern.matcher(lower)
-        if (jutaMatcher.find()) {
-            val numStr = jutaMatcher.group(1)?.replace(",", ".") ?: "1"
-            amount = (numStr.toDoubleOrNull() ?: 1.0) * 1_000_000.0
-        } else {
-            val ribuPattern = Pattern.compile("(\\d+([.,]\\d+)?)\\s*(ribu|rb|k)")
-            val ribuMatcher = ribuPattern.matcher(lower)
-            if (ribuMatcher.find()) {
-                val numStr = ribuMatcher.group(1)?.replace(",", ".") ?: "1"
-                amount = (numStr.toDoubleOrNull() ?: 1.0) * 1_000.0
-            } else {
-                val plainNumPattern = Pattern.compile("(?:rp\\.?\\s*)?(\\d{1,3}(?:\\.\\d{3})+|\\d+)")
-                val numMatcher = plainNumPattern.matcher(lower)
-                if (numMatcher.find()) {
-                    val rawNum = numMatcher.group(1)?.replace(".", "") ?: "0"
-                    amount = rawNum.toDoubleOrNull() ?: 0.0
-                }
-            }
+        // 1. Penanganan Pembuatan Dompet
+        if (command.intentType in listOf(
+                LocalFinancialIntentParser.IntentType.CREATE_WALLET,
+                LocalFinancialIntentParser.IntentType.CREATE_WALLET_WITH_OPENING_BALANCE,
+                LocalFinancialIntentParser.IntentType.CREATE_WALLET_WITH_INCOME
+            ) && command.status == LocalFinancialIntentParser.ParseStatus.WALLET_DRAFT_READY
+        ) {
+            val walletDraft = WalletDraftManager.createDraft(command, ownerUserId = activeUserId)
+            return@withContext ParsedTransactionResult(
+                title = command.title,
+                amount = command.amount ?: 0.0,
+                type = "CREATE_WALLET",
+                category = "Dompet Baru",
+                categoryIcon = "account_balance_wallet",
+                suggestedWalletName = command.title,
+                suggestedTargetWalletName = null,
+                note = "Pembuatan Dompet Baru via Chatbot",
+                tags = "#dompet",
+                aiExplanation = command.responseMessage,
+                timestamp = command.timestamp,
+                detectedDateText = null,
+                isValid = walletDraft != null,
+                draftId = null,
+                isWalletCreation = true,
+                walletDraftId = walletDraft?.id,
+                walletType = command.walletType,
+                openingBalance = command.initialBalance ?: 0.0,
+                incomeAmount = command.incomeAmount
+            )
         }
 
-        // 3. Match Wallet
-        val matchedSourceWallet = wallets.firstOrNull { w ->
-            lower.contains(w.name.lowercase(Locale.ROOT)) ||
-                    (w.iconName.isNotBlank() && lower.contains(w.iconName.lowercase(Locale.ROOT))) ||
-                    (lower.contains("gopay") && w.name.contains("gopay", true)) ||
-                    (lower.contains("ovo") && w.name.contains("ovo", true)) ||
-                    (lower.contains("dana") && w.name.contains("dana", true)) ||
-                    (lower.contains("shopee") && w.name.contains("shopee", true)) ||
-                    (lower.contains("bca") && w.name.contains("bca", true)) ||
-                    (lower.contains("bri") && w.name.contains("bri", true)) ||
-                    (lower.contains("mandiri") && w.name.contains("mandiri", true)) ||
-                    (lower.contains("tunai") || lower.contains("cash")) && w.type == com.example.data.model.WalletType.CASH
-        } ?: wallets.firstOrNull()
+        // 2. Penanganan Transaksi Keuangan (Expense, Income, Transfer)
+        val txType = command.transactionType ?: TransactionType.EXPENSE
+        val txTypeStr = when (txType) {
+            TransactionType.INCOME -> "INCOME"
+            TransactionType.TRANSFER -> "TRANSFER"
+            TransactionType.EXPENSE -> "EXPENSE"
+        }
 
-        val matchedTargetWallet = if (isTransfer) {
-            wallets.firstOrNull { w ->
-                w.id != matchedSourceWallet?.id && (
-                        lower.contains("ke ${w.name.lowercase(Locale.ROOT)}") ||
-                                (w.iconName.isNotBlank() && lower.contains("ke ${w.iconName.lowercase(Locale.ROOT)}")) ||
-                                (lower.contains("ke gopay") && w.name.contains("gopay", true)) ||
-                                (lower.contains("ke dana") && w.name.contains("dana", true)) ||
-                                (lower.contains("ke ovo") && w.name.contains("ovo", true))
-                        )
-            } ?: wallets.filter { it.id != matchedSourceWallet?.id }.firstOrNull()
+        val isActionableTransaction = command.status == LocalFinancialIntentParser.ParseStatus.READY_FOR_DRAFT &&
+                (command.amount ?: 0.0) > 0.0 &&
+                command.sourceWallet != null &&
+                (command.transactionType != TransactionType.TRANSFER || (command.targetWallet != null && command.targetWallet.id != command.sourceWallet.id))
+
+        val draft = if (isActionableTransaction) {
+            TransactionDraftManager.createDraft(command, ownerUserId = activeUserId)
         } else null
 
-        // 4. Match Category
-        val matchedCategory = when {
-            isTransfer -> "Transfer Saldo"
-            lower.contains("makan") || lower.contains("minum") || lower.contains("kopi") || lower.contains("bakso") || lower.contains("nasi") || lower.contains("sate") || lower.contains("resto") -> "Makanan & Minuman"
-            lower.contains("bensin") || lower.contains("pertalite") || lower.contains("pertamax") || lower.contains("parkir") || lower.contains("gojek") || lower.contains("grab") || lower.contains("tol") || lower.contains("angkot") -> "Transportasi & Bensin"
-            lower.contains("belanja") || lower.contains("beli") || lower.contains("baju") || lower.contains("sepatu") || lower.contains("kaos") || lower.contains("indomaret") || lower.contains("alfamart") -> "Belanja & Hobi"
-            lower.contains("listrik") || lower.contains("pln") || lower.contains("wifi") || lower.contains("pulsa") || lower.contains("paket data") || lower.contains("air") || lower.contains("pdam") -> "Tagihan & Utilitas"
-            lower.contains("obat") || lower.contains("dokter") || lower.contains("klinik") || lower.contains("apotek") || lower.contains("vitamin") -> "Kesehatan"
-            lower.contains("gaji") -> "Gaji Pokok"
-            lower.contains("bonus") || lower.contains("thr") -> "Bonus & Tunjangan"
-            lower.contains("investasi") || lower.contains("saham") || lower.contains("reksadana") || lower.contains("crypto") -> "Investasi & Dividen"
-            lower.contains("omset") || lower.contains("jual") || lower.contains("toko") -> "Penjualan / Omset"
-            else -> if (type == "INCOME") "Pemasukan Lain" else "Lain-lain"
-        }
+        val amount = if (isActionableTransaction) (command.amount ?: 0.0) else 0.0
+        val sourceWalletName = command.sourceWallet?.name ?: "Pilih Dompet"
+        val targetWalletName = command.targetWallet?.name
 
-        // 5. Category Icon
-        val catIcon = when (matchedCategory) {
-            "Makanan & Minuman" -> "restaurant"
-            "Transportasi & Bensin" -> "commute"
-            "Belanja & Hobi" -> "shopping_bag"
-            "Tagihan & Utilitas" -> "receipt"
-            "Kesehatan" -> "medical_services"
-            "Gaji Pokok" -> "payments"
-            "Bonus & Tunjangan" -> "card_giftcard"
-            "Investasi & Dividen" -> "trending_up"
-            "Penjualan / Omset" -> "store"
-            "Transfer Saldo" -> "swap_horiz"
-            else -> "category"
-        }
-
-        // 6. Generate Title
-        val title = cleanedInput.replace(Regex("(?i)(pake|pakai|via|dari|ke|dengan)\\s+\\w+"), "").trim().capitalize(Locale.ROOT)
-
-        val dateSuffix = if (detectedDateText != null) {
-            " pada ${CurrencyFormatter.formatDate(timestamp)} ($detectedDateText)"
-        } else ""
-
-        val explanation = when (type) {
-            "INCOME" -> "AI mencatat pemasukan '$title'$dateSuffix senilai ${amount.toLong()} ke ${matchedSourceWallet?.name}."
-            "TRANSFER" -> "AI menyiapkan transfer ${amount.toLong()} dari ${matchedSourceWallet?.name} ke ${matchedTargetWallet?.name}$dateSuffix."
-            else -> "AI mendeteksi pengeluaran '$title'$dateSuffix sebesar ${amount.toLong()} via ${matchedSourceWallet?.name}."
-        }
-
-        return ParsedTransactionResult(
-            title = if (title.isBlank()) matchedCategory else title,
+        ParsedTransactionResult(
+            title = command.title.ifBlank { command.categoryName },
             amount = amount,
-            type = type,
-            category = matchedCategory,
-            categoryIcon = catIcon,
-            suggestedWalletName = matchedSourceWallet?.name ?: "Dompet Utama",
-            suggestedTargetWalletName = matchedTargetWallet?.name,
-            note = if (detectedDateText != null) "Dicatat via AI • Tanggal: $detectedDateText" else "Dicatat otomatis via AI Gemini Input",
-            tags = "#" + matchedCategory.split(" ").first().lowercase(),
-            aiExplanation = explanation,
-            timestamp = timestamp,
-            detectedDateText = detectedDateText
+            type = txTypeStr,
+            category = command.categoryName.ifBlank { "Umum" },
+            categoryIcon = command.categoryIcon.ifBlank { "payments" },
+            suggestedWalletName = sourceWalletName,
+            suggestedTargetWalletName = targetWalletName,
+            note = if (command.detectedDateText != null) "Tanggal: ${command.detectedDateText}" else "Dicatat via Chatbot Lokal",
+            tags = "#" + command.categoryName.split(" ").firstOrNull()?.lowercase().orEmpty(),
+            aiExplanation = command.responseMessage,
+            timestamp = command.timestamp,
+            detectedDateText = command.detectedDateText,
+            isValid = isActionableTransaction && draft != null,
+            draftId = draft?.id,
+            isWalletCreation = false,
+            walletDraftId = null
         )
     }
 }

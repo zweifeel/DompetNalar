@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.example.util.AppStrings
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -106,7 +109,7 @@ fun CashflowChartCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Analisis Arus Kas",
+                        text = AppStrings.t("Analisis Arus Kas", "Cashflow Analysis"),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -114,7 +117,7 @@ fun CashflowChartCard(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Grafik Pemasukan vs Pengeluaran",
+                        text = AppStrings.t("Grafik Pemasukan vs Pengeluaran", "Income vs Expense Chart"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -190,7 +193,9 @@ fun CashflowChartCard(
 
             // Timeframe Filter Chips
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
@@ -206,7 +211,14 @@ fun CashflowChartCard(
                             selectedPointIndex = null
                             onTimeframeSelected(filter)
                         },
-                        label = { Text(filter.label, fontSize = 12.sp) },
+                        label = {
+                            Text(
+                                text = filter.label,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -238,13 +250,13 @@ fun CashflowChartCard(
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(
-                                text = "Masuk: ${CurrencyFormatter.formatRupiah(point.income)}",
+                                text = "${AppStrings.t("Masuk", "Income")}: ${CurrencyFormatter.formatRupiah(point.income)}",
                                 color = IncomeGreen,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Keluar: ${CurrencyFormatter.formatRupiah(point.expense)}",
+                                text = "${AppStrings.t("Keluar", "Expense")}: ${CurrencyFormatter.formatRupiah(point.expense)}",
                                 color = ExpenseRed,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -267,7 +279,7 @@ fun CashflowChartCard(
                         .background(IncomeGreen, CircleShape)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Pemasukan", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(AppStrings.income, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -277,7 +289,7 @@ fun CashflowChartCard(
                         .background(ExpenseRed, CircleShape)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Pengeluaran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(AppStrings.expense, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -296,7 +308,7 @@ fun CashflowChartCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Belum ada transaksi di periode ini.\nTekan + Pemasukan / + Pengeluaran untuk memulai.",
+                        text = AppStrings.t("Belum ada transaksi di periode ini.\nTekan + Pemasukan / + Pengeluaran untuk memulai.", "No transactions in this period.\nTap + Income / + Expense to start."),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -315,7 +327,7 @@ fun CashflowChartCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Belum ada nilai arus kas pada periode ini.",
+                            text = AppStrings.t("Belum ada nilai arus kas pada periode ini.", "No cashflow data in this period."),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -362,7 +374,7 @@ fun CashflowChartCard(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 val diff = totalIncome - totalExpense
                                 Text(
-                                    text = if (diff >= 0) "Surplus" else "Defisit",
+                                    text = if (diff >= 0) AppStrings.t("Surplus", "Surplus") else AppStrings.t("Defisit", "Deficit"),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (diff >= 0) IncomeGreen else ExpenseRed
@@ -382,7 +394,7 @@ fun CashflowChartCard(
                                 Box(modifier = Modifier.size(12.dp).background(IncomeGreen, CircleShape))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
-                                    Text(text = "Pemasukan ($incomePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = IncomeGreen)
+                                    Text(text = "${AppStrings.income} ($incomePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = IncomeGreen)
                                     Text(text = CurrencyFormatter.formatRupiah(totalIncome), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             }
@@ -391,7 +403,7 @@ fun CashflowChartCard(
                                 Box(modifier = Modifier.size(12.dp).background(ExpenseRed, CircleShape))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
-                                    Text(text = "Pengeluaran ($expensePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ExpenseRed)
+                                    Text(text = "${AppStrings.expense} ($expensePercent%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ExpenseRed)
                                     Text(text = CurrencyFormatter.formatRupiah(totalExpense), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             }

@@ -1,0 +1,107 @@
+
+==========================================
+SCREEN: DashboardScreen.kt (Total lines: 670)
+==========================================
+
+==========================================
+SCREEN: TransactionsScreen.kt (Total lines: 405)
+==========================================
+
+==========================================
+SCREEN: WalletsScreen.kt (Total lines: 480)
+==========================================
+  Line  330: "Asset Tracker"
+  Line  341: "AI Debt Planner"
+
+==========================================
+SCREEN: AnalyticsScreen.kt (Total lines: 533)
+==========================================
+  Line  358: "Total"
+
+==========================================
+SCREEN: SettingsScreen.kt (Total lines: 2548)
+==========================================
+  Line  540: "Panel Kelola Akun Master Dev"
+  Line  553: "Upgrade ke Smart Master 👑 (Mulai Rp12.400/bln)"
+  Line  783: "Masuk / Daftar Akun Google"
+  Line  799: "Cadangkan"
+  Line  809: "Pulihkan Data"
+  Line  961: "Hubungkan ke Google Drive"
+  Line 1107: "Publish Application Update (MasterDev)"
+  Line 1121: "Buka Master Dev User Manager"
+  Line 1160: "Aksi Goyang HP (Shake Gesture)"
+  Line 1225: "Tutup"
+  Line 1239: "Pilih Tema Tampilan"
+  Line 1297: "Tutup"
+  Line 1311: "Warna Aksen Aplikasi"
+  Line 1373: "Tutup"
+  Line 1387: "Latar Belakang Galeri"
+  Line 1525: "Dynamic Launcher Icon"
+  Line 1616: "Tutup"
+  Line 1807: "Tutup"
+  Line 1854: "Pilihan Pencadangan Data"
+  Line 1914: "Cadangan Perangkat (Otomatis)"
+  Line 1955: "Cadangan Portabel (Kata Sandi)"
+  Line 1991: "Buat Cadangan Portabel"
+  Line 2008: "Kata Sandi Cadangan"
+  Line 2009: "Minimal 6 karakter"
+  Line 2034: "Konfirmasi Kata Sandi"
+  Line 2035: "Ketik ulang kata sandi"
+  Line 2158: "Pilihan Pemulihan Data"
+  Line 2218: "Pulihkan Cadangan Perangkat"
+  Line 2260: "Pulihkan Cadangan Portabel (Kata Sandi)"
+  Line 2297: "Pulihkan Cadangan Portabel"
+  Line 2332: "Pilih File Cadangan Lain (.json)"
+  Line 2343: "Kata Sandi Cadangan"
+  Line 2344: "Masukkan kata sandi"
+
+==========================================
+SCREEN: AiChatScreen.kt (Total lines: 1450)
+==========================================
+
+==========================================
+SCREEN: BudgetScreen.kt (Total lines: 785)
+==========================================
+  Line  595: "Limit Kategori: $selectedCategoryName"
+
+==========================================
+SCREEN: ExportScreen.kt (Total lines: 786)
+==========================================
+
+==========================================
+SCREEN: FeedbackScreen.kt (Total lines: 392)
+==========================================
+
+==========================================
+SCREEN: ReceiptScanScreen.kt (Total lines: 1329)
+==========================================
+  Line  523: "Cafe/Kopi"
+  Line  546: "Indomaret"
+  Line  569: "Momoyo"
+  Line  682: "Tutup"
+  Line  820: "Salin Teks"
+  Line 1005: "Pajak Termasuk (Inklusif)"
+  Line 1014: "Pajak Tambahan (Eksklusif)"
+  Line 1245: "Qty"
+
+==========================================
+SCREEN: SplitBillScreen.kt (Total lines: 1484)
+==========================================
+  Line  734: "+ Tambah Dompet Baru"
+  Line  993: "Bagikan"
+  Line 1005: "Salin"
+  Line 1039: "Contoh: Rian, Dita, Maya, dll."
+  Line 1059: "Tambah"
+  Line 1088: "Qty"
+
+==========================================
+SCREEN: DevFeedbackViewerScreen.kt (Total lines: 754)
+==========================================
+  Line  114: "Akses Ditolak"
+  Line  140: "Akses Terbatas: Master Developer"
+  Line  149: "Kembali ke Pengaturan"
+  Line  343: "Menghubungkan Akun Google..."
+  Line  347: "Hubungkan Akun Google Developer"
+  Line  401: "Coba Lagi"
+  Line  451: "Sinkronkan"
+  Line  468: "Semua (${combinedFeedbacks.size})"

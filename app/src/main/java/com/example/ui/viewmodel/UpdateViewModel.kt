@@ -55,7 +55,7 @@ class UpdateViewModel : ViewModel() {
                     if (showFeedbackIfLatest) {
                         Toast.makeText(
                             context,
-                            "FinSmart sudah versi terbaru (v${status.metadata.version_name})",
+                            "DompetNalar sudah versi terbaru (v${status.metadata.version_name})",
                             Toast.LENGTH_SHORT
                         ).show()
                     }

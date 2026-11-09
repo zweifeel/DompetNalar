@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -146,7 +147,7 @@ fun UpdateAvailableBottomSheet(
 
             // Changelog List
             Text(
-                text = "Catatan Rilis / Pembaruan Fitur:",
+                text = AppStrings.t("Catatan Rilis / Pembaruan Fitur:", "Release Notes / Feature Updates:"),
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 modifier = Modifier.align(Alignment.Start)

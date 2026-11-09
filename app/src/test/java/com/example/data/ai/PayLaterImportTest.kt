@@ -21,6 +21,23 @@ class PayLaterImportTest {
 
     private val EPSILON = 0.001
 
+    @org.junit.Before
+    fun setUp() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        com.example.util.LocaleHelper.initialize(context)
+        com.example.util.LocaleHelper.setLanguage(context, com.example.util.AppLanguage.INDONESIAN)
+        com.example.util.CurrencyFormatter.initialize(context)
+        com.example.util.CurrencyFormatter.setCurrency(com.example.util.AppCurrency.IDR, context)
+    }
+
+    @org.junit.After
+    fun tearDown() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        com.example.util.LocaleHelper.setLanguage(context, com.example.util.AppLanguage.INDONESIAN)
+        com.example.util.CurrencyFormatter.setCurrency(com.example.util.AppCurrency.IDR, context)
+        com.example.util.CurrencyFormatter.setMode(context, com.example.util.CurrencyMode.FOLLOW_DEVICE)
+    }
+
     @Test
     fun test1_IndonesianRupiahAmountExtraction() {
         // 1. Ekstraksi nominal Rupiah dengan berbagai variasi pemisah ribuan
@@ -41,11 +58,11 @@ class PayLaterImportTest {
         assertEquals(5, day1)
 
         val (norm2, day2) = PayLaterAiOcrScanner.parseDueDateString("Bayar sebelum 15 Nov 2026")
-        assertEquals("Tgl 15 tiap bulan", norm2)
+        assertEquals("2026-11-15", norm2)
         assertEquals(15, day2)
 
         val (norm3, day3) = PayLaterAiOcrScanner.parseDueDateString("2026-10-25")
-        assertEquals("Tgl 25 tiap bulan", norm3)
+        assertEquals("2026-10-25", norm3)
         assertEquals(25, day3)
 
         val (norm4, day4) = PayLaterAiOcrScanner.parseDueDateString("Jatuh tempo tgl 30")
@@ -68,7 +85,7 @@ class PayLaterImportTest {
         val emptyJson = JSONObject("{}")
         val result = PayLaterAiOcrScanner.parseScanResultFromJson(emptyJson)
 
-        assertEquals("Tagihan PayLater", result.providerName)
+        assertEquals("", result.providerName)
         assertEquals(0.0, result.currentBillAmount, EPSILON)
         assertEquals(0.0, result.totalRemainingAmount, EPSILON)
         assertNull(result.installmentCurrent)

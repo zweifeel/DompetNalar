@@ -68,11 +68,14 @@ interface CategoryDao {
     @Query("DELETE FROM categories WHERE userId = :userId AND isSystem = 0")
     suspend fun clearCustomCategories(userId: Long): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCategory(category: CategoryItem): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCategories(categories: List<CategoryItem>)
+
+    @androidx.room.Update
+    suspend fun updateCategory(category: CategoryItem): Int
 
     /**
      * Database lifecycle query for initial seeding on cold startup.

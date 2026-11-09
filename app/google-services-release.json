@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1029968996578",
+    "project_id": "finsmart-47fdd",
+    "storage_bucket": "finsmart-47fdd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1029968996578:android:e7a99f540b6e9a70cd96bb",
+        "android_client_info": {
+          "package_name": "com.aistudio.finsmart.kptxvw"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2SfR0lfk87ggyAvNR1TdbJUmCnEYUams"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

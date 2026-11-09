@@ -1,0 +1,164 @@
+================================================================================
+LAPORAN CHANGELOG RESMI DOMPETNALAR — VERSI 1.0.8 (VERSION CODE 8)
+================================================================================
+Aplikasi         : DompetNalar
+Developer Brand  : SleepyKoala
+Application ID   : com.aistudio.finsmart.kptxvw
+Versi Sebelumnya : 1.0.7 (Version Code 7)
+Versi Baru       : 1.0.8 (Version Code 8)
+Target Platform  : Google Play Console (Closed Testing)
+Tanggal Rilis    : 24 Oktober 2026
+================================================================================
+
+--------------------------------------------------------------------------------
+BAGIAN A — CHANGELOG TEKNIS LENGKAP (AUDIT V7 -> V8)
+--------------------------------------------------------------------------------
+
+1. PERBAIKAN LOGOUT, MULTI-USER ISOLATION, DAN PEMBERSIHAN SESI AUTENTIKASI
+   - Perilaku Sebelum Perbaikan (v1.0.7):
+     Pada versi 1.0.7, mekanisme logout belum sepenuhnya membersihkan state in-memory
+     dan cache ViewModel. Terdapat risiko query Room DAO pada entitas tertentu yang
+     belum secara ketat memfilter parameter `currentUserId`, sehingga pada perangkat
+     bersama (shared device) atau saat pergantian akun/login reviewer, data keuangan
+     akun sebelumnya berpotensi terbaca.
+   - Perubahan Sesudah Perbaikan (v1.0.8):
+     * Seluruh operasi CRUD di FinanceRepository dan Room DAO (UserDao, TransactionDao,
+       DebtDao, AssetDao, BudgetDao) kini mewajibkan parameter `userId` terverifikasi.
+     * SessionManager dirombak dengan mekanisme atomik: saat logout dipicu, seluruh
+       StateFlow, cache sesi pengguna, token auth lokal, dan in-memory states dibersihkan
+       sebelum navigasi diarahkan kembali ke layar Login.
+     * Akun reviewer Google Play (reviewer@finsmart.app) diisolasi dengan data demo
+       mandiri tanpa menyentuh database akun pengguna riil.
+   - Komponen / File Terkait:
+     * com.example.util.SessionManager
+     * com.example.data.repository.FinanceRepository
+     * com.example.data.local.UserDao, TransactionDao, DebtDao, AssetDao, BudgetDao
+     * com.example.ui.viewmodel.FinanceViewModel
+     * com.example.ui.viewmodel.AuthViewModel
+   - Bukti Implementasi & Pengujian:
+     * Unit Test: FinanceSessionScopingTest, StealthModeDataLeakageRemediationTest,
+       ReviewerAccountTest.
+     * Lolos kompilasi penuh R8 minification dan dexing release bundle.
+   - Keterbatasan:
+     Pengujian sesi multi-akun telah diverifikasi pada level unit test dan lifecycle
+     arsitektur Compose; verifikasi interaksi login perangkat fisik multi-Google-Account
+     perlu dipantau berkala pada Closed Testing.
+
+2. GOOGLE DRIVE BACKUP / RESTORE DAN PENGHENTIAN AUTO-UPLOAD
+   - Perilaku Sebelum Perbaikan (v1.0.7):
+     Fitur backup Google Drive berpotensi memicu sinkronisasi latar belakang otomatis
+     (auto-upload) tanpa konfirmasi eksplisit dari pengguna saat akun terhubung.
+     Selain itu, mekanisme backup belum memiliki partisi folder AppData yang ketat antar
+     akun Google yang berbeda pada perangkat yang sama.
+   - Perubahan Sesudah Perbaikan (v1.0.8):
+     * Auto-upload latar belakang dinonaktifkan secara default. Seluruh proses pencadangan
+       ke Google Drive kini bersifat manual (user-triggered) melalui tombol "Cadangkan Sekarang".
+     * File backup disimpan secara aman di Google Drive AppData folder dengan enkripsi
+       AES-GCM dan validasi checksum integritas payload.
+     * Aturan backup Android (backup_rules.xml dan data_extraction_rules.xml) diperbarui
+       untuk mencegah kebocoran database lokal ke backup sistem OS standar yang tidak terenkripsi.
+   - Komponen / File Terkait:
+     * com.example.util.GoogleDriveService
+     * com.example.util.AutoSyncWorker
+     * com.example.ui.screens.SettingsScreen
+     * app/src/main/res/xml/backup_rules.xml
+     * app/src/main/res/xml/data_extraction_rules.xml
+   - Bukti Implementasi & Pengujian:
+     * Unit Test: GoogleAuthAndDriveCloudTest, BackupEncryptionTest,
+       BackupPayloadCompatibilityTest.
+   - Keterbatasan:
+     Fitur restore cloud membutuhkan koneksi internet aktif dan izin OAuth Drive AppData
+     scope yang valid dari Google Cloud Console.
+
+3. GOOGLE PLAY BILLING V8.0.0 & PEMULIHAN ENTITLEMENT SMART MASTER
+   - Perilaku Sebelum Perbaikan (v1.0.7):
+     Integrasi billing menggunakan struktur lama yang belum mengoptimalkan alur listener
+     Play Billing v8.0.0. Tester Closed Testing yang melakukan instalasi ulang seringkali
+     mengalami status entitlement Smart Master yang kembali ke Free sebelum tombol "Pulihkan" ditekan.
+     Penanganan status subscription kedaluwarsa atau grace period belum memiliki fallback lokal.
+   - Perubahan Sesudah Perbaikan (v1.0.8):
+     * Diperbarui dan dikunci ke Google Play Billing Library versi 8.0.0.
+     * BillingManager secara otomatis menjalankan `queryPurchasesAsync` pada saat startup
+       aplikasi dan login berhasil untuk memulihkan pembelian aktif tanpa menuntut aksi manual pengguna.
+     * Dukungan penuh Product ID: `smart_master_monthly` dan `smart_master_yearly`.
+     * EntitlementRegistry dan EntitlementManager mengelola status hak akses fitur premium
+       (OCR tanpa batas, laporan ekspor PDF/Excel, analisis keuangan AI) dengan sinkronisasi
+       berkala dan pencegahan manipulasi timestamp lokal.
+   - Komponen / File Terkait:
+     * com.example.util.BillingManager
+     * com.example.util.EntitlementManager
+     * com.example.util.EntitlementRegistry
+     * com.example.ui.viewmodel.AuthViewModel
+     * com.example.ui.screens.SubscriptionScreen
+   - Bukti Implementasi & Pengujian:
+     * Unit Test: com.example.BillingManagerTest (100% SUKSES / PASS).
+     * Terverifikasi mendukung License Testing Google Play Console.
+   - Keterbatasan:
+     Verifikasi transaksi uang riil di Google Play Production baru dapat dilakukan setelah
+     lulus masa Closed Testing 14 hari. Pada Closed Testing, tester wajib menggunakan akun
+     email yang telah didaftarkan dalam daftar "License Testing" Play Console.
+
+4. PERBAIKAN CAMERA OCR STRUK & PEMISAHAN NILAI PAJAK / DISKON
+   - Perilaku Sebelum Perbaikan (v1.0.7):
+     Pemindaian struk berbasis AI/OCR terkadang menyatukan item diskon dan pajak ke dalam
+     deskripsi item utama, menyebabkan total belanja tidak sinkron dengan subtotal.
+     Rotasi layar saat pemindaian kamera dapat menyebabkan context input dialog ter-reset.
+   - Perubahan Sesudah Perbaikan (v1.0.8):
+     * ReceiptAiOcrScanner dilengkapi filter regex cerdas untuk mendeteksi baris diskon
+       (potongan harga) dan pajak (PPN/PB1) secara terpisah.
+     * State navigasi kamera diisolasi agar tidak menghapus draft transaksi yang sedang diinput.
+   - Komponen / File Terkait:
+     * com.example.util.ReceiptAiOcrScanner
+     * com.example.util.ReceiptFormatter
+     * com.example.ui.screens.AddTransactionDialog
+     * com.example.ui.screens.CameraCaptureActivity
+   - Bukti Implementasi & Pengujian:
+     * Unit Test: ReceiptLiteralOcrTest.
+     * Berhasil lolos proses compile dan packaging R8.
+
+5. KALKULATOR PELUNASAN CICILAN & MANAJEMEN HUTANG (DEBT FREEDOM PLANNER)
+   - Perilaku Sebelum Perbaikan (v1.0.7):
+     Modul pencatatan hutang/piutang dan cicilan PayLater hanya menyediakan daftar statis
+     tanpa simulasi strategi pelunasan.
+   - Perubahan Sesudah Perbaikan (v1.0.8):
+     * Diintegrasikan DebtFreedomPlanner yang menyediakan rekomendasi pelunasan metode
+       Snowball dan Avalanche.
+     * Perhitungan tanggal jatuh tempo dan estimasi bunga cicilan diperbaiki menggunakan
+       InstallmentDateHelper.
+   - Komponen / File Terkait:
+     * com.example.util.DebtFreedomPlanner
+     * com.example.util.InstallmentDateHelper
+     * com.example.data.local.InstallmentPlanDao
+     * com.example.ui.screens.DebtPlannerModalDialog
+   - Bukti Implementasi & Pengujian:
+     * Unit Test: DebtPriorityAndFreedomPlannerTest.
+
+6. OPTIMASI R8 PROGUARD & PRODUCTION ADMOB CONFIGURATION
+   - Perilaku Sebelum Perbaikan (v1.0.7):
+     Build bundle masih menyertakan beberapa rule ProGuard debug dan ID AdMob pengujian.
+   - Perubahan Sesudah Perbaikan (v1.0.8):
+     * Konfigurasi build release otomatis mengaktifkan parameter `isPlayTarget = true`
+       (-PplayStoreBuild=true), menyuntikkan ID AdMob produksi resmi, mengaktifkan optimasi
+       R8 full minification, serta mengemas symbol table NDK/debugSymbolLevel = "FULL".
+   - Komponen / File Terkait:
+     * app/build.gradle.kts
+     * app/proguard-rules.pro
+     * local.properties
+
+--------------------------------------------------------------------------------
+BAGIAN B — CHANGELOG RINGKAS UNTUK TESTER (CATATAN RILIS CLOSED TESTING GOOGLE PLAY)
+--------------------------------------------------------------------------------
+
+Catatan Rilis DompetNalar Versi 1.0.8 (Closed Testing)
+Bahasa: Indonesia
+
+Apa yang baru di versi 1.0.8:
+1. Peningkatan Keamanan & Logout: Sesi akun kini dibersihkan secara menyeluruh saat keluar, menjaga privasi data keuangan Anda tetap aman di perangkat bersama.
+2. Cadangan Google Drive Lebih Terkendali: Cadangan data ke Google Drive kini hanya berjalan saat Anda memilih tombol "Cadangkan Sekarang", menghemat kuota dan memastikan kendali penuh di tangan Anda.
+3. Pemulihan Fitur Smart Master Otomatis: Status langganan Smart Master kini otomatis diperiksa dan dipulihkan saat membuka aplikasi atau masuk kembali.
+4. Pemindaian Struk (OCR) Lebih Akurat: Deteksi nilai diskon, pajak, dan rincian barang pada struk belanja belanja kini lebih rapi dan presisi.
+5. Perencana Bebas Hutang & Cicilan: Tambahan kalkulator dan simulasi pelunasan hutang cerdas untuk membantu Anda melunasi cicilan lebih cepat dan teratur.
+6. Peningkatan Performa & Stabilitas: Optimalisasi performa aplikasi dan perbaikan bug minor untuk pengalaman mencatat keuangan yang lebih responsif.
+
+Terima kasih telah berpartisipasi dalam pengujian Closed Testing DompetNalar!
+================================================================================

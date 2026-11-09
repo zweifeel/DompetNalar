@@ -1,4 +1,6 @@
 package com.example.ui.screens
+import com.example.util.AppStrings
+import com.example.util.LocaleHelper
 
 import android.Manifest
 import android.content.Context
@@ -40,8 +42,12 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Payments
@@ -98,6 +104,7 @@ import com.example.data.model.CategoryItem
 import com.example.data.model.ReceiptItem
 import com.example.data.model.ReceiptScanResult
 import com.example.data.model.TaxTreatment
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
 import com.example.ui.theme.FinSmartPrimary
@@ -105,6 +112,7 @@ import com.example.ui.theme.IncomeGreen
 import com.example.util.CurrencyFormatter
 import com.example.util.ReceiptCalculator
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,7 +137,9 @@ fun ReceiptScanScreen(
         targetWalletName: String?,
         timestamp: Long,
         note: String,
-        tags: String
+        tags: String,
+        onSuccess: (() -> Unit)?,
+        onError: ((String) -> Unit)?
     ) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -141,6 +151,9 @@ fun ReceiptScanScreen(
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var isScanning by remember { mutableStateOf(false) }
     var scanErrorMessage by remember { mutableStateOf<String?>(null) }
+    var activeScanToken by remember { mutableStateOf(0L) }
+    var tempCameraUriString by rememberSaveable { mutableStateOf<String?>(null) }
+    val tempCameraUri = tempCameraUriString?.let { Uri.parse(it) }
 
     // Form fields for editing scanned receipt
     var editMerchantName by remember { mutableStateOf("") }
@@ -153,6 +166,7 @@ fun ReceiptScanScreen(
     var editTotalAmount by remember { mutableStateOf(0.0) }
     var editTaxTreatment by remember { mutableStateOf(TaxTreatment.UNKNOWN) }
     var editItems by remember { mutableStateOf<List<ReceiptItem>>(emptyList()) }
+    var editRawText by remember { mutableStateOf("") }
     var selectedWallet by remember { mutableStateOf(wallets.firstOrNull()) }
 
     // Add/Edit Item Dialog state
@@ -178,6 +192,7 @@ fun ReceiptScanScreen(
         editTaxTreatment = result.taxTreatment
         editTotalAmount = result.totalAmount
         editItems = result.items
+        editRawText = result.rawText ?: ""
         selectedWallet = wallets.firstOrNull()
     }
 
@@ -206,29 +221,111 @@ fun ReceiptScanScreen(
             return
         }
 
+        if (isScanning) return // Cegah eksekusi ganda jika tombol ditekan berulang
+
+        val token = System.currentTimeMillis()
+        activeScanToken = token
+
         coroutineScope.launch {
             isScanning = true
             scanErrorMessage = null
             try {
-                val result = ReceiptAiOcrScanner.scanReceiptImage(context, uri, bitmap)
-                syncScanResultToForm(result)
-                Toast.makeText(context, "Nota '${result.merchantName}' berhasil dianalisis AI!", Toast.LENGTH_SHORT).show()
+                // Batasi waktu pemindaian nota hingga maksimal 60 detik (P1 Timeout Requirement)
+                val result = withTimeoutOrNull(60_000L) {
+                    ReceiptAiOcrScanner.scanReceiptImage(context, uri, bitmap)
+                }
+                if (activeScanToken == token) {
+                    if (result != null) {
+                        syncScanResultToForm(result)
+                        Toast.makeText(context, "${com.example.util.AppStrings.t("Nota", "Receipt")} '${result.merchantName}' ${com.example.util.AppStrings.t("berhasil ditranskripsikan!", "transcribed successfully!")}", Toast.LENGTH_SHORT).show()
+                    } else {
+                        scanErrorMessage = if (com.example.util.LocaleHelper.isEnglish()) {
+                            "Receipt scan timed out (60-second limit). Please ensure the receipt is well-lit, clearly readable, and try again."
+                        } else {
+                            "Pemindaian nota melebihi batas waktu (60 detik). Pastikan gambar nota jelas, teks terbaca, dan pencahayaan cukup, lalu coba lagi."
+                        }
+                    }
+                }
             } catch (e: Exception) {
-                scanErrorMessage = e.message ?: "Gagal memproses nota. Silakan periksa koneksi atau API Key."
+                if (activeScanToken == token) {
+                    scanErrorMessage = e.message ?: "Gagal mentranskripsi nota. Pastikan gambar nota jelas dan pencahayaan cukup."
+                }
             } finally {
-                isScanning = false
+                if (activeScanToken == token) {
+                    isScanning = false
+                }
             }
         }
     }
 
-    // Camera Capture Launcher
+    // Camera Capture Launcher dengan verifikasi FileProvider & fallback hasil
     val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            capturedBitmap = bitmap
-            selectedImageUri = null
-            processReceipt(bitmap, null)
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = tempCameraUriString?.let { Uri.parse(it) }
+        val hasFileContent = if (uri != null) {
+            try {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                    pfd.statSize > 0
+                } ?: false
+            } catch (e: Exception) {
+                false
+            }
+        } else false
+
+        if (result.resultCode == android.app.Activity.RESULT_OK || hasFileContent) {
+            if (uri != null && hasFileContent) {
+                selectedImageUri = uri
+                capturedBitmap = null
+                processReceipt(null, uri)
+            } else {
+                Toast.makeText(context, com.example.util.AppStrings.t("Foto dari kamera tidak tersimpan. Silakan coba lagi.", "Photo from camera was not saved. Please try again."), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, com.example.util.AppStrings.t("Pengambilan foto kamera dibatalkan.", "Camera photo capture cancelled."), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun launchCameraSafely() {
+        try {
+            val packageManager = context.packageManager
+            if (!packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY)) {
+                Toast.makeText(context, com.example.util.AppStrings.t("Perangkat tidak memiliki kamera. Silakan pilih foto dari galeri.", "Device does not have a camera. Please choose a photo from gallery."), Toast.LENGTH_LONG).show()
+                return
+            }
+
+            val tempFile = File.createTempFile("receipt_capture_", ".jpg", context.cacheDir)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
+            tempCameraUriString = uri.toString()
+
+            val cameraIntent = android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = android.content.ClipData.newRawUri("receipt_capture", uri)
+            }
+
+            val resolvedActivities = packageManager.queryIntentActivities(
+                cameraIntent,
+                android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
+            )
+            for (resInfo in resolvedActivities) {
+                val pkgName = resInfo.activityInfo.packageName
+                context.grantUriPermission(
+                    pkgName,
+                    uri,
+                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+
+            if (cameraIntent.resolveActivity(packageManager) != null || resolvedActivities.isNotEmpty()) {
+                cameraLauncher.launch(cameraIntent)
+            } else {
+                Toast.makeText(context, com.example.util.AppStrings.t("Aplikasi kamera tidak ditemukan di perangkat ini. Silakan pilih foto dari galeri.", "Camera app not found on this device. Please choose a photo from gallery."), Toast.LENGTH_LONG).show()
+            }
+        } catch (e: android.content.ActivityNotFoundException) {
+            Toast.makeText(context, com.example.util.AppStrings.t("Aplikasi kamera tidak ditemukan di perangkat ini. Silakan pilih foto dari galeri.", "Camera app not found on this device. Please choose a photo from gallery."), Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "${com.example.util.AppStrings.t("Gagal menyiapkan kamera:", "Failed to initialize camera:")} ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -237,9 +334,9 @@ fun ReceiptScanScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            cameraLauncher.launch(null)
+            launchCameraSafely()
         } else {
-            Toast.makeText(context, "Izin kamera diperlukan untuk mengambil foto nota.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, com.example.util.AppStrings.t("Izin kamera diperlukan untuk mengambil foto nota.", "Camera permission is required to take receipt photos."), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -260,7 +357,7 @@ fun ReceiptScanScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Scan Nota",
+                            text = AppStrings.t("Scan Nota", "Scan Receipt"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
@@ -270,7 +367,7 @@ fun ReceiptScanScreen(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "GEMINI OCR",
+                                text = "DOMPETNALAR OCR",
                                 color = Color.White,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -319,13 +416,13 @@ fun ReceiptScanScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Scan Nota Otomatis & Rinci",
+                                    text = AppStrings.t("Scan Nota Otomatis & Rinci", "Automatic & Detailed Receipt Scan"),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = "Foto nota belanjaanmu, AI mengekstrak item & total secara instan.",
+                                    text = AppStrings.t("Foto nota belanjaanmu, AI mengekstrak item & total secara instan.", "Take a photo of your receipt, AI instantly extracts items & total."),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                 )
@@ -344,9 +441,13 @@ fun ReceiptScanScreen(
                     // Camera Button
                     Button(
                         onClick = {
+                            if (!isUnlocked) {
+                                onTriggerPaywall()
+                                return@Button
+                            }
                             val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
                             if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-                                cameraLauncher.launch(null)
+                                launchCameraSafely()
                             } else {
                                 cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                             }
@@ -360,12 +461,16 @@ fun ReceiptScanScreen(
                     ) {
                         Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Foto Kamera", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(AppStrings.t("Foto Kamera", "Camera Photo"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
 
                     // Gallery Button
                     OutlinedButton(
                         onClick = {
+                            if (!isUnlocked) {
+                                onTriggerPaywall()
+                                return@OutlinedButton
+                            }
                             photoPickerLauncher.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
@@ -378,7 +483,7 @@ fun ReceiptScanScreen(
                     ) {
                         Icon(Icons.Default.Collections, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Dari Galeri", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(AppStrings.t("Dari Galeri", "From Gallery"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -387,18 +492,18 @@ fun ReceiptScanScreen(
             item {
                 Column {
                     Text(
-                        text = "Atau coba contoh nota struk siap scan:",
+                        text = AppStrings.t("Atau coba contoh simulasi nota (Demo):", "Or try sample receipt simulations (Demo):"),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Surface(
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.05f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     val preset = ReceiptAiOcrScanner.generateRealisticReceiptFallback(presetType = 0)
@@ -409,18 +514,19 @@ fun ReceiptScanScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Default.LocalCafe, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Cafe/Kopi", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Icon(Icons.Default.LocalCafe, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Cafe/Kopi", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                             }
                         }
 
                         Surface(
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.18f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     val preset = ReceiptAiOcrScanner.generateRealisticReceiptFallback(presetType = 1)
@@ -431,18 +537,19 @@ fun ReceiptScanScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Indomaret", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Indomaret", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                             }
                         }
 
                         Surface(
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(0.77f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     val preset = ReceiptAiOcrScanner.generateRealisticReceiptFallback(presetType = 2)
@@ -453,12 +560,13 @@ fun ReceiptScanScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Default.Restaurant, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Momoyo", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Icon(Icons.Default.Restaurant, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Momoyo", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                             }
                         }
                     }
@@ -485,14 +593,14 @@ fun ReceiptScanScreen(
                             CircularProgressIndicator(color = FinSmartPrimary, modifier = Modifier.size(36.dp), strokeWidth = 3.dp)
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
-                                text = "Menganalisis Struk dengan Gemini Vision AI...",
+                                text = AppStrings.t("Menganalisis Struk dengan DompetNalar OCR...", "Analyzing Receipt with DompetNalar OCR..."),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 14.sp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Mengonversi gambar & mengekstrak item, tanggal, pajak & total.",
+                                text = AppStrings.t("Mengonversi gambar & mengekstrak item, tanggal, pajak & total.", "Converting image & extracting items, date, tax & total."),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -552,20 +660,21 @@ fun ReceiptScanScreen(
                                         }
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                    shape = RoundedCornerShape(10.dp)
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.testTag("btn_retry_receipt_scan")
                                 ) {
-                                    Text("Coba Ulang", fontSize = 12.sp)
+                                    Text(com.example.util.AppStrings.retry, fontSize = 12.sp)
                                 }
                                 OutlinedButton(
                                     onClick = {
                                         scanErrorMessage = null
-                                        // Load example preset
-                                        val fallback = ReceiptAiOcrScanner.generateRealisticReceiptFallback(presetType = 1)
-                                        syncScanResultToForm(fallback)
+                                        photoPickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
                                     },
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Text("Gunakan Contoh", fontSize = 12.sp)
+                                    Text(AppStrings.t("Pilih Foto Lain", "Choose Another Photo"), fontSize = 12.sp)
                                 }
                                 TextButton(
                                     onClick = { scanErrorMessage = null }
@@ -644,7 +753,7 @@ fun ReceiptScanScreen(
                                     contentDescription = "Nota yang di-scan",
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(120.dp)
+                                        .height(140.dp)
                                         .clip(RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
@@ -657,18 +766,87 @@ fun ReceiptScanScreen(
                                     contentDescription = "Nota yang di-scan",
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(120.dp)
+                                        .height(140.dp)
                                         .clip(RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
 
+                            // Transkripsi Literal Teks Asli Terbaca
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("card_transcription_result"),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Description,
+                                                contentDescription = null,
+                                                tint = FinSmartPrimary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Transkripsi Teks Asli (Literal OCR)",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                        TextButton(
+                                            onClick = {
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                                val clip = android.content.ClipData.newPlainText(AppStrings.t("Transkripsi Nota DompetNalar", "DompetNalar Receipt Transcription"), editRawText)
+                                                clipboard.setPrimaryClip(clip)
+                                                Toast.makeText(context, "Teks nota berhasil disalin ke clipboard!", Toast.LENGTH_SHORT).show()
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ContentCopy,
+                                                contentDescription = "Salin",
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Salin Teks", fontSize = 11.sp)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Hasil pembacaan teks apa adanya dari foto nota (tanpa penafsiran atau rekaan AI):",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = editRawText,
+                                        onValueChange = { editRawText = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .testTag("input_raw_transcription_text"),
+                                        maxLines = 8,
+                                        shape = RoundedCornerShape(10.dp),
+                                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, lineHeight = 16.sp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
                             // Form Edit: Merchant Name & Date
                             OutlinedTextField(
                                 value = editMerchantName,
                                 onValueChange = { editMerchantName = it },
-                                label = { Text("Nama Toko / Restoran") },
+                                label = { Text(AppStrings.t("Nama Toko / Restoran", "Store / Restaurant Name")) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp)
                             )
@@ -682,7 +860,7 @@ fun ReceiptScanScreen(
                                 OutlinedTextField(
                                     value = editDate,
                                     onValueChange = { editDate = it },
-                                    label = { Text("Tanggal") },
+                                    label = { Text(AppStrings.date) },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp)
                                 )
@@ -690,7 +868,7 @@ fun ReceiptScanScreen(
                                 OutlinedTextField(
                                     value = editCategory,
                                     onValueChange = { editCategory = it },
-                                    label = { Text("Kategori") },
+                                    label = { Text(AppStrings.category) },
                                     modifier = Modifier.weight(1.2f),
                                     shape = RoundedCornerShape(12.dp)
                                 )
@@ -722,7 +900,7 @@ fun ReceiptScanScreen(
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Tambah Item", fontSize = 12.sp)
+                                    Text(AppStrings.t("Tambah Item", "Add Item"), fontSize = 12.sp)
                                 }
                             }
 
@@ -792,7 +970,7 @@ fun ReceiptScanScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Subtotal Item:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(AppStrings.t("Subtotal Item:", "Item Subtotal:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(CurrencyFormatter.formatRupiah(editSubtotal), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                             }
 
@@ -824,7 +1002,7 @@ fun ReceiptScanScreen(
                                             editTaxTreatment = TaxTreatment.INCLUSIVE
                                             recalculateTotals(editItems, editTax, editService, editDiscount, TaxTreatment.INCLUSIVE)
                                         },
-                                        label = { Text("Pajak Termasuk (Inklusif)", fontSize = 10.sp) },
+                                        label = { Text(AppStrings.t("Pajak Termasuk (Inklusif)", "Tax Included (Inclusive)"), fontSize = 10.sp) },
                                         modifier = Modifier.testTag("chip_tax_inclusive")
                                     )
                                     FilterChip(
@@ -833,7 +1011,7 @@ fun ReceiptScanScreen(
                                             editTaxTreatment = TaxTreatment.EXCLUSIVE
                                             recalculateTotals(editItems, editTax, editService, editDiscount, TaxTreatment.EXCLUSIVE)
                                         },
-                                        label = { Text("Pajak Tambahan (Eksklusif)", fontSize = 10.sp) },
+                                        label = { Text(AppStrings.t("Pajak Tambahan (Eksklusif)", "Additional Tax (Exclusive)"), fontSize = 10.sp) },
                                         modifier = Modifier.testTag("chip_tax_exclusive")
                                     )
                                 }
@@ -845,7 +1023,7 @@ fun ReceiptScanScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Biaya Layanan / Service:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(AppStrings.t("Biaya Layanan / Service:", "Service Fee:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(CurrencyFormatter.formatRupiah(editService), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             }
@@ -857,7 +1035,7 @@ fun ReceiptScanScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Potongan Diskon:", fontSize = 12.sp, color = IncomeGreen)
+                                    Text(AppStrings.t("Potongan Diskon:", "Discount:"), fontSize = 12.sp, color = IncomeGreen)
                                     IconButton(
                                         onClick = {
                                             editingDiscountText = if (editDiscount > 0) editDiscount.toLong().toString() else ""
@@ -877,7 +1055,7 @@ fun ReceiptScanScreen(
                                             isDiscountDialogOpen = true
                                         }
                                     ) {
-                                        Text("+ Tambah Diskon", fontSize = 11.sp, color = IncomeGreen)
+                                        Text(AppStrings.t("+ Tambah Diskon", "+ Add Discount"), fontSize = 11.sp, color = IncomeGreen)
                                     }
                                 }
                             }
@@ -917,7 +1095,7 @@ fun ReceiptScanScreen(
                                     val cleaned = input.filter { it.isDigit() }
                                     editTotalAmount = cleaned.toDoubleOrNull() ?: 0.0
                                 },
-                                label = { Text("Total Akhir Transaksi (Bisa diedit/ketik ulang)") },
+                                label = { Text(AppStrings.t("Total Akhir Transaksi", "Final Transaction Total")) },
                                 placeholder = { Text("Rp 0") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier
@@ -929,17 +1107,18 @@ fun ReceiptScanScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             // Source Wallet Selection
-                            Text("Pilih Sumber Dana (Dompet):", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(AppStrings.t("Pilih Sumber Dana (Dompet):", "Select Source Wallet:"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                             Spacer(modifier = Modifier.height(6.dp))
-                            Row(
+                            androidx.compose.foundation.lazy.LazyRow(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                wallets.forEach { w ->
+                                items(wallets.size) { index ->
+                                    val w = wallets[index]
                                     FilterChip(
                                         selected = selectedWallet?.id == w.id,
                                         onClick = { selectedWallet = w },
-                                        label = { Text(w.name, fontSize = 11.sp) },
+                                        label = { Text(w.name, fontSize = 11.sp, maxLines = 1, softWrap = false) },
                                         colors = FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = FinSmartPrimary,
                                             selectedLabelColor = Color.White
@@ -958,33 +1137,45 @@ fun ReceiptScanScreen(
                                 // Save to Transaction Button
                                 Button(
                                     onClick = {
+                                        if (!isUnlocked) {
+                                            onTriggerPaywall()
+                                            return@Button
+                                        }
                                         if (editTotalAmount <= 0.0) {
-                                            Toast.makeText(context, "Total transaksi harus lebih dari Rp 0.", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, if (LocaleHelper.isEnglish()) "Total amount must be greater than 0." else "Total transaksi harus lebih dari Rp 0.", Toast.LENGTH_SHORT).show()
                                             return@Button
                                         }
                                         val wallet = selectedWallet ?: wallets.firstOrNull()
-                                        if (wallet != null) {
-                                            val itemNotes = editItems.joinToString("\n") { "• ${it.qty}x ${it.name} (${CurrencyFormatter.formatRupiah(it.total)})" }
-                                            val discountNote = if (editDiscount > 0) ", Diskon: ${CurrencyFormatter.formatRupiah(editDiscount)}" else ""
-                                            val fullNote = "Nota: $editMerchantName\n$itemNotes\nSubtotal: ${CurrencyFormatter.formatRupiah(editSubtotal)}, Pajak: ${CurrencyFormatter.formatRupiah(editTax)}$discountNote"
-
-                                            onSaveTransaction(
-                                                editMerchantName.ifBlank { "Belanja Struk" },
-                                                editTotalAmount,
-                                                TransactionType.EXPENSE,
-                                                editCategory,
-                                                result.categoryIcon,
-                                                wallet.id,
-                                                wallet.name,
-                                                null,
-                                                null,
-                                                System.currentTimeMillis(),
-                                                fullNote,
-                                                "#scan #nota #${editCategory.split(" ").first().lowercase()}"
-                                            )
-                                            Toast.makeText(context, "Transaksi pengeluaran nota berhasil disimpan!", Toast.LENGTH_LONG).show()
-                                            onNavigateBack()
+                                        if (wallet == null) {
+                                            Toast.makeText(context, if (LocaleHelper.isEnglish()) "No wallet available. Please add a wallet in the Wallets menu first." else "Tidak ada dompet yang tersedia. Silakan tambahkan dompet di menu Dompet terlebih dahulu.", Toast.LENGTH_LONG).show()
+                                            return@Button
                                         }
+
+                                        val itemNotes = editItems.joinToString("\n") { "• ${it.qty}x ${it.name} (${CurrencyFormatter.formatRupiah(it.total)})" }
+                                        val discountNote = if (editDiscount > 0) ", Diskon: ${CurrencyFormatter.formatRupiah(editDiscount)}" else ""
+                                        val fullNote = "Nota: $editMerchantName\n$itemNotes\nSubtotal: ${CurrencyFormatter.formatRupiah(editSubtotal)}, Pajak: ${CurrencyFormatter.formatRupiah(editTax)}$discountNote"
+
+                                        onSaveTransaction(
+                                            editMerchantName.ifBlank { "Belanja Struk" },
+                                            editTotalAmount,
+                                            TransactionType.EXPENSE,
+                                            editCategory,
+                                            result.categoryIcon,
+                                            wallet.id,
+                                            wallet.name,
+                                            null,
+                                            null,
+                                            System.currentTimeMillis(),
+                                            fullNote,
+                                            "#scan #nota #${editCategory.split(" ").first().lowercase()}",
+                                            {
+                                                Toast.makeText(context, if (LocaleHelper.isEnglish()) "Receipt transaction successfully saved!" else "Transaksi pengeluaran nota berhasil disimpan!", Toast.LENGTH_LONG).show()
+                                                onNavigateBack()
+                                            },
+                                            { errMsg ->
+                                                Toast.makeText(context, errMsg, Toast.LENGTH_LONG).show()
+                                            }
+                                        )
                                     },
                                     modifier = Modifier
                                         .weight(1f)
@@ -995,7 +1186,7 @@ fun ReceiptScanScreen(
                                 ) {
                                     Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Simpan Mutasi", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text(AppStrings.t("Simpan Transaksi", "Save Transaction"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
 
                                 // Split Bill AI Button
@@ -1024,7 +1215,7 @@ fun ReceiptScanScreen(
                                 ) {
                                     Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Split Bill", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text(AppStrings.t("Split Bill", "Split Bill"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -1044,7 +1235,7 @@ fun ReceiptScanScreen(
                     OutlinedTextField(
                         value = editingItemName,
                         onValueChange = { editingItemName = it },
-                        label = { Text("Nama Item / Makanan") },
+                        label = { Text(AppStrings.t("Nama Item / Makanan", "Item / Food Name")) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1058,7 +1249,7 @@ fun ReceiptScanScreen(
                         OutlinedTextField(
                             value = editingItemPrice,
                             onValueChange = { editingItemPrice = it },
-                            label = { Text("Harga Satuan (Rp)") },
+                            label = { Text(AppStrings.t("Harga Satuan", "Unit Price")) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(2f)
                         )
@@ -1090,12 +1281,12 @@ fun ReceiptScanScreen(
                         }
                     }
                 ) {
-                    Text("Simpan")
+                    Text(com.example.util.AppStrings.t("Simpan", "Save"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isItemDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -1105,13 +1296,13 @@ fun ReceiptScanScreen(
     if (isDiscountDialogOpen) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { isDiscountDialogOpen = false },
-            title = { Text("Edit Potongan Diskon / Voucher", fontWeight = FontWeight.Bold) },
+            title = { Text(AppStrings.t("Edit Potongan Diskon / Voucher", "Edit Discount / Voucher"), fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = editingDiscountText,
                     onValueChange = { editingDiscountText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Nominal Diskon (Rp)") },
-                    placeholder = { Text("Contoh: 10600") },
+                    label = { Text(AppStrings.t("Nominal Diskon", "Discount Amount")) },
+                    placeholder = { Text(com.example.util.AppStrings.t("Contoh: 10600", "e.g. 10600")) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth().testTag("input_edit_discount")
                 )
@@ -1125,12 +1316,12 @@ fun ReceiptScanScreen(
                         isDiscountDialogOpen = false
                     }
                 ) {
-                    Text("Terapkan")
+                    Text(AppStrings.t("Terapkan", "Apply"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isDiscountDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )

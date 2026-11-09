@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,6 +63,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -74,12 +77,14 @@ import com.example.ui.theme.IncomeGreen
 fun AuthModalDialog(
     pendingOtpCode: String?,
     authError: String?,
+    isGoogleLoading: Boolean = false,
     onDismiss: () -> Unit,
     onLogin: (identifier: String, pass: String) -> Unit,
     onSendOtp: (email: String) -> Unit,
     onVerifyOtpAndRegister: (username: String, email: String, pass: String, otp: String) -> Unit,
     onGoogleLogin: () -> Unit,
-    onGuestLogin: () -> Unit
+    onGuestLogin: () -> Unit,
+    onClearError: (() -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -96,7 +101,11 @@ fun AuthModalDialog(
     var isOtpSent by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (!isGoogleLoading) {
+                onDismiss()
+            }
+        },
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surface,
@@ -119,7 +128,7 @@ fun AuthModalDialog(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = if (isLoginTab) "Masuk ke FinSmart" else "Daftar Akun Baru",
+                text = if (isLoginTab) AppStrings.t("Masuk ke DompetNalar", "Log In to DompetNalar") else "Daftar Akun Baru",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -158,7 +167,7 @@ fun AuthModalDialog(
                     },
                     text = {
                         Text(
-                            "Masuk (Login)",
+                            AppStrings.t("Masuk (Login)", "Log In"),
                             fontWeight = if (isLoginTab) FontWeight.Bold else FontWeight.Normal,
                             color = if (isLoginTab) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -169,7 +178,7 @@ fun AuthModalDialog(
                     onClick = { isLoginTab = false },
                     text = {
                         Text(
-                            "Daftar Akun",
+                            AppStrings.t("Daftar Akun", "Register"),
                             fontWeight = if (!isLoginTab) FontWeight.Bold else FontWeight.Normal,
                             color = if (!isLoginTab) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -184,8 +193,8 @@ fun AuthModalDialog(
                 OutlinedTextField(
                     value = identifier,
                     onValueChange = { identifier = it },
-                    label = { Text("Email atau Username") },
-                    placeholder = { Text("misal: user123 atau nama@email.com") },
+                    label = { Text(com.example.util.AppStrings.t("Email atau Username", "Email or Username")) },
+                    placeholder = { Text(com.example.util.AppStrings.t("misal: user123 atau nama@email.com", "e.g. user123 or name@email.com")) },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
@@ -199,7 +208,7 @@ fun AuthModalDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Kata Sandi") },
+                    label = { Text(com.example.util.AppStrings.t("Kata Sandi", "Password")) },
                     placeholder = { Text("••••••••") },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
@@ -232,7 +241,7 @@ fun AuthModalDialog(
                         .testTag("btn_submit_login"),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Masuk Sekarang", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(com.example.util.AppStrings.t("Masuk Sekarang", "Sign In Now"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
             } else {
                 // REGISTRATION FORM WITH OTP VERIFICATION
@@ -240,8 +249,8 @@ fun AuthModalDialog(
                     OutlinedTextField(
                         value = regUsername,
                         onValueChange = { regUsername = it },
-                        label = { Text("Nama Lengkap / Panggilan") },
-                        placeholder = { Text("misal: Nama Lengkap") },
+                        label = { Text(com.example.util.AppStrings.t("Nama Lengkap / Panggilan", "Full Name / Nickname")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("misal: Nama Lengkap", "e.g. Full Name")) },
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
@@ -255,7 +264,7 @@ fun AuthModalDialog(
                     OutlinedTextField(
                         value = regEmail,
                         onValueChange = { regEmail = it },
-                        label = { Text("Alamat Email") },
+                        label = { Text(com.example.util.AppStrings.t("Alamat Email", "Email Address")) },
                         placeholder = { Text("nama@email.com") },
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -271,7 +280,7 @@ fun AuthModalDialog(
                     OutlinedTextField(
                         value = regPassword,
                         onValueChange = { regPassword = it },
-                        label = { Text("Buat Kata Sandi") },
+                        label = { Text(com.example.util.AppStrings.t("Buat Kata Sandi", "Create Password")) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
@@ -296,7 +305,7 @@ fun AuthModalDialog(
                             .testTag("btn_send_otp"),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Kirim Kode OTP Verifikasi", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(com.example.util.AppStrings.t("Kirim Kode OTP Verifikasi", "Send Verification OTP Code"), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 } else {
                     // OTP VERIFICATION STEP
@@ -334,7 +343,7 @@ fun AuthModalDialog(
                     OutlinedTextField(
                         value = regOtp,
                         onValueChange = { regOtp = it.filter { ch -> ch.isDigit() }.take(6) },
-                        label = { Text("Masukkan 6-Digit Kode OTP") },
+                        label = { Text(com.example.util.AppStrings.t("Masukkan 6-Digit Kode OTP", "Enter 6-Digit OTP Code")) },
                         placeholder = { Text("123456") },
                         leadingIcon = { Icon(Icons.Default.Security, contentDescription = null) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -357,21 +366,14 @@ fun AuthModalDialog(
                             .testTag("btn_verify_otp_submit"),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Verifikasi & Aktifkan Akun", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(com.example.util.AppStrings.t("Verifikasi & Aktifkan Akun", "Verify & Activate Account"), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
 
                     TextButton(onClick = { isOtpSent = false }) {
-                        Text("← Ubah Email / Data", fontSize = 12.sp)
+                        Text(com.example.util.AppStrings.t("← Ubah Email / Data", "← Change Email / Data"), fontSize = 12.sp)
                     }
                 }
             }
-
-            authError?.let { err ->
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(text = err, color = ExpenseRed, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
 
             // Divider Or
             Row(
@@ -392,13 +394,85 @@ fun AuthModalDialog(
             // Google OAuth & Guest Mode options
             OutlinedButton(
                 onClick = onGoogleLogin,
+                enabled = !isGoogleLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .testTag("btn_google_oauth"),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Masuk dengan Akun Google", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                if (isGoogleLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(com.example.util.AppStrings.t("Menghubungkan Akun Google...", "Connecting Google Account..."), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                } else {
+                    Text(com.example.util.AppStrings.t("Masuk dengan Akun Google", "Sign In with Google Account"), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
+            }
+
+            authError?.let { err ->
+                Spacer(modifier = Modifier.height(14.dp))
+                Surface(
+                    color = ExpenseRed.copy(alpha = 0.08f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = ExpenseRed,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Kendala Autentikasi / Google Sign-In",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ExpenseRed
+                                )
+                            }
+                            if (onClearError != null) {
+                                IconButton(
+                                    onClick = onClearError,
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Tutup pesan",
+                                        tint = ExpenseRed,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = err,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -408,7 +482,7 @@ fun AuthModalDialog(
                 modifier = Modifier.testTag("btn_guest_mode")
             ) {
                 Text(
-                    "Coba Gratis Mode Tamu (Guest Mode 3 Hari)",
+                    "Coba Mode Tamu (Guest Mode)",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold

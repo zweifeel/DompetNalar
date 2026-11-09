@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,11 +43,14 @@ import com.example.ui.theme.ExpenseRed
 fun DeleteAccountDialog(
     currentUser: User?,
     onDismiss: () -> Unit,
+    errorMessage: String? = null,
     onConfirmDelete: (password: String) -> Boolean
 ) {
     var passwordInput by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var localErrorMessage by remember { mutableStateOf<String?>(null) }
+    val displayError = errorMessage ?: localErrorMessage
     val isGuest = currentUser == null || currentUser.isGuest
+    val requiresPassword = !isGuest && !currentUser.passwordHash.isNullOrBlank()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -62,7 +66,7 @@ fun DeleteAccountDialog(
                         tint = ExpenseRed
                     )
                     Text(
-                        text = "Hapus Akun & Data Permanen",
+                        text = AppStrings.t("Hapus Akun & Data Permanen", "Delete Account & Data Permanently"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         color = ExpenseRed
@@ -83,7 +87,7 @@ fun DeleteAccountDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "⚠️ PERINGATAN (Play Store Deletion Policy):",
+                            text = AppStrings.t("⚠️ PERINGATAN (Play Store Deletion Policy):", "⚠️ WARNING (Play Store Deletion Policy):"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = ExpenseRed
@@ -93,7 +97,7 @@ fun DeleteAccountDialog(
                             text = if (isGuest) {
                                 "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, dan data lokal sesi tamu akan dihapus secara permanen dari perangkat dan database."
                             } else {
-                                "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username}' akan dihapus secara permanen dari perangkat dan database."
+                                "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username ?: currentUser?.email}' akan dihapus secara permanen dari perangkat, database lokal, dan server cloud."
                             },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -105,14 +109,22 @@ fun DeleteAccountDialog(
 
                 if (isGuest) {
                     Text(
-                        text = "Sesi Mode Tamu tidak memerlukan kata sandi. Mengonfirmasi tindakan ini akan langsung menghapus seluruh riwayat mutasi, dompet, dan data lokal secara permanen dari perangkat.",
+                        text = AppStrings.t("Sesi Mode Tamu tidak memerlukan kata sandi. Mengonfirmasi tindakan ini akan langsung menghapus seluruh riwayat mutasi, dompet, dan data lokal secara permanen dari perangkat.", "Guest mode session does not require a password. Confirming will permanently delete all transaction history, wallets, and local data from this device."),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (!requiresPassword) {
+                    // Google Sign-In or OAuth account without local password
+                    Text(
+                        text = AppStrings.t("Akun Anda terhubung melalui Google Sign-In (${currentUser.email}). Tidak ada kata sandi lokal yang diperlukan. Mengonfirmasi tindakan ini akan menghapus akun Google Anda dari DompetNalar dan server cloud secara permanen beserta seluruh data keuangan lokal Anda.", "Your account is connected via Google Sign-In (${currentUser.email}). No local password required. Confirming will permanently delete your Google account and all local financial data from DompetNalar."),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     Text(
-                        text = "Konfirmasi Kata Sandi / PIN:",
+                        text = AppStrings.t("Konfirmasi Kata Sandi Akun:", "Confirm Account Password:"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -123,9 +135,9 @@ fun DeleteAccountDialog(
                         value = passwordInput,
                         onValueChange = {
                             passwordInput = it
-                            errorMessage = null
+                            localErrorMessage = null
                         },
-                        label = { Text("Masukkan kata sandi akun") },
+                        label = { Text(AppStrings.t("Masukkan kata sandi akun", "Enter account password")) },
                         placeholder = { Text("••••••••") },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         visualTransformation = PasswordVisualTransformation(),
@@ -137,7 +149,7 @@ fun DeleteAccountDialog(
                     )
                 }
 
-                errorMessage?.let { err ->
+                displayError?.let { err ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = err, color = ExpenseRed, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
@@ -146,24 +158,24 @@ fun DeleteAccountDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (!isGuest && passwordInput.isBlank()) {
-                        errorMessage = "Kata sandi wajib diisi untuk konfirmasi keamanan."
+                    if (requiresPassword && passwordInput.isBlank()) {
+                        localErrorMessage = "Kata sandi wajib diisi untuk konfirmasi keamanan."
                         return@Button
                     }
-                    val isSuccess = onConfirmDelete(if (isGuest) "" else passwordInput.trim())
-                    if (!isSuccess) {
-                        errorMessage = if (isGuest) "Penghapusan akun dibatalkan." else "Kata sandi salah. Penghapusan akun dibatalkan."
+                    val isSuccess = onConfirmDelete(if (requiresPassword) passwordInput.trim() else "")
+                    if (!isSuccess && localErrorMessage == null) {
+                        localErrorMessage = if (requiresPassword) "Kata sandi salah. Penghapusan akun dibatalkan." else "Gagal menghapus akun. Silakan coba beberapa saat lagi."
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                 modifier = Modifier.testTag("btn_confirm_delete_account_final")
             ) {
-                Text("Hapus Permanen", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(com.example.util.AppStrings.t("Hapus Permanen", "Delete Permanently"), color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(com.example.util.AppStrings.cancel)
             }
         }
     )

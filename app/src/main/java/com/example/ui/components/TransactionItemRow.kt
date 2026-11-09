@@ -42,6 +42,7 @@ import com.example.ui.theme.IncomeGreen
 import com.example.ui.theme.IncomeGreenDark
 import com.example.ui.theme.TransferBlue
 import com.example.util.CurrencyFormatter
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun TransactionItemRow(
@@ -64,95 +65,82 @@ fun TransactionItemRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: Category icon & details
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // Category Icon Circle
+            val iconBg = when (transaction.type) {
+                TransactionType.INCOME -> IncomeGreen.copy(alpha = 0.15f)
+                TransactionType.EXPENSE -> ExpenseRed.copy(alpha = 0.15f)
+                TransactionType.TRANSFER -> TransferBlue.copy(alpha = 0.15f)
+            }
+            val iconTint = when (transaction.type) {
+                TransactionType.INCOME -> IncomeGreenDark
+                TransactionType.EXPENSE -> ExpenseRedDark
+                TransactionType.TRANSFER -> TransferBlue
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(iconBg, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (transaction.type == TransactionType.TRANSFER) {
+                        Icons.Default.SwapHoriz
+                    } else {
+                        FinSmartIcons.getCategoryIcon(transaction.categoryIcon)
+                    },
+                    contentDescription = transaction.category,
+                    tint = iconTint,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Center details column with flex weight
+            Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Category Icon Circle
-                val iconBg = when (transaction.type) {
-                    TransactionType.INCOME -> IncomeGreen.copy(alpha = 0.15f)
-                    TransactionType.EXPENSE -> ExpenseRed.copy(alpha = 0.15f)
-                    TransactionType.TRANSFER -> TransferBlue.copy(alpha = 0.15f)
+                Text(
+                    text = transaction.title,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                val subtitle = if (transaction.type == TransactionType.TRANSFER) {
+                    "${transaction.walletName} → ${transaction.targetWalletName ?: "Dompet"} • ${CurrencyFormatter.formatRelativeDate(transaction.timestamp)}"
+                } else {
+                    "${transaction.category} • ${CurrencyFormatter.formatRelativeDate(transaction.timestamp)}"
                 }
-                val iconTint = when (transaction.type) {
-                    TransactionType.INCOME -> IncomeGreenDark
-                    TransactionType.EXPENSE -> ExpenseRedDark
-                    TransactionType.TRANSFER -> TransferBlue
-                }
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(iconBg, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (transaction.type == TransactionType.TRANSFER) {
-                            Icons.Default.SwapHoriz
-                        } else {
-                            FinSmartIcons.getCategoryIcon(transaction.categoryIcon)
-                        },
-                        contentDescription = transaction.category,
-                        tint = iconTint,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Text(
-                        text = transaction.title,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
-                    )
+                if (transaction.note.isNotBlank() || transaction.tags.isNotBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        // Category / Transfer tag
-                        Text(
-                            text = if (transaction.type == TransactionType.TRANSFER) {
-                                "${transaction.walletName} → ${transaction.targetWalletName ?: "Dompet"}"
-                            } else {
-                                transaction.category
-                            },
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "•",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = CurrencyFormatter.formatRelativeDate(transaction.timestamp),
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (transaction.note.isNotBlank() || transaction.tags.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = listOfNotNull(
-                                transaction.note.takeIf { it.isNotBlank() },
-                                transaction.tags.takeIf { it.isNotBlank() }
-                            ).joinToString(" "),
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1
-                        )
-                    }
+                    Text(
+                        text = listOfNotNull(
+                            transaction.note.takeIf { it.isNotBlank() },
+                            transaction.tags.takeIf { it.isNotBlank() }
+                        ).joinToString(" "),
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Right: Amount & Delete
             Row(
@@ -176,12 +164,15 @@ fun TransactionItemRow(
                         text = if (isPrivacyMode) "Rp •••••" else prefix + CurrencyFormatter.formatRupiah(transaction.amount),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = amountColor
+                        color = amountColor,
+                        maxLines = 1
                     )
                     Text(
                         text = transaction.walletName,
                         fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 

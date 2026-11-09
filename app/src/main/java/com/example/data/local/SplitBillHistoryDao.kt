@@ -64,7 +64,19 @@ interface SplitBillHistoryDao {
     @Query("SELECT COUNT(*) FROM split_bill_history WHERE userId = :userId")
     suspend fun getSplitBillHistoryCount(userId: Long): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertSplitBillHistory(item: SplitBillHistoryItem)
+
+    @androidx.room.Update
+    suspend fun updateSplitBillHistory(item: SplitBillHistoryItem): Int
+
+    @Query("SELECT * FROM split_bill_history WHERE userId IS NULL ORDER BY timestamp ASC")
+    suspend fun getLegacyNullOwnerHistory(): List<SplitBillHistoryItem>
+
+    @Query("UPDATE split_bill_history SET userId = :userId WHERE id = :id AND userId IS NULL")
+    suspend fun claimLegacySplitBillHistory(id: String, userId: Long): Int
+
+    @Query("UPDATE split_bill_history SET userId = :userId WHERE userId IS NULL")
+    suspend fun claimLegacySplitBills(userId: Long): Int
 
 }

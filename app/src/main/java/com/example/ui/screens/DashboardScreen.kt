@@ -1,4 +1,5 @@
 package com.example.ui.screens
+import com.example.util.LocaleHelper
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,6 +30,8 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import com.example.ui.theme.ExpenseRed
@@ -60,6 +63,7 @@ import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
 import com.example.ui.components.CashflowChartCard
+import com.example.ui.components.GuestReminderBanner
 import com.example.ui.components.MainBalanceCard
 import com.example.ui.components.QuickActionButtons
 import com.example.ui.components.TransactionItemRow
@@ -67,6 +71,8 @@ import com.example.ui.components.WalletsSection
 import com.example.ui.theme.FinSmartPrimary
 import com.example.ui.viewmodel.CashflowDataPoint
 import com.example.ui.viewmodel.TimeframeFilter
+import com.example.ui.viewmodel.CurrencyBalanceSummary
+import com.example.util.AppStrings
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,9 +80,9 @@ import com.example.util.ThemeEngine
 
 @Composable
 fun DashboardScreen(
-    totalBalance: Double,
-    totalIncome: Double,
-    totalExpense: Double,
+    totalBalance: Double?,
+    totalIncome: Double?,
+    totalExpense: Double?,
     accountMode: AccountMode,
     isPrivacyMode: Boolean,
     wallets: List<Wallet>,
@@ -103,9 +109,18 @@ fun DashboardScreen(
     onBadgeClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onOpenNotifications: () -> Unit = {},
+    onResolveUnassignedWallets: () -> Unit = {},
     profilePhotoUri: String? = null,
     budgetLimits: List<com.example.data.model.BudgetLimitItem> = emptyList(),
     currentMonthExpenses: List<com.example.data.model.TransactionItem> = emptyList(),
+    isGuestBannerVisible: Boolean = false,
+    onGuestBannerLoginGoogle: () -> Unit = {},
+    onGuestBannerDismiss: () -> Unit = {},
+    adRewardRemainingSeconds: Long = 0L,
+    multiCurrencyBalances: List<CurrencyBalanceSummary> = emptyList(),
+    activeDashboardCurrency: String? = null,
+    aggregationError: String? = null,
+    onSelectCurrency: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val wallpaperUri by ThemeEngine.customWallpaperUri.collectAsState()
@@ -152,7 +167,10 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(42.dp)
@@ -169,16 +187,17 @@ fun DashboardScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (!profilePhotoUri.isNullOrEmpty()) {
+                        val shouldShowPhoto = currentUser != null && !currentUser.isGuest && !profilePhotoUri.isNullOrEmpty()
+                        if (shouldShowPhoto) {
                             AsyncImage(
                                 model = profilePhotoUri,
-                                contentDescription = "Foto Profil",
+                                contentDescription = AppStrings.t("Foto Profil", "Profile Photo"),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
                             Text(
-                                text = (currentUser?.username?.take(1) ?: "F").uppercase(),
+                                text = (currentUser?.username?.take(1) ?: "D").uppercase(),
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
                                 fontSize = 16.sp
@@ -186,21 +205,24 @@ fun DashboardScreen(
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         // Header Flexbox Row (white-space nowrap style)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.testTag("header_user_greeting_row")
                         ) {
                             Text(
-                                text = "Halo, ${currentUser?.username ?: "Sobat FinSmart"}",
+                                text = "${AppStrings.t("Halo, ", "Hello, ")}${currentUser?.username ?: if (currentUser?.isGuest == true) AppStrings.t("Tamu DompetNalar", "DompetNalar Guest") else AppStrings.t("Sobat DompetNalar", "DompetNalar Friend")}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
 
-                            // Account Status & Badge Hierarchy
+                            // Account Status & Badge Hierarchy (Protected from overlapping notification button)
                             val role = currentUser?.role ?: com.example.data.model.UserRole.FREE_MEMBER
                             Surface(
                                 color = when (role) {
@@ -218,7 +240,7 @@ fun DashboardScreen(
                                     text = when (role) {
                                         com.example.data.model.UserRole.MASTER_DEV -> "MasterDev 👑"
                                         com.example.data.model.UserRole.SMART_MASTER -> "Smart Master 👑"
-                                        com.example.data.model.UserRole.FREE_MEMBER -> if (trialDaysRemaining in 1..3) "Trial $trialDaysRemaining Hari" else "Member"
+                                        com.example.data.model.UserRole.FREE_MEMBER -> if (currentUser?.isGuest == true) AppStrings.t("Tamu", "Guest") else "Member"
                                     },
                                     color = when (role) {
                                         com.example.data.model.UserRole.MASTER_DEV -> Color.White
@@ -232,12 +254,16 @@ fun DashboardScreen(
                             }
                         }
                         Text(
-                            text = if (currentUser?.role == com.example.data.model.UserRole.MASTER_DEV) "Panel Master Developer Aktif" else "Kelola finansialmu dengan cerdas",
+                            text = if (currentUser?.role == com.example.data.model.UserRole.MASTER_DEV) AppStrings.t("Panel Master Developer Aktif", "Master Developer Panel Active") else AppStrings.t("Kelola finansialmu dengan cerdas", "Manage your finances smartly"),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 IconButton(
                     onClick = onOpenNotifications,
@@ -248,10 +274,92 @@ fun DashboardScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifikasi",
+                        contentDescription = AppStrings.t("Notifikasi", "Notifications"),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+        }
+
+        // 0A. Guest Conversion Reminder Banner
+        if (isGuestBannerVisible && currentUser?.isGuest == true) {
+            item {
+                GuestReminderBanner(
+                    onGoogleLogin = onGuestBannerLoginGoogle,
+                    onDismiss = onGuestBannerDismiss,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+        }
+
+        // 0B. Rewarded Ad Active Countdown Banner (BUG-07: Redesigned and positioned below 'Akses bebas fitur')
+        if (adRewardRemainingSeconds > 0L) {
+            item {
+                val mins = adRewardRemainingSeconds / 60L
+                val secs = adRewardRemainingSeconds % 60L
+                val timeFormatted = String.format(java.util.Locale.getDefault(), "%02d:%02d", mins, secs)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .testTag("ad_reward_countdown_banner"),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)),
+                    border = BorderStroke(1.dp, Color(0xFFD97706))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color(0xFFD97706).copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Diamond,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = AppStrings.t("Smart Master Aktif (Reward Iklan)", "Smart Master Active (Ad Reward)"),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF92400E)
+                            )
+                            Text(
+                                text = AppStrings.t("Akses bebas fitur AI, Scan & Ekspor", "Free access to AI, Scan & Export features"),
+                                fontSize = 11.sp,
+                                color = Color(0xFFB45309)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            // BUG-07: Compact horizontal pill placed cleanly below "Akses bebas fitur"
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFD97706)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = "⏱ ${AppStrings.t("Sisa Waktu", "Time Left")}: $timeFormatted",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -278,7 +386,7 @@ fun DashboardScreen(
         categoryLimitsMap.forEach { (catName, limit) ->
             val spent = categoryExpensesMap[catName] ?: 0.0
             if (limit > 0.0 && spent > limit) {
-                overbudgetAlerts.add("Kategori [$catName] telah overbudget!")
+                overbudgetAlerts.add(AppStrings.t("Kategori [$catName] telah overbudget!", "Category [$catName] is over budget!"))
             }
         }
 
@@ -301,19 +409,19 @@ fun DashboardScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Warning,
-                            contentDescription = "Peringatan",
+                            contentDescription = AppStrings.t("Peringatan", "Warning"),
                             tint = ExpenseRed,
                             modifier = Modifier.size(24.dp)
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Peringatan Overbudget Cerdas!",
+                                text = AppStrings.t("Peringatan Overbudget Cerdas!", "Smart Overbudget Warning!"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
                                 color = ExpenseRed
                             )
                             Text(
-                                text = overbudgetAlerts.first() + if (overbudgetAlerts.size > 1) " (+${overbudgetAlerts.size - 1} lainnya)" else "",
+                                text = overbudgetAlerts.first() + if (overbudgetAlerts.size > 1) (if (LocaleHelper.isEnglish()) " (+${overbudgetAlerts.size - 1} others)" else " (+${overbudgetAlerts.size - 1} lainnya)") else "",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -342,7 +450,13 @@ fun DashboardScreen(
                     onToggleAccountMode = onToggleAccountMode,
                     onAddIncomeClick = onAddIncomeClick,
                     onAddExpenseClick = onAddExpenseClick,
-                    onTransferClick = onTransferClick
+                    onTransferClick = onTransferClick,
+                    unassignedWalletsCount = wallets.count { !it.hasAssignedCurrency },
+                    onResolveUnassignedWallets = onResolveUnassignedWallets,
+                    multiCurrencyBalances = multiCurrencyBalances,
+                    activeDashboardCurrency = activeDashboardCurrency,
+                    aggregationError = aggregationError,
+                    onSelectCurrency = onSelectCurrency
                 )
             }
         }
@@ -414,7 +528,7 @@ fun DashboardScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Scan Nota",
+                            text = com.example.util.AppStrings.t("Scan Nota", "Scan Receipt"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -530,7 +644,7 @@ fun DashboardScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Anggaran",
+                            text = com.example.util.AppStrings.t("Anggaran", "Budget"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurface,

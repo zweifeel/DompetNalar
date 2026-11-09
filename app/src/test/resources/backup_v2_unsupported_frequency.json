@@ -1,0 +1,46 @@
+{
+  "_metadata": {
+    "status": "UNSUPPORTED_FREQUENCY_PRESERVE",
+    "description": "Tests that legacy PayLater plans with non-monthly frequencies (e.g. Mingguan, Sekali Bayar) are preserved without forced conversion to Bulanan or fabricating fake dates."
+  },
+  "version": 2,
+  "exportedAt": 1704067200000,
+  "installmentPlans": [
+    {
+      "id": "plan-weekly-legacy",
+      "name": "Cicilan Mingguan Toko",
+      "provider": "Mitra Lokal",
+      "installmentAmount": 100000.0,
+      "totalTenor": 8,
+      "paidCount": 3,
+      "frequency": "Mingguan",
+      "startDate": "2024-01-01",
+      "nextDueDate": "2024-01-22",
+      "anchorDay": 1,
+      "totalRemainingPrincipal": 500000.0,
+      "status": "AKTIF",
+      "notes": "Jadwal bayar setiap hari Senin",
+      "createdAt": 1704067200000,
+      "lastPaymentDate": 1705276800000,
+      "userId": 101
+    },
+    {
+      "id": "plan-lump-sum-legacy",
+      "name": "Tempo Sekali Bayar 30 Hari",
+      "provider": "Finansial App",
+      "installmentAmount": 1500000.0,
+      "totalTenor": 1,
+      "paidCount": 0,
+      "frequency": "Sekali Bayar",
+      "startDate": "2024-01-10",
+      "nextDueDate": "2024-02-10",
+      "anchorDay": 10,
+      "totalRemainingPrincipal": 1500000.0,
+      "status": "AKTIF",
+      "notes": "Tempo 30 hari penuh",
+      "createdAt": 1704067200000,
+      "lastPaymentDate": null,
+      "userId": 101
+    }
+  ]
+}

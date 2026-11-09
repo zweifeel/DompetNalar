@@ -1,4 +1,5 @@
 package com.example.ui.screens
+import com.example.util.AppStrings
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -164,10 +165,10 @@ fun BudgetScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Anggaran Cerdas", fontWeight = FontWeight.Bold) },
+                title = { Text(com.example.util.AppStrings.t("Anggaran Cerdas", "Smart Budget"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack, modifier = Modifier.testTag("btn_back_budget")) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+                        Icon(Icons.Default.ArrowBack, contentDescription = com.example.util.AppStrings.t("Kembali", "Back"))
                     }
                 },
                 actions = {
@@ -175,7 +176,7 @@ fun BudgetScreen(
                         onClick = { isResetConfirmDialogOpen = true },
                         modifier = Modifier.testTag("btn_reset_all_budget")
                     ) {
-                        Icon(Icons.Default.RestartAlt, contentDescription = "Reset Semua Anggaran", tint = ExpenseRed)
+                        Icon(Icons.Default.RestartAlt, contentDescription = com.example.util.AppStrings.t("Reset Semua Anggaran", "Reset All Budgets"), tint = ExpenseRed)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -194,7 +195,7 @@ fun BudgetScreen(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("+ Kategori", fontWeight = FontWeight.Bold)
+                    Text(com.example.util.AppStrings.t("+ Kategori", "+ Category"), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -224,7 +225,7 @@ fun BudgetScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = ExpenseRed, modifier = Modifier.size(20.dp))
-                                Text("Peringatan Anggaran Cerdas AI", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = ExpenseRed)
+                                Text(com.example.util.AppStrings.t("Peringatan Anggaran Cerdas AI", "AI Smart Budget Alert"), fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = ExpenseRed)
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             alertsList.forEach { alert ->
@@ -266,8 +267,8 @@ fun BudgetScreen(
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
-                                    Text("Anggaran Bulanan", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                    Text("Seluruh kategori digabung", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(com.example.util.AppStrings.t("Anggaran Bulanan", "Monthly Budget"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text(com.example.util.AppStrings.t("Seluruh kategori digabung", "All categories combined"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
 
@@ -278,7 +279,7 @@ fun BudgetScreen(
                                 },
                                 modifier = Modifier.testTag("btn_edit_total_budget")
                             ) {
-                                Icon(Icons.Default.Edit, contentDescription = "Ubah Limit Bulanan", tint = FinSmartPrimary)
+                                Icon(Icons.Default.Edit, contentDescription = com.example.util.AppStrings.t("Ubah Limit Bulanan", "Edit Monthly Limit"), tint = FinSmartPrimary)
                             }
                         }
 
@@ -294,12 +295,12 @@ fun BudgetScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Terpakai: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)}",
+                                    text = "${com.example.util.AppStrings.t("Terpakai:", "Spent:")} ${CurrencyFormatter.formatRupiah(totalExpenseAmount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Limit: ${CurrencyFormatter.formatRupiah(totalLimitAmount)}",
+                                    text = "${com.example.util.AppStrings.t("Limit:", "Limit:")} ${CurrencyFormatter.formatRupiah(totalLimitAmount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = FinSmartPrimary
@@ -326,7 +327,7 @@ fun BudgetScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Sisa Anggaran: ${CurrencyFormatter.formatRupiah(remaining)}",
+                                    text = "${com.example.util.AppStrings.t("Sisa Anggaran:", "Remaining Budget:")} ${CurrencyFormatter.formatRupiah(remaining)}",
                                     fontSize = 11.sp,
                                     color = if (remaining > 0.0) IncomeGreen else ExpenseRed,
                                     fontWeight = FontWeight.Bold
@@ -357,7 +358,7 @@ fun BudgetScreen(
                                     Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "+ Klik untuk Atur Limit Anggaran Bulanan",
+                                        text = AppStrings.t("+ Klik untuk Atur Limit Anggaran Bulanan", "+ Tap to Set Monthly Budget Limit"),
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 12.sp,
                                         color = FinSmartPrimary
@@ -377,7 +378,7 @@ fun BudgetScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Batas Anggaran Per Kategori",
+                        text = com.example.util.AppStrings.t("Batas Anggaran Per Kategori", "Category Budget Limits"),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground
@@ -390,7 +391,7 @@ fun BudgetScreen(
             if (expenseCategories.isEmpty()) {
                 item {
                     Text(
-                        text = "Belum ada kategori pengeluaran tersedia.",
+                        text = com.example.util.AppStrings.t("Belum ada kategori pengeluaran tersedia.", "No expense categories available."),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp)
@@ -437,7 +438,7 @@ fun BudgetScreen(
                                     Column {
                                         Text(category.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                         Text(
-                                            text = "Terpakai: ${CurrencyFormatter.formatRupiah(spent)}",
+                                            text = "${com.example.util.AppStrings.t("Terpakai:", "Spent:")} ${CurrencyFormatter.formatRupiah(spent)}",
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -454,7 +455,7 @@ fun BudgetScreen(
                                         )
                                     } else {
                                         Text(
-                                            text = "Belum Diatur",
+                                            text = com.example.util.AppStrings.t("Belum Diatur", "Not Set"),
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                         )
@@ -468,7 +469,7 @@ fun BudgetScreen(
                                         },
                                         modifier = Modifier.size(32.dp).testTag("btn_edit_budget_${category.name}")
                                     ) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Ubah Limit Kategori", tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Edit, contentDescription = com.example.util.AppStrings.t("Ubah Limit Kategori", "Edit Category Limit"), tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
                                     }
 
                                     IconButton(
@@ -478,7 +479,7 @@ fun BudgetScreen(
                                         },
                                         modifier = Modifier.size(32.dp).testTag("btn_delete_category_${category.name}")
                                     ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Hapus Kategori", tint = ExpenseRed, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Delete, contentDescription = com.example.util.AppStrings.t("Hapus Kategori", "Delete Category"), tint = ExpenseRed, modifier = Modifier.size(16.dp))
                                     }
                                 }
                             }
@@ -506,7 +507,7 @@ fun BudgetScreen(
                                 ) {
                                     val remaining = (limit - spent).coerceAtLeast(0.0)
                                     Text(
-                                        text = if (remaining > 0.0) "Sisa limit: ${CurrencyFormatter.formatRupiah(remaining)}" else "Overbudget!",
+                                        text = if (remaining > 0.0) "${com.example.util.AppStrings.t("Sisa limit:", "Remaining:")} ${CurrencyFormatter.formatRupiah(remaining)}" else com.example.util.AppStrings.t("Overbudget!", "Over Budget!"),
                                         fontSize = 10.sp,
                                         color = if (remaining > 0.0) IncomeGreen else ExpenseRed,
                                         fontWeight = FontWeight.SemiBold
@@ -536,17 +537,17 @@ fun BudgetScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Payments, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Atur Limit Bulanan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Atur Limit Bulanan", "Set Monthly Limit"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Masukkan batas maksimal total pengeluaran bulanan gabungan Anda.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(com.example.util.AppStrings.t("Masukkan batas maksimal total pengeluaran bulanan gabungan Anda.", "Enter your combined monthly maximum spending limit."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = totalLimitInput,
                         onValueChange = { totalLimitInput = it },
-                        label = { Text("Limit Anggaran (Rp)") },
-                        placeholder = { Text("Contoh: 5000000") },
+                        label = { Text(com.example.util.AppStrings.t("Limit Anggaran (Rp)", "Budget Limit")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Contoh: 5000000", "e.g. 5000000")) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_edit_total_budget")
@@ -559,7 +560,7 @@ fun BudgetScreen(
                         val amount = totalLimitInput.trim().toDoubleOrNull() ?: 0.0
                         if (amount > 0.0) {
                             onSaveBudgetLimit("total_monthly", amount, false)
-                            Toast.makeText(context, "Limit bulanan berhasil disimpan!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Limit bulanan berhasil disimpan!", "Monthly limit saved successfully!"), Toast.LENGTH_SHORT).show()
                             isEditTotalDialogOpen = false
                         } else {
                             // If 0 or empty, delete the limit
@@ -567,18 +568,18 @@ fun BudgetScreen(
                             if (item != null) {
                                 onDeleteBudgetLimit(item)
                             }
-                            Toast.makeText(context, "Limit bulanan dinonaktifkan.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Limit bulanan dinonaktifkan.", "Monthly limit disabled."), Toast.LENGTH_SHORT).show()
                             isEditTotalDialogOpen = false
                         }
                     },
                     modifier = Modifier.testTag("btn_confirm_total_budget")
                 ) {
-                    Text("Simpan")
+                    Text(com.example.util.AppStrings.t("Simpan", "Save"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isEditTotalDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -592,17 +593,17 @@ fun BudgetScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Warning, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Limit Kategori: $selectedCategoryName", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(AppStrings.t("Limit Kategori: ", "Category Limit: ") + selectedCategoryName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Masukkan batas maksimal pengeluaran bulanan untuk kategori [$selectedCategoryName]. Biarkan kosong atau 0 untuk menonaktifkan.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(com.example.util.AppStrings.t("Masukkan batas maksimal pengeluaran bulanan untuk kategori [$selectedCategoryName]. Biarkan kosong atau 0 untuk menonaktifkan.", "Enter monthly spending limit for category [$selectedCategoryName]. Leave empty or 0 to disable."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = categoryLimitInput,
                         onValueChange = { categoryLimitInput = it },
-                        label = { Text("Limit Kategori (Rp)") },
-                        placeholder = { Text("Contoh: 1000000") },
+                        label = { Text(com.example.util.AppStrings.t("Limit Kategori (Rp)", "Category Limit")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Contoh: 1000000", "e.g. 1000000")) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_edit_category_budget")
@@ -615,25 +616,25 @@ fun BudgetScreen(
                         val amount = categoryLimitInput.trim().toDoubleOrNull() ?: 0.0
                         if (amount > 0.0) {
                             onSaveBudgetLimit(selectedCategoryName, amount, true)
-                            Toast.makeText(context, "Limit kategori $selectedCategoryName disimpan!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${com.example.util.AppStrings.t("Limit kategori", "Category limit")} $selectedCategoryName ${com.example.util.AppStrings.t("disimpan!", "saved!")}", Toast.LENGTH_SHORT).show()
                             isEditCategoryDialogOpen = false
                         } else {
                             val item = budgetLimits.firstOrNull { it.id == selectedCategoryName }
                             if (item != null) {
                                 onDeleteBudgetLimit(item)
                             }
-                            Toast.makeText(context, "Limit kategori $selectedCategoryName dinonaktifkan.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${com.example.util.AppStrings.t("Limit kategori", "Category limit")} $selectedCategoryName ${com.example.util.AppStrings.t("dinonaktifkan.", "disabled.")}", Toast.LENGTH_SHORT).show()
                             isEditCategoryDialogOpen = false
                         }
                     },
                     modifier = Modifier.testTag("btn_confirm_category_budget")
                 ) {
-                    Text("Simpan")
+                    Text(com.example.util.AppStrings.t("Simpan", "Save"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isEditCategoryDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -647,24 +648,24 @@ fun BudgetScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Add, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Tambah Kategori Anggaran Baru", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Tambah Kategori Anggaran Baru", "Add New Budget Category"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Buat kategori pengeluaran baru lengkap dengan alokasi batas anggaran.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(com.example.util.AppStrings.t("Buat kategori pengeluaran baru lengkap dengan alokasi batas anggaran.", "Create a new expense category with budget limit allocation."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = newCategoryNameInput,
                         onValueChange = { newCategoryNameInput = it },
-                        label = { Text("Nama Kategori (Misal: Langganan, Hobi)") },
+                        label = { Text(com.example.util.AppStrings.t("Nama Kategori (Misal: Langganan, Hobi)", "Category Name (e.g., Subscription, Hobby)")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().testTag("input_new_category_name")
                     )
                     OutlinedTextField(
                         value = newCategoryLimitInput,
                         onValueChange = { newCategoryLimitInput = it },
-                        label = { Text("Batas Limit (Rp)") },
-                        placeholder = { Text("Contoh: 500000") },
+                        label = { Text(com.example.util.AppStrings.t("Batas Limit (Rp)", "Limit Amount")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Contoh: 500000", "e.g. 500000")) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_new_category_limit")
@@ -681,22 +682,22 @@ fun BudgetScreen(
                             if (limit > 0.0) {
                                 onSaveBudgetLimit(name, limit, true)
                             }
-                            Toast.makeText(context, "Kategori [$name] berhasil dibuat!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${com.example.util.AppStrings.t("Kategori", "Category")} [$name] ${com.example.util.AppStrings.t("berhasil dibuat!", "created successfully!")}", Toast.LENGTH_SHORT).show()
                             newCategoryNameInput = ""
                             newCategoryLimitInput = ""
                             isAddCategoryDialogOpen = false
                         } else {
-                            Toast.makeText(context, "Isi nama kategori terlebih dahulu.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Isi nama kategori terlebih dahulu.", "Please enter a category name first."), Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.testTag("btn_confirm_add_category")
                 ) {
-                    Text("Tambah Kategori")
+                    Text(com.example.util.AppStrings.t("Tambah Kategori", "Add Category"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isAddCategoryDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -710,12 +711,12 @@ fun BudgetScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Reset Semua Anggaran?", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Reset Semua Anggaran?", "Reset All Budgets?"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin mereset seluruh batas anggaran bulanan dan kategori menjadi nol (0)? Tindakan Fresh Start ini tidak dapat dibatalkan.",
+                    text = com.example.util.AppStrings.t("Apakah Anda yakin ingin mereset seluruh batas anggaran bulanan dan kategori menjadi nol (0)? Tindakan Fresh Start ini tidak dapat dibatalkan.", "Are you sure you want to reset all monthly and category budget limits to zero (0)? This Fresh Start action cannot be undone."),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -724,18 +725,18 @@ fun BudgetScreen(
                 Button(
                     onClick = {
                         onResetAllBudgetLimits()
-                        Toast.makeText(context, "Seluruh limit anggaran berhasil di-reset ke nol (Fresh Start)! 🧹", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, com.example.util.AppStrings.t("Seluruh limit anggaran berhasil di-reset ke nol (Fresh Start)! 🧹", "All budget limits reset to zero (Fresh Start)! 🧹"), Toast.LENGTH_SHORT).show()
                         isResetConfirmDialogOpen = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                     modifier = Modifier.testTag("btn_confirm_reset_all_budget")
                 ) {
-                    Text("Reset Semua (1-Klik)", color = Color.White)
+                    Text(com.example.util.AppStrings.t("Reset Semua (1-Klik)", "Reset All (1-Click)"), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isResetConfirmDialogOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )
@@ -749,12 +750,12 @@ fun BudgetScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseRed)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Hapus Kategori?", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Hapus Kategori?", "Delete Category?"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin menghapus kategori [${categoryToDelete?.name}]? Tindakan ini akan menghapus kategori dari daftar.",
+                    text = "${com.example.util.AppStrings.t("Apakah Anda yakin ingin menghapus kategori", "Are you sure you want to delete category")} [${categoryToDelete?.name}]? ${com.example.util.AppStrings.t("Tindakan ini akan menghapus kategori dari daftar.", "This action will remove the category from the list.")}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -764,7 +765,7 @@ fun BudgetScreen(
                     onClick = {
                         categoryToDelete?.let { cat ->
                             onDeleteCategory(cat)
-                            Toast.makeText(context, "Kategori [${cat.name}] berhasil dihapus.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${com.example.util.AppStrings.t("Kategori", "Category")} [${cat.name}] ${com.example.util.AppStrings.t("berhasil dihapus.", "deleted successfully.")}", Toast.LENGTH_SHORT).show()
                         }
                         isDeleteCategoryConfirmOpen = false
                         categoryToDelete = null
@@ -772,12 +773,12 @@ fun BudgetScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                     modifier = Modifier.testTag("btn_confirm_delete_category")
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(com.example.util.AppStrings.t("Hapus", "Delete"), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { isDeleteCategoryConfirmOpen = false }) {
-                    Text("Batal")
+                    Text(com.example.util.AppStrings.t("Batal", "Cancel"))
                 }
             }
         )

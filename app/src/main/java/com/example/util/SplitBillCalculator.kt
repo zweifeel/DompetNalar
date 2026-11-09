@@ -160,7 +160,7 @@ object SplitBillCalculator {
         sb.append("💰 *Total Tagihan Keseluruhan:* *${formatRp(splitResult.grandTotal)}*\n\n")
         sb.append("💳 *Transfer Pembayaran ke Penyelenggara:*\n")
         sb.append("👉 *${splitResult.paymentTargetInfo}*\n\n")
-        sb.append("⚡ _Dihitung & Dibagi Otomatis via FinSmart AI_")
+        sb.append("⚡ _Dihitung & Dibagi Otomatis via DompetNalar AI_")
 
         return sb.toString()
     }

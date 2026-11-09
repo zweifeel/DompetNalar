@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -117,7 +118,7 @@ fun ReceiptGeneratorModalDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "BUKTI TRANSAKSI DIGITAL",
+                            text = AppStrings.t("BUKTI TRANSAKSI DIGITAL", "DIGITAL TRANSACTION RECEIPT"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
                             color = FinSmartPrimary
@@ -187,14 +188,14 @@ fun ReceiptGeneratorModalDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "BUKTI TRANSAKSI DIGITAL",
+                        text = AppStrings.t("BUKTI TRANSAKSI DIGITAL", "DIGITAL TRANSACTION RECEIPT"),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = if (is80mm) 15.sp else 13.sp,
                         fontFamily = FontFamily.Monospace,
                         color = Color.Black
                     )
                     Text(
-                        text = "FINSMART PERSONAL FINANCE",
+                        text = "DOMPETNALAR PERSONAL FINANCE",
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.SemiBold,
@@ -250,7 +251,7 @@ fun ReceiptGeneratorModalDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Deskripsi:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                        Text(text = AppStrings.t("Deskripsi:", "Description:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                         Text(text = transaction.title, fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = Color.Black)
                     }
 
@@ -258,7 +259,7 @@ fun ReceiptGeneratorModalDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Kategori:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                        Text(text = AppStrings.t("Kategori:", "Category:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                         Text(text = transaction.category, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                     }
 
@@ -292,7 +293,7 @@ fun ReceiptGeneratorModalDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Catatan:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                            Text(text = AppStrings.t("Catatan:", "Notes:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                             Text(text = transaction.note, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                         }
                     }
@@ -339,7 +340,7 @@ fun ReceiptGeneratorModalDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Simpan bukti ini sebagai referensi\npencatatan keuangan pribadi Anda.\n--- FinSmart Smart Finance ---",
+                        text = AppStrings.t("Simpan bukti ini sebagai referensi\npencatatan keuangan pribadi Anda.\n--- DompetNalar Personal Finance ---", "Save this receipt for your\npersonal finance records.\n--- DompetNalar Personal Finance ---"),
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         textAlign = TextAlign.Center,
@@ -359,9 +360,9 @@ fun ReceiptGeneratorModalDialog(
                     onClick = {
                         val shareText = ReceiptFormatter.formatReceiptText(transaction, is80mm)
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val clip = ClipData.newPlainText("Bukti Transaksi FinSmart", shareText)
+                        val clip = ClipData.newPlainText(AppStrings.t("Bukti Transaksi DompetNalar", "DompetNalar Transaction Receipt"), shareText)
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, "Teks bukti transaksi berhasil disalin!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, AppStrings.t("Teks bukti transaksi berhasil disalin!", "Receipt text copied successfully!"), Toast.LENGTH_SHORT).show()
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
@@ -379,7 +380,7 @@ fun ReceiptGeneratorModalDialog(
                             putExtra(Intent.EXTRA_TEXT, shareText)
                             type = "text/plain"
                         }
-                        val chooser = Intent.createChooser(sendIntent, "Bagikan Bukti Transaksi FinSmart")
+                        val chooser = Intent.createChooser(sendIntent, AppStrings.t("Bagikan Bukti Transaksi DompetNalar", "Share DompetNalar Transaction Receipt"))
                         context.startActivity(chooser)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),

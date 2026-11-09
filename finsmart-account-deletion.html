@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kebijakan & Panduan Penghapusan Akun — FinSmart</title>
+  <style>
+    :root {
+      --primary: #0F52BA;
+      --primary-dark: #0A387E;
+      --text-main: #1F2937;
+      --text-muted: #4B5563;
+      --bg-page: #F9FAFB;
+      --bg-card: #FFFFFF;
+      --border: #E5E7EB;
+      --danger: #DC2626;
+      --danger-bg: #FEF2F2;
+      --danger-border: #FCA5A5;
+      --warning-bg: #FFFBEB;
+      --warning-border: #FCD34D;
+      --warning-text: #92400E;
+      --info-bg: #EFF6FF;
+      --info-border: #BFDBFE;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    .badge {
+      display: inline-block;
+      background-color: #E0E7FF;
+      color: #3730A3;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 26px;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .meta-info {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .meta-info strong {
+      color: var(--text-main);
+    }
+
+    h2 {
+      font-size: 20px;
+      color: var(--primary-dark);
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--primary);
+      padding-left: 10px;
+    }
+
+    h3 {
+      font-size: 16px;
+      color: var(--text-main);
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      margin-bottom: 14px;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: #F3F4F6;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .alert {
+      border-radius: 8px;
+      padding: 16px;
+      margin: 18px 0;
+      font-size: 14px;
+    }
+
+    .alert-danger {
+      background-color: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: #991B1B;
+    }
+
+    .alert-warning {
+      background-color: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      color: var(--warning-text);
+    }
+
+    .alert-info {
+      background-color: var(--info-bg);
+      border: 1px solid var(--info-border);
+      color: #1E40AF;
+    }
+
+    .alert-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .btn-email {
+      display: inline-block;
+      background-color: var(--primary);
+      color: #FFFFFF !important;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin: 10px 0 16px 0;
+      transition: background-color 0.2s ease;
+      font-size: 15px;
+    }
+
+    .btn-email:hover {
+      background-color: var(--primary-dark);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background-color: #F3F4F6;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+      padding-top: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 8px;
+      }
+      .container {
+        padding: 16px;
+        border-radius: 8px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+      tr {
+        border: 1px solid var(--border);
+        margin-bottom: 12px;
+        border-radius: 8px;
+        background: #FFFFFF;
+      }
+      td {
+        border: none;
+        border-bottom: 1px solid #F3F4F6;
+        position: relative;
+        padding-left: 50%;
+      }
+      td:before {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: 600;
+        color: var(--text-main);
+        content: attr(data-label);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">Kebijakan Privasi &amp; Kepatuhan Google Play</span>
+      <h1>Panduan Penghapusan Akun &amp; Data Aplikasi FinSmart</h1>
+      <div class="meta-info">
+        <p><strong>Nama Aplikasi:</strong> FinSmart</p>
+        <p><strong>Pengembang:</strong> SleepyKoala</p>
+        <p><strong>Email Dukungan Resmi:</strong> <a href="mailto:lunachroc01@gmail.com">lunachroc01@gmail.com</a></p>
+        <p><strong>Tanggal Pembaruan Terakhir:</strong> 11 Oktober 2026</p>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <h2>1. Prinsip Penyimpanan Data Aplikasi</h2>
+        <p>
+          FinSmart mengutamakan privasi pengguna dengan arsitektur penyimpanan lokal (<em>offline-first</em>). Berdasarkan implementasi aplikasi:
+        </p>
+        <ul>
+          <li><strong>Penyimpanan Lokal:</strong> Catatan keuangan utama (akun pengguna, transaksi, saldo dompet, hutang, anggaran, aset, dan riwayat split bill) disimpan secara langsung di dalam penyimpanan privat perangkat pengguna menggunakan basis data lokal Room SQLite.</li>
+          <li><strong>Tanpa Server Pengembang:</strong> Pengembang (SleepyKoala) <strong>tidak mengoperasikan server basis data cloud terpusat</strong> untuk menampung atau menyinkronkan salinan catatan keuangan pengguna.</li>
+          <li><strong>Layanan Eksternal:</strong> Data tertentu hanya diproses ketika fitur terkait digunakan atas kehendak pengguna, yaitu:
+            <ul>
+              <li><strong>Google Gemini Vision AI:</strong> Digunakan untuk ekstraksi data gambar struk/nota dan screenshot tagihan PayLater saat memindai.</li>
+              <li><strong>Google Drive Pribadi:</strong> Digunakan jika pengguna secara sadar menghubungkan akun Google untuk menyimpan atau memulihkan berkas cadangan terenkripsi.</li>
+              <li><strong>Google AdMob:</strong> Digunakan untuk penayangan iklan pada akun gratis dengan pemrosesan teknis oleh Google.</li>
+              <li><strong>Google Play Billing:</strong> Digunakan untuk pemrosesan langganan digital yang dikelola langsung oleh sistem Google Play Store.</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>2. Cara Menghapus Akun &amp; Data Melalui Aplikasi</h2>
+        <p>
+          Jika Anda masih memiliki akses ke aplikasi FinSmart di perangkat Anda, penghapusan akun dan data dapat dilakukan langsung dengan langkah-langkah berikut:
+        </p>
+        <ol>
+          <li>Buka aplikasi <strong>FinSmart</strong> di perangkat Anda.</li>
+          <li>Buka tab menu <strong>Pengaturan</strong>.</li>
+          <li>Gulir ke bawah hingga menemukan baris berlabel merah: <strong>Hapus Akun &amp; Data Permanen</strong>.</li>
+          <li>Dialog konfirmasi keamanan akan muncul:
+            <ul>
+              <li><strong>Pengguna Terdaftar:</strong> Masukkan kata sandi akun Anda untuk verifikasi identitas.</li>
+              <li><strong>Pengguna Mode Tamu:</strong> Konfirmasi langsung pada dialog tanpa sandi.</li>
+            </ul>
+          </li>
+          <li>Ketuk tombol <strong>Hapus Permanen</strong>.</li>
+        </ol>
+
+        <div class="alert alert-danger">
+          <span class="alert-title">Akibat Penghapusan di Aplikasi:</span>
+          Tindakan ini mengeksekusi penghapusan basis data lokal secara seketika. Akun pengguna, riwayat mutasi, dompet, hutang, aset, dan anggaran terkait ID akun Anda akan dimusnahkan secara permanen dari perangkat. Tugas terjadwal pengingat akan dibatalkan, dan sesi login Anda akan diakhiri.
+        </div>
+      </section>
+
+      <section>
+        <h2>3. Jika Aplikasi Tidak Dapat Dibuka atau Telah Dihapus (Uninstall)</h2>
+        <p>
+          Apabila Anda tidak lagi memiliki akses ke aplikasi, lupa kata sandi, atau telah menghapus aplikasi dari perangkat Anda:
+        </p>
+        <div class="card">
+          <h3>Opsi A: Hapus Penyimpanan Melalui Pengaturan Android (Clear Storage)</h3>
+          <ol>
+            <li>Buka <strong>Pengaturan (Settings)</strong> pada perangkat Android Anda.</li>
+            <li>Pilih menu <strong>Aplikasi (Apps)</strong> &rarr; cari <strong>FinSmart</strong>.</li>
+            <li>Pilih menu <strong>Penyimpanan (Storage)</strong> &rarr; ketuk <strong>Hapus Penyimpanan / Hapus Data (Clear Data)</strong>.</li>
+          </ol>
+          <p>Langkah ini menghapus seluruh basis data lokal privat, sesi login, dan pengaturan aplikasi yang tersimpan di perangkat Anda.</p>
+        </div>
+
+        <div class="card">
+          <h3>Opsi B: Menghapus Instalasi Aplikasi (Uninstall)</h3>
+          <p>
+            Ketika Anda menghapus instalasi (<em>uninstall</em>) FinSmart, sistem operasi Android secara otomatis menghapus seluruh direktori data privat aplikasi dari penyimpanan perangkat Anda.
+          </p>
+        </div>
+
+        <div class="alert alert-warning">
+          <span class="alert-title">Catatan Penting Penyimpanan Terpisah:</span>
+          Menghapus aplikasi atau memilih Clear Data <strong>tidak otomatis menghapus</strong> berkas ekspor laporan (seperti PDF atau CSV) yang pernah Anda simpan secara manual ke folder unduhan publik perangkat, serta <strong>tidak menghapus</strong> berkas cadangan yang tersimpan di akun Google Drive pribadi Anda.
+        </div>
+      </section>
+
+      <section>
+        <h2>4. Panduan Menghapus Cadangan di Google Drive Pribadi</h2>
+        <p>
+          Jika Anda pernah menggunakan fitur pencadangan awan ke Google Drive, berkas cadangan tersebut tersimpan di dalam ruang penyimpanan akun Google Drive pribadi milik Anda sendiri (bukan di server pengembang).
+        </p>
+        <p>
+          Berdasarkan implementasi teknis aplikasi, <strong>pengembang tidak memiliki hak akses jarak jauh</strong> ke akun Google Drive Anda untuk menghapus berkas cadangan atas nama Anda. Anda dapat menghapusnya secara mandiri dengan langkah berikut:
+        </p>
+        <ol>
+          <li>Buka aplikasi <strong>Google Drive</strong> di ponsel Anda atau kunjungi situs web <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer">drive.google.com</a> melalui peramban.</li>
+          <li>Masuk menggunakan akun Google yang sebelumnya Anda hubungkan ke FinSmart.</li>
+          <li>Cari folder cadangan FinSmart (biasanya bernama <code>FinSmart_Backups</code> atau cari file cadangan FinSmart berformat <code>.json</code>).</li>
+          <li>Pilih berkas cadangan tersebut dan pindahkan ke <strong>Sampah (Trash)</strong>, lalu kosongkan sampah jika ingin menghapusnya secara permanen.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>5. Jalur Pengajuan Permintaan Penghapusan Akun &amp; Data (Email Resmi)</h2>
+        <p>
+          Bagi pengguna yang telah menghapus instalasi (<em>uninstall</em>) aplikasi FinSmart, tidak dapat lagi mengakses aplikasi, atau mengalami kendala teknis lainnya, Anda <strong>dapat mengajukan permintaan penghapusan akun dan data secara resmi melalui surat elektronik (email) tanpa perlu memasang aplikasi kembali</strong>.
+        </p>
+
+        <a class="btn-email" href="mailto:lunachroc01@gmail.com?subject=Permintaan%20Penghapusan%20Akun%20dan%20Data%20FinSmart">
+          Ajukan Permintaan Penghapusan via Email (lunachroc01@gmail.com)
+        </a>
+
+        <div class="alert alert-info">
+          <span class="alert-title">Prosedur &amp; Penjelasan Transparan Pemrosesan Permintaan:</span>
+          <ul>
+            <li><strong>Peninjauan oleh Pengembang:</strong> Pengembang akan meninjau setiap permintaan yang masuk dan memberikan tanggapan resmi mengenai status data yang berada dalam kendali pengembang.</li>
+            <li><strong>Batasan Arsitektur Tanpa Server Terpusat:</strong> Berdasarkan arsitektur <em>offline-first</em> FinSmart yang telah diaudit, pengembang tidak mengoperasikan server basis data akun terpusat. Oleh karena itu, pengembang <strong>tidak memiliki akses jarak jauh (remote access)</strong> untuk memusnahkan data privat yang tersimpan di dalam perangkat fisik Anda maupun menghapus berkas cadangan di akun Google Drive pribadi Anda.</li>
+            <li><strong>Panduan Tindak Lanjut:</strong> Sebagai bagian dari pemrosesan permintaan, pengembang akan mengonfirmasi ketiadaan data akun di sisi server pengembang dan memberikan petunjuk langkah mandiri yang sesuai agar Anda dapat memastikan seluruh data lokal atau cadangan di Google Drive yang berada dalam kendali Anda telah terhapus tuntas.</li>
+            <li><strong>Layanan Pihak Ketiga:</strong> Jalur email ini merupakan saluran pengajuan resmi dan bantuan penanganan data pengguna, bukan jaminan bahwa seluruh data telemetri teknis pada penyedia layanan pihak ketiga (seperti Google AdMob atau Google Play Billing) otomatis terhapus seketika, karena pemrosesan data tersebut tunduk langsung pada kebijakan privasi masing-masing penyedia layanan.</li>
+            <li><strong>Peringatan Keamanan Privasi:</strong> Demi keamanan Anda, <strong>JANGAN PERNAH</strong> menyertakan kata sandi akun, PIN keamanan, nomor rekening/kartu, data perbankan, atau salinan riwayat transaksi keuangan Anda di dalam pesan email.</li>
+            <li><strong>Waktu Tanggapan:</strong> Setiap permohonan yang diterima akan ditinjau dan ditanggapi secara langsung oleh pengembang sesegera mungkin sesuai antrean dukungan yang masuk.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>6. Rangkuman Status Data Saat Penghapusan</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Kategori Data</th>
+              <th>Lokasi Penyimpanan</th>
+              <th>Mekanisme Penghapusan</th>
+              <th>Status Setelah Dihapus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-label="Kategori Data">Akun &amp; Catatan Keuangan</td>
+              <td data-label="Lokasi Penyimpanan">Basis data lokal internal di perangkat (SQLite Room)</td>
+              <td data-label="Mekanisme Penghapusan">Menu "Hapus Akun &amp; Data Permanen" di aplikasi atau Clear Data di Android</td>
+              <td data-label="Status Setelah Dihapus">Terhapus secara permanen dari basis data lokal perangkat.</td>
+            </tr>
+            <tr>
+              <td data-label="Kategori Data">Berkas Cadangan Cloud</td>
+              <td data-label="Lokasi Penyimpanan">Akun Google Drive pribadi milik pengguna</td>
+              <td data-label="Mekanisme Penghapusan">Penghapusan mandiri oleh pengguna melalui Google Drive</td>
+              <td data-label="Status Setelah Dihapus">Tetap ada di Google Drive pengguna hingga dihapus secara manual oleh pemilik akun.</td>
+            </tr>
+            <tr>
+              <td data-label="Kategori Data">File Ekspor PDF/CSV</td>
+              <td data-label="Lokasi Penyimpanan">Penyimpanan bersama perangkat (folder Download)</td>
+              <td data-label="Mekanisme Penghapusan">Penghapusan mandiri oleh pengguna via File Manager</td>
+              <td data-label="Status Setelah Dihapus">Tetap ada di penyimpanan perangkat hingga dihapus pengguna secara manual.</td>
+            </tr>
+            <tr>
+              <td data-label="Kategori Data">Data Pemrosesan OCR &amp; Iklan</td>
+              <td data-label="Lokasi Penyimpanan">Layanan pihak ketiga (Google Gemini AI &amp; AdMob)</td>
+              <td data-label="Mekanisme Penghapusan">Tunduk pada kebijakan privasi dan masa retensi masing-masing layanan Google</td>
+              <td data-label="Status Setelah Dihapus">Dikelola langsung oleh sistem Google sesuai ketentuan layanan Google.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 SleepyKoala — Aplikasi FinSmart. Seluruh hak cipta dilindungi.</p>
+      <p>Dokumen ini disiapkan sebagai panduan transparansi pengguna dan pemenuhan persyaratan formulir Data Safety Google Play Store.</p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,5 +1,6 @@
 package com.example.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -9,6 +10,7 @@ import java.util.UUID
 /**
  * DEF-03 (Room v7): [userId] is the submitting user. `NULL` means ownership is unknown
  * (legacy v6 data) and must never be implicitly assigned to any user.
+ * DEF-04 (Room v9): [isSynced] tracks Firestore cloud sync status (0=false, 1=true).
  */
 @Entity(
     tableName = "feedbacks",
@@ -30,5 +32,7 @@ data class FeedbackItem(
     val category: String,
     val message: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val userId: Long? = null
+    val userId: Long? = null,
+    @ColumnInfo(name = "isSynced", defaultValue = "0")
+    val isSynced: Boolean = false
 )

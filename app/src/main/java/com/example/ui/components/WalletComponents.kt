@@ -177,7 +177,10 @@ fun WalletCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.weight(1f, fill = false),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         WalletBrandLogoIcon(brandInfo = brandInfo)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
@@ -185,7 +188,8 @@ fun WalletCard(
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
 
@@ -207,7 +211,7 @@ fun WalletCard(
                             onDismissRequest = { menuExpanded = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit Dompet") },
+                                text = { Text(com.example.util.AppStrings.t("Ubah Dompet", "Edit Wallet")) },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -215,7 +219,7 @@ fun WalletCard(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Hapus Dompet", color = ExpenseRed) },
+                                text = { Text(com.example.util.AppStrings.t("Hapus Dompet", "Delete Wallet"), color = ExpenseRed) },
                                 leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseRed) },
                                 onClick = {
                                     menuExpanded = false
@@ -245,7 +249,7 @@ fun WalletCard(
                 // Bottom: Balance
                 Column {
                     Text(
-                        text = "Saldo",
+                        text = com.example.util.AppStrings.t("Saldo", "Balance"),
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 10.sp
                     )
@@ -253,7 +257,9 @@ fun WalletCard(
                         text = if (isPrivacyMode) "Rp •••••••" else CurrencyFormatter.formatRupiah(wallet.balance),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -293,14 +299,14 @@ fun AddWalletPlaceholderCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Dompet",
+                    contentDescription = com.example.util.AppStrings.t("Tambah Dompet", "Add Wallet"),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Tambah\nDompet",
+                text = com.example.util.AppStrings.t("Tambah\nDompet", "Add\nWallet"),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -328,7 +334,7 @@ fun WalletsSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Dompet & Rekening",
+                text = com.example.util.AppStrings.t("Dompet & Rekening", "Wallets & Accounts"),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -339,25 +345,85 @@ fun WalletsSection(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Tambah", fontSize = 12.sp)
+                Text(com.example.util.AppStrings.t("Tambah", "Add"), fontSize = 12.sp)
             }
         }
 
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(wallets, key = { it.id }) { wallet ->
-                WalletCard(
-                    wallet = wallet,
-                    isPrivacyMode = isPrivacyMode,
-                    onEdit = onEditWallet,
-                    onDelete = onDeleteWallet
-                )
+        if (wallets.isEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .testTag("empty_wallets_dashboard_card"),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = com.example.util.AppStrings.t("Belum Ada Dompet Terdaftar", "No Wallets Registered Yet"),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = com.example.util.AppStrings.t(
+                            "Tambahkan akun bank, dompet digital, atau uang tunai Anda untuk mulai mencatat keuangan.",
+                            "Add your bank account, e-wallet, or cash to start tracking your finances."
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Button(
+                        onClick = onAddWalletClick,
+                        modifier = Modifier.testTag("btn_add_wallet_empty_dashboard"),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(com.example.util.AppStrings.t("Tambah Dompet Pertama", "Add First Wallet"))
+                    }
+                }
             }
-            item {
-                AddWalletPlaceholderCard(onClick = onAddWalletClick)
+        } else {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(wallets, key = { it.id }) { wallet ->
+                    WalletCard(
+                        wallet = wallet,
+                        isPrivacyMode = isPrivacyMode,
+                        onEdit = onEditWallet,
+                        onDelete = onDeleteWallet
+                    )
+                }
+                item {
+                    AddWalletPlaceholderCard(onClick = onAddWalletClick)
+                }
             }
         }
     }
@@ -367,7 +433,7 @@ fun WalletsSection(
 fun WalletDialog(
     existingWallet: Wallet?,
     onDismiss: () -> Unit,
-    onSave: (name: String, type: WalletType, accountNumber: String, initialBalance: Double, colorHex: String, iconName: String, existingId: Long?) -> Unit
+    onSave: (name: String, type: WalletType, accountNumber: String, initialBalance: Double, colorHex: String, iconName: String, existingId: Long?, currencyCode: String) -> Unit
 ) {
     var name by remember { mutableStateOf(existingWallet?.name ?: "") }
     var selectedType by remember { mutableStateOf(existingWallet?.type ?: WalletType.BANK) }
@@ -376,6 +442,9 @@ fun WalletDialog(
     var selectedColor by remember { mutableStateOf(existingWallet?.colorHex ?: "#0B57D0") }
     var selectedIcon by remember { mutableStateOf(existingWallet?.iconName ?: "bank") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var selectedCurrency by remember {
+        mutableStateOf(existingWallet?.currencyCode ?: com.example.util.DeviceRegionResolver.resolveDeviceCurrencyCode() ?: "IDR")
+    }
 
     val presetWallets = listOf(
         PresetOption("BCA", WalletType.BANK, "#005DAA", "bca"),
@@ -393,7 +462,7 @@ fun WalletDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (existingWallet == null) "Tambah Dompet / Rekening" else "Edit Dompet",
+                text = if (existingWallet == null) com.example.util.AppStrings.t("Tambah Dompet / Rekening", "Add Wallet / Account") else com.example.util.AppStrings.t("Edit Dompet", "Edit Wallet"),
                 fontWeight = FontWeight.Bold
             )
         },
@@ -406,7 +475,7 @@ fun WalletDialog(
             ) {
                 // Preset Quick Chips (only for new wallets)
                 if (existingWallet == null) {
-                    Text("Pilih Template Populer:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(com.example.util.AppStrings.t("Pilih Template Populer:", "Choose Popular Template:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         items(presetWallets) { preset ->
                             FilterChip(
@@ -429,16 +498,36 @@ fun WalletDialog(
                         name = it
                         errorMessage = null
                     },
-                    label = { Text("Nama Dompet / Bank") },
-                    placeholder = { Text("misal: BCA Utama, GoPay, Tunai") },
+                    label = { Text(com.example.util.AppStrings.t("Nama Dompet / Bank", "Wallet / Bank Name")) },
+                    placeholder = { Text(com.example.util.AppStrings.t("misal: BCA Utama, GoPay, Tunai", "e.g., Main BCA, GoPay, Cash")) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("input_wallet_name")
                 )
 
+                // Currency Chips
+                Text(com.example.util.AppStrings.t("Mata Uang:", "Currency:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("IDR", "USD", "EUR", "SGD").forEach { curr ->
+                        FilterChip(
+                            selected = selectedCurrency == curr,
+                            onClick = {
+                                if (existingWallet == null || !existingWallet.hasAssignedCurrency) {
+                                    selectedCurrency = curr
+                                }
+                            },
+                            enabled = existingWallet == null || !existingWallet.hasAssignedCurrency,
+                            label = { Text(curr, fontSize = 11.sp) }
+                        )
+                    }
+                }
+
                 // Type Chips
-                Text("Tipe Dompet:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(com.example.util.AppStrings.t("Tipe Dompet:", "Wallet Type:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -455,7 +544,7 @@ fun WalletDialog(
                 OutlinedTextField(
                     value = accountNumber,
                     onValueChange = { accountNumber = it },
-                    label = { Text("No. Rekening / No. HP (Opsional)") },
+                    label = { Text(com.example.util.AppStrings.t("No. Rekening / No. HP (Opsional)", "Account / Phone No. (Optional)")) },
                     placeholder = { Text("misal: 1234567890") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -468,7 +557,7 @@ fun WalletDialog(
                     OutlinedTextField(
                         value = initialBalanceText,
                         onValueChange = { initialBalanceText = it },
-                        label = { Text("Saldo Awal (Rp)") },
+                        label = { Text(com.example.util.AppStrings.t("Saldo Awal", "Initial Balance")) },
                         placeholder = { Text("0") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -479,7 +568,7 @@ fun WalletDialog(
                 }
 
                 // Color choices
-                Text("Pilih Warna Tema:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(com.example.util.AppStrings.t("Pilih Warna Tema:", "Choose Theme Color:"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -515,7 +604,7 @@ fun WalletDialog(
             Button(
                 onClick = {
                     if (name.isBlank()) {
-                        errorMessage = "Nama dompet tidak boleh kosong."
+                        errorMessage = com.example.util.AppStrings.t("Nama dompet tidak boleh kosong.", "Wallet name cannot be empty.")
                         return@Button
                     }
                     val balance = initialBalanceText.toDoubleOrNull() ?: 0.0
@@ -526,17 +615,18 @@ fun WalletDialog(
                         balance,
                         selectedColor,
                         selectedIcon,
-                        existingWallet?.id
+                        existingWallet?.id,
+                        selectedCurrency
                     )
                 },
                 modifier = Modifier.testTag("btn_save_wallet")
             ) {
-                Text(if (existingWallet == null) "Tambah Dompet" else "Simpan Perubahan")
+                Text(if (existingWallet == null) com.example.util.AppStrings.t("Tambah Dompet", "Add Wallet") else com.example.util.AppStrings.t("Simpan Perubahan", "Save Changes"))
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(com.example.util.AppStrings.t("Batal", "Cancel"))
             }
         }
     )
@@ -546,30 +636,47 @@ fun WalletDialog(
 fun DeleteWalletConfirmDialog(
     wallet: Wallet,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onArchive: (() -> Unit)? = null
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Hapus Dompet?", fontWeight = FontWeight.Bold) },
+        title = { Text(com.example.util.AppStrings.t("Hapus Dompet?", "Delete Wallet?"), fontWeight = FontWeight.Bold) },
         text = {
             Text(
-                "Apakah Anda yakin ingin menghapus dompet '${wallet.name}'?\n" +
-                        "Saldo saat ini: ${CurrencyFormatter.formatRupiah(wallet.balance)}.\n" +
-                        "Data transaksi terkait dompet ini akan tetap tersimpan."
+                if (com.example.util.LocaleHelper.isEnglish()) {
+                    "Are you sure you want to delete wallet '${wallet.name}'?\n" +
+                            "Current balance: ${CurrencyFormatter.formatCurrency(wallet.balance, wallet.currencyCode)}.\n\n" +
+                            "Note: Wallets with transaction history cannot be deleted permanently for financial integrity. Please use the Archive option if this wallet is no longer in use."
+                } else {
+                    "Apakah Anda yakin ingin menghapus dompet '${wallet.name}'?\n" +
+                            "Saldo saat ini: ${CurrencyFormatter.formatRupiah(wallet.balance)}.\n\n" +
+                            "Catatan: Dompet dengan riwayat data tidak dapat dihapus permanen demi integritas finansial. Silakan gunakan opsi Arsipkan jika dompet tidak lagi digunakan."
+                }
             )
         },
         confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
-                modifier = Modifier.testTag("btn_confirm_delete_wallet")
-            ) {
-                Text("Hapus", color = Color.White)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (onArchive != null) {
+                    OutlinedButton(
+                        onClick = onArchive,
+                        modifier = Modifier.testTag("btn_archive_wallet_from_dialog")
+                    ) {
+                        Text(com.example.util.AppStrings.t("Arsipkan", "Archive"))
+                    }
+                }
+                Button(
+                    onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
+                    modifier = Modifier.testTag("btn_confirm_delete_wallet")
+                ) {
+                    Text(com.example.util.AppStrings.t("Hapus", "Delete"), color = Color.White)
+                }
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(com.example.util.AppStrings.t("Batal", "Cancel"))
             }
         }
     )
@@ -581,3 +688,162 @@ private data class PresetOption(
     val colorHex: String,
     val iconName: String
 )
+
+
+@Composable
+fun CurrencyAssignmentWizardDialog(
+    unassignedWallets: List<Wallet>,
+    onAssignCurrency: (walletId: Long, currencyCode: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedWalletId by remember { mutableStateOf(unassignedWallets.firstOrNull()?.id ?: 0L) }
+    var selectedCurrency by remember { 
+        mutableStateOf(com.example.util.DeviceRegionResolver.resolveDeviceCurrencyCode() ?: "IDR") 
+    }
+
+    val supportedCurrencies = remember {
+        listOf("IDR", "USD", "EUR", "SGD", "MYR", "JPY")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(com.example.util.AppStrings.t("Tetapkan Mata Uang Dompet", "Assign Wallet Currency"), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = com.example.util.AppStrings.t("Beberapa dompet Anda belum memiliki mata uang yang ditentukan. Pilih mata uang untuk melanjutkan transaksi secara aman.", "Some of your wallets do not have an assigned currency. Select a currency to continue transactions securely."),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                unassignedWallets.forEach { wallet ->
+                    Surface(
+                        color = if (selectedWalletId == wallet.id) 
+                            MaterialTheme.colorScheme.primaryContainer 
+                        else 
+                            MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedWalletId = wallet.id }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(wallet.name, fontWeight = FontWeight.SemiBold)
+                            Text(CurrencyFormatter.formatRupiah(wallet.balance), fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(com.example.util.AppStrings.t("Mata Uang:", "Currency:"), fontWeight = FontWeight.Medium, fontSize = 13.sp)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    supportedCurrencies.take(4).forEach { code ->
+                        FilterChip(
+                            selected = selectedCurrency == code,
+                            onClick = { selectedCurrency = code },
+                            label = { Text(code) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (selectedWalletId > 0L) {
+                        onAssignCurrency(selectedWalletId, selectedCurrency)
+                    }
+                },
+                enabled = unassignedWallets.isNotEmpty()
+            ) {
+                Text(com.example.util.AppStrings.t("Tetapkan", "Assign"))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(com.example.util.AppStrings.t("Tutup", "Close"))
+            }
+        }
+    )
+}
+
+@Composable
+fun LegacyWalletClaimDialog(
+    legacyWallets: List<Wallet>,
+    onClaimWallet: (walletId: Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(com.example.util.AppStrings.t("Klaim Dompet Warisan", "Claim Legacy Wallets"), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = com.example.util.AppStrings.t("Ditemukan dompet dari versi sebelumnya yang belum memiliki pemilik akun. Klaim dompet untuk menghubungkannya ke akun Anda.", "Found wallets from an earlier version with no owner. Claim wallets to link them to your account."),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (legacyWallets.isEmpty()) {
+                    Text(
+                        text = com.example.util.AppStrings.t("Tidak ada dompet warisan yang belum diklaim.", "No unclaimed legacy wallets found."),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    legacyWallets.forEach { wallet ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(wallet.name, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        com.example.util.AppStrings.t("Saldo: ", "Balance: ") + CurrencyFormatter.formatRupiah(wallet.balance),
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Button(
+                                    onClick = { onClaimWallet(wallet.id) },
+                                    modifier = Modifier.testTag("btn_claim_wallet_" + wallet.id)
+                                ) {
+                                    Text(com.example.util.AppStrings.t("Klaim", "Claim"))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(com.example.util.AppStrings.t("Selesai", "Done"))
+            }
+        }
+    )
+}

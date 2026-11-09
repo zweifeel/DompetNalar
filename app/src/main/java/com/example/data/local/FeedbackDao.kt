@@ -27,13 +27,25 @@ interface FeedbackDao {
     @Query("SELECT COUNT(*) FROM feedbacks WHERE userId = :userId")
     suspend fun getFeedbackCount(userId: Long): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertFeedback(feedback: FeedbackItem)
+
+    @androidx.room.Update
+    suspend fun updateFeedback(feedback: FeedbackItem): Int
 
     // --- Global / Existing Operations ---
 
     @Query("SELECT * FROM feedbacks ORDER BY timestamp DESC")
     fun getAllFeedbacks(): Flow<List<FeedbackItem>>
+
+    @Query("SELECT * FROM feedbacks WHERE isSynced = 0 ORDER BY timestamp DESC")
+    fun getUnsyncedFeedbacks(): Flow<List<FeedbackItem>>
+
+    @Query("SELECT * FROM feedbacks WHERE isSynced = 0 ORDER BY timestamp DESC")
+    suspend fun getUnsyncedFeedbacksList(): List<FeedbackItem>
+
+    @Query("UPDATE feedbacks SET isSynced = 1 WHERE id = :id")
+    suspend fun markFeedbackAsSynced(id: String): Int
 
     /**
      * Administrative moderation operation for Developer Feedback Viewer.
@@ -41,4 +53,7 @@ interface FeedbackDao {
      */
     @Query("DELETE FROM feedbacks WHERE id = :id")
     suspend fun deleteFeedbackByAdmin(id: String): Int
+
+    @Query("DELETE FROM feedbacks WHERE LOWER(userEmail) = LOWER(:email) AND LOWER(userName) = LOWER(:userName)")
+    suspend fun deleteSampleFeedbackByEmailAndName(email: String, userName: String): Int
 }

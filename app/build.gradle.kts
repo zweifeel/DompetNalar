@@ -9,24 +9,7 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-// Ensure .env contains GEMINI_API_KEY from environment variable if provided in CI/CD (GitHub Actions)
-val envGeminiKey = System.getenv("GEMINI_API_KEY") ?: (project.findProperty("GEMINI_API_KEY") as? String) ?: ""
-if (envGeminiKey.isNotBlank() && envGeminiKey != "MY_GEMINI_API_KEY") {
-    val envFile = rootProject.file(".env")
-    if (!envFile.exists()) {
-        envFile.writeText("GEMINI_API_KEY=$envGeminiKey\n")
-    } else {
-        val currentContent = envFile.readText()
-        if (!currentContent.contains("GEMINI_API_KEY=") || currentContent.contains("GEMINI_API_KEY=MY_GEMINI_API_KEY")) {
-            val updated = currentContent.lines()
-                .filterNot { it.startsWith("GEMINI_API_KEY=") }
-                .plus("GEMINI_API_KEY=$envGeminiKey")
-                .joinToString("\n")
-            envFile.writeText(updated)
-        }
-    }
-}
-
+// Local-first on-device AI architecture active - zero Gemini API key required.
 android {
     namespace = "com.example"
     compileSdk = 36
@@ -35,10 +18,22 @@ android {
         applicationId = "com.aistudio.finsmart.kptxvw"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.3"
+        versionCode = 15
+        versionName = "1.0.15"
+
+        buildConfigField("boolean", "IS_PLAY_STORE_BUILD", "false")
+        buildConfigField("String", "ADMOB_APP_ID", "\"ca-app-pub-3940256099942544~3347511713\"")
+        buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/9214589741\"")
+        buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/5224354917\"")
+
+        buildConfigField("String", "ADMOB_INTERSTITIAL_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    androidResources {
+        localeFilters += listOf("id", "en")
     }
 
     val localProperties = Properties().apply {
@@ -91,6 +86,17 @@ android {
 
     buildTypes {
         release {
+            val isPlayTarget = (project.findProperty("playStoreBuild") as? String)?.toBoolean() ?: true
+            buildConfigField("boolean", "IS_PLAY_STORE_BUILD", isPlayTarget.toString())
+            val releaseAdmobAppId = getReleaseSigningProperty("ADMOB_APP_ID") ?: "ca-app-pub-2539100802088383~9012414109"
+            val releaseAdmobBannerId = getReleaseSigningProperty("ADMOB_BANNER_AD_UNIT_ID") ?: "ca-app-pub-2539100802088383/9128798324"
+            val releaseAdmobRewardedId = getReleaseSigningProperty("ADMOB_REWARDED_AD_UNIT_ID") ?: "ca-app-pub-2539100802088383/3501242135"
+            val releaseAdmobInterstitialId = getReleaseSigningProperty("ADMOB_INTERSTITIAL_AD_UNIT_ID") ?: "ca-app-pub-2539100802088383/4814323801"
+            buildConfigField("String", "ADMOB_APP_ID", "\"$releaseAdmobAppId\"")
+            buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"$releaseAdmobBannerId\"")
+            buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$releaseAdmobRewardedId\"")
+            buildConfigField("String", "ADMOB_INTERSTITIAL_AD_UNIT_ID", "\"$releaseAdmobInterstitialId\"")
+            manifestPlaceholders["admobAppId"] = releaseAdmobAppId
             isCrunchPngs = false
             isMinifyEnabled = true
             isShrinkResources = true
@@ -98,6 +104,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
             val releaseSigning = signingConfigs.getByName("release")
             if (releaseSigning.storeFile?.exists() == true && !releaseSigning.storePassword.isNullOrBlank()) {
                 signingConfig = releaseSigning
@@ -106,6 +115,14 @@ android {
             }
         }
         debug {
+            val isPlayDebug = (project.findProperty("playStoreBuild") as? String)?.toBoolean() ?: false
+            buildConfigField("boolean", "IS_PLAY_STORE_BUILD", isPlayDebug.toString())
+            buildConfigField("String", "ADMOB_APP_ID", "\"ca-app-pub-3940256099942544~3347511713\"")
+            buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/9214589741\"")
+            buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/5224354917\"")
+
+            buildConfigField("String", "ADMOB_INTERSTITIAL_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
             applicationIdSuffix = ".debug"
             val debugKeystore = file("${rootDir}/debug.keystore")
             val userDebugKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
@@ -117,8 +134,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlin {
+        jvmToolchain(17)
     }
     buildFeatures {
         compose = true
@@ -174,21 +194,26 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.coil.compose)
     implementation(libs.converter.moshi)
-    implementation(libs.firebase.ai)
-    // Uncomment to use Firestore:
-    // implementation(libs.firebase.firestore)
 
-    // Uncomment ALL FOUR of the following dependencies together to use Firebase Auth and Google Sign-In via Credential Manager:
-    // implementation(libs.firebase.auth)
-    // implementation(libs.androidx.credentials)
-    // implementation(libs.androidx.credentials.play.services)
-    // implementation(libs.googleid)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+
+    // Google Sign-In via Credential Manager & Google Play Services Auth:
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    // Media3 ExoPlayer for video splash screen
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+    implementation(libs.googleid)
+    implementation(libs.play.services.auth)
     implementation(libs.firebase.appcheck.recaptcha)
     implementation(libs.firebase.appcheck.debug)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation(libs.play.services.ads)
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation(libs.play.billing)
     implementation(libs.logging.interceptor)
     implementation(libs.moshi.kotlin)
     implementation(libs.okhttp)

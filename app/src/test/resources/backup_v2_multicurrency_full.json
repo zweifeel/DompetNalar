@@ -1,0 +1,191 @@
+{
+  "_metadata": {
+    "status": "PROPOSED CONTRACT FIXTURE — NOT PRODUCTION COMPATIBILITY PROOF",
+    "targetRoomVersion": 10,
+    "description": "Proposed multi-currency payload structure for Room 10. Contains IDR and USD wallets, cross-currency transfer, installment periods, recurring schedules, and financial operations."
+  },
+  "version": 2,
+  "exportedAt": 1767139200000,
+  "wallets": [
+    {
+      "id": 1,
+      "name": "Dompet IDR Utama",
+      "type": "BANK",
+      "accountNumber": "555111222",
+      "balance": 15000000.0,
+      "currency": "IDR",
+      "currencyStatus": "CONFIRMED_BASE",
+      "isArchived": false,
+      "accountMode": "PERSONAL",
+      "isDefault": true,
+      "userId": 101
+    },
+    {
+      "id": 2,
+      "name": "Wise USD Account",
+      "type": "BANK",
+      "accountNumber": "999888777",
+      "balance": 1250.75,
+      "currency": "USD",
+      "currencyStatus": "CONFIRMED_USER",
+      "isArchived": false,
+      "accountMode": "PERSONAL",
+      "isDefault": false,
+      "userId": 101
+    }
+  ],
+  "transactions": [
+    {
+      "id": 101,
+      "title": "Pembayaran Domain USD",
+      "amount": 25.0,
+      "type": "EXPENSE",
+      "category": "Teknologi",
+      "walletId": 2,
+      "walletName": "Wise USD Account",
+      "currency": "USD",
+      "currencyStatus": "CONFIRMED_USER",
+      "exchangeRate": 1.0,
+      "feeAmount": 0.0,
+      "feeCurrency": "USD",
+      "idempotencyKey": "tx_usd_domain_101",
+      "userId": 101
+    },
+    {
+      "id": 102,
+      "title": "Transfer Kurs IDR ke USD",
+      "amount": 3200000.0,
+      "type": "TRANSFER",
+      "category": "Transfer",
+      "walletId": 1,
+      "walletName": "Dompet IDR Utama",
+      "targetWalletId": 2,
+      "targetWalletName": "Wise USD Account",
+      "currency": "IDR",
+      "currencyStatus": "CONFIRMED_BASE",
+      "targetCurrency": "USD",
+      "targetAmount": 200.0,
+      "exchangeRate": 16000.0,
+      "feeAmount": 25000.0,
+      "feeCurrency": "IDR",
+      "idempotencyKey": "xfer_idr_usd_102",
+      "userId": 101
+    }
+  ],
+  "installmentPlans": [
+    {
+      "id": "plan-mc-01",
+      "name": "Kamera Mirrorless",
+      "provider": "Toko Kamera",
+      "installmentAmount": 1500000.0,
+      "totalTenor": 6,
+      "paidCount": 2,
+      "frequency": "Bulanan",
+      "startDate": "2026-01-15",
+      "nextDueDate": "2026-03-15",
+      "currency": "IDR",
+      "currencyStatus": "CONFIRMED_BASE",
+      "userId": 101
+    }
+  ],
+  "installmentPeriods": [
+    {
+      "id": "period-01-1",
+      "planId": "plan-mc-01",
+      "periodNumber": 1,
+      "dueDate": "2026-01-15",
+      "amountDue": 1500000.0,
+      "isPaid": true,
+      "paidDate": "2026-01-14",
+      "paymentTransactionId": 91,
+      "currency": "IDR",
+      "userId": 101
+    },
+    {
+      "id": "period-01-2",
+      "planId": "plan-mc-01",
+      "periodNumber": 2,
+      "dueDate": "2026-02-15",
+      "amountDue": 1500000.0,
+      "isPaid": true,
+      "paidDate": "2026-02-15",
+      "paymentTransactionId": 95,
+      "currency": "IDR",
+      "userId": 101
+    },
+    {
+      "id": "period-01-3",
+      "planId": "plan-mc-01",
+      "periodNumber": 3,
+      "dueDate": "2026-03-15",
+      "amountDue": 1500000.0,
+      "isPaid": false,
+      "paidDate": null,
+      "paymentTransactionId": null,
+      "currency": "IDR",
+      "userId": 101
+    }
+  ],
+  "recurringSchedules": [
+    {
+      "id": "rec-daily-01",
+      "title": "Kopi Pagi",
+      "amount": 25000.0,
+      "type": "EXPENSE",
+      "category": "Makanan",
+      "walletId": 1,
+      "frequency": "DAILY",
+      "dayOfMonth": null,
+      "dayOfWeek": null,
+      "isEnabled": true,
+      "currency": "IDR",
+      "userId": 101
+    },
+    {
+      "id": "rec-weekly-01",
+      "title": "Les Privat",
+      "amount": 200000.0,
+      "type": "EXPENSE",
+      "category": "Pendidikan",
+      "walletId": 1,
+      "frequency": "WEEKLY",
+      "dayOfMonth": null,
+      "dayOfWeek": 6,
+      "isEnabled": true,
+      "currency": "IDR",
+      "userId": 101
+    },
+    {
+      "id": "rec-monthly-01",
+      "title": "Internet Rumah",
+      "amount": 450000.0,
+      "type": "EXPENSE",
+      "category": "Tagihan",
+      "walletId": 1,
+      "frequency": "MONTHLY",
+      "dayOfMonth": 20,
+      "dayOfWeek": null,
+      "isEnabled": true,
+      "currency": "IDR",
+      "userId": 101
+    }
+  ],
+  "financialOperations": [
+    {
+      "idempotencyKey": "xfer_idr_usd_102",
+      "operationType": "CROSS_CURRENCY_TRANSFER",
+      "state": "CONFIRMED",
+      "sourceWalletId": 1,
+      "targetWalletId": 2,
+      "sourceAmount": 3200000.0,
+      "targetAmount": 200.0,
+      "exchangeRate": 16000.0,
+      "feeAmount": 25000.0,
+      "sourceCurrency": "IDR",
+      "targetCurrency": "USD",
+      "feeCurrency": "IDR",
+      "createdAt": 1767139200000,
+      "userId": 101
+    }
+  ]
+}

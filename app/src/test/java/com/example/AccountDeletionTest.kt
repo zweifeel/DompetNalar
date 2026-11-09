@@ -38,7 +38,7 @@ import org.robolectric.annotation.Config
  * Verifies that account deletion is strictly user-scoped and never executes global wipe.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [34])
 class AccountDeletionTest {
 
     private lateinit var db: FinSmartDatabase

@@ -16,12 +16,44 @@ class AutoSyncWorker(
     override suspend fun doWork(): Result {
         return try {
             SessionManager.initialize(applicationContext)
-            val userId = SessionManager.getActiveUserId()
-            if (userId == null || userId <= 0L) {
-                // DEF-03: No authenticated user session active. Skip background sync safely.
+
+            // Pastikan fitur auto sync aktif
+            if (!GoogleDriveService.isAutoSyncEnabled(applicationContext)) {
                 return Result.success()
             }
+
+            val userId = SessionManager.getActiveUserId()
+            if (userId == null || userId <= 0L) {
+                // Tidak ada sesi pengguna aktif. Batalkan sinkronisasi latar belakang demi privasi.
+                return Result.success()
+            }
+
+            val isStealth = try {
+                SessionManager.isStealthModeActive()
+            } catch (e: Exception) {
+                true // Fail-safe
+            }
+            if (isStealth) {
+                // Mode Stealth aktif: batalkan pekerjaan latar belakang tanpa retry instan
+                return Result.success()
+            }
+
+            // Pastikan koneksi Google Drive aktif
+            if (!GoogleDriveService.isConnected(applicationContext)) {
+                return Result.success()
+            }
+            val connectedEmail = GoogleDriveService.getConnectedEmail(applicationContext)
+            if (connectedEmail.isBlank()) {
+                return Result.success()
+            }
+
             val database = FinSmartDatabase.getDatabase(applicationContext, CoroutineScope(Dispatchers.IO))
+            val activeUser = database.userDao().getUserById(userId)
+            // Akun tamu (guest) tidak boleh melakukan backup cloud
+            if (activeUser == null || activeUser.isGuest) {
+                return Result.success()
+            }
+
             val result = GoogleDriveService.backupNow(applicationContext, database, userId)
             if (result.first) {
                 Result.success()

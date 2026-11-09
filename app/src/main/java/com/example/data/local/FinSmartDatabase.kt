@@ -25,6 +25,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.example.config.DeveloperAccountConfig
+import com.example.config.ReviewerAccountConfig
+import com.example.util.PasswordHasher
 
 @Database(
     entities = [
@@ -37,9 +40,13 @@ import kotlinx.coroutines.launch
         FeedbackItem::class,
         DebtItem::class,
         AssetItem::class,
-        com.example.data.model.InstallmentPlanItem::class
+        com.example.data.model.InstallmentPlanItem::class,
+        com.example.data.model.RecurringSchedule::class,
+        com.example.data.model.InstallmentPeriod::class,
+        com.example.data.model.InstallmentPayment::class,
+        com.example.data.model.InstallmentPaymentAllocation::class
     ],
-    version = 8,
+    version = 11,
     exportSchema = true
 )
 abstract class FinSmartDatabase : RoomDatabase() {
@@ -53,6 +60,13 @@ abstract class FinSmartDatabase : RoomDatabase() {
     abstract fun debtDao(): DebtDao
     abstract fun assetDao(): AssetDao
     abstract fun installmentPlanDao(): InstallmentPlanDao
+    abstract fun recurringScheduleDao(): RecurringScheduleDao
+    abstract fun installmentPeriodDao(): InstallmentPeriodDao
+    abstract fun installmentPaymentDao(): InstallmentPaymentDao
+    abstract fun installmentPaymentAllocationDao(): InstallmentPaymentAllocationDao
+
+    open val writeCoordinator: DatabaseWriteCoordinator
+        get() = DatabaseWriteCoordinator.getInstance()
 
     companion object {
         @Volatile
@@ -99,6 +113,9 @@ abstract class FinSmartDatabase : RoomDatabase() {
          */
         val MIGRATION_6_7: Migration = Migration6To7
         val MIGRATION_7_8: Migration = Migration7To8
+        val MIGRATION_8_9: Migration = Migration8To9
+        val MIGRATION_9_10: Migration = Migration9To10()
+        val MIGRATION_10_11: Migration = Migration10To11()
 
         /**
          * Registry of explicit Room migrations.
@@ -106,7 +123,10 @@ abstract class FinSmartDatabase : RoomDatabase() {
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_5_6,
             MIGRATION_6_7,
-            MIGRATION_7_8
+            MIGRATION_7_8,
+            MIGRATION_8_9,
+            MIGRATION_9_10,
+            MIGRATION_10_11
         )
 
         fun getDatabase(context: Context, scope: CoroutineScope): FinSmartDatabase {
@@ -130,6 +150,13 @@ abstract class FinSmartDatabase : RoomDatabase() {
             override fun onOpen(db: SupportSQLiteDatabase) {
                 super.onOpen(db)
                 db.setForeignKeyConstraintsEnabled(true)
+
+
+                INSTANCE?.let { database ->
+                    scope.launch(Dispatchers.IO) {
+                        ensureReviewerAccount(database)
+                    }
+                }
             }
 
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -137,6 +164,7 @@ abstract class FinSmartDatabase : RoomDatabase() {
                 INSTANCE?.let { database ->
                     scope.launch(Dispatchers.IO) {
                         populateInitialData(database)
+                        ensureReviewerAccount(database)
                     }
                 }
             }
@@ -169,104 +197,373 @@ abstract class FinSmartDatabase : RoomDatabase() {
          * Other users, their records, system categories, and legacy quarantined rows remain completely intact.
          * Never invokes clearAllTables().
          */
+        /**
+         * Atomically deletes a user account and cascades deletion to all user-owned records (DEF-03 Stage 3).
+         * P0: Explicitly deletes child entities with RESTRICT foreign keys in strict order:
+         * 1. installment_payment_allocations (RESTRICT to payments and periods)
+         * 2. installment_payments (RESTRICT to plans and transactions)
+         * 3. installment_periods (CASCADE to plans)
+         * 4. installment_plans (CASCADE to user)
+         * 5. recurring_schedules (CASCADE to user & wallets)
+         * 6. Target user (Room ON DELETE CASCADE removes wallets, transactions, debts, assets, budgets, categories).
+         * Other users, their records, system categories, and legacy quarantined rows remain completely intact.
+         * Never invokes clearAllTables().
+         */
         suspend fun deleteUserAccountInTransaction(database: FinSmartDatabase, user: User) {
-            database.withTransaction {
-                database.userDao().deleteUser(user)
+            database.writeCoordinator.withWritePermit {
+                database.withTransaction {
+                    val userId = user.id
+                    val dbHelper = database.openHelper.writableDatabase
+                    dbHelper.execSQL("DELETE FROM installment_payment_allocations WHERE userId = $userId")
+                    dbHelper.execSQL("DELETE FROM installment_payments WHERE userId = $userId")
+                    dbHelper.execSQL("DELETE FROM installment_periods WHERE userId = $userId")
+                    dbHelper.execSQL("DELETE FROM installment_plans WHERE userId = $userId")
+                    dbHelper.execSQL("DELETE FROM recurring_schedules WHERE userId = $userId")
+                    database.userDao().deleteUser(user)
+                }
             }
         }
 
-        suspend fun populateInitialData(database: FinSmartDatabase) {
-            val walletDao = database.walletDao()
-            val categoryDao = database.categoryDao()
-            val userDao = database.userDao()
+        /**
+         * P0: Controlled atomic developer account purge.
+         * Verifies target identity using:
+         * - Username: 'Lukas' (case-insensitive)
+         * - Email: 'lunachroc07@gmail.com' (case-insensitive)
+         * - Historic role: MASTER_DEV
+         * Aborts safely if identity is ambiguous or multiple candidates found.
+         * Performs ordered transactional deletion of RESTRICT children (installment allocations/payments),
+         * cleans sample feedbacks, and removes user row.
+         */
+        suspend fun purgeTargetDeveloperAccountAtomically(database: FinSmartDatabase): Result<Boolean> {
+            return database.writeCoordinator.withWritePermit {
+                try {
+                    val userDao = database.userDao()
+                    val targetEmail = "lunachroc07@gmail.com"
+                    val targetUsername = "Lukas"
 
-            if (userDao.getUserCount() == 0) {
-                val initialUsers = listOf(
-                    // Master Dev Lukas
-                    User(
-                        id = 1L,
-                        username = "Lukas",
-                        email = "lunachroc07@gmail.com",
-                        passwordHash = "",
-                        role = UserRole.MASTER_DEV,
-                        isApproved = true
-                    )
+                    val candidateByEmail = userDao.getUserByEmail(targetEmail)
+                    val candidateByUsername = userDao.getUserByIdentifier(targetUsername)
+
+                    // If neither candidate exists, clean orphan sample feedbacks and return success(false)
+                    if (candidateByEmail == null && candidateByUsername == null) {
+                        database.feedbackDao().deleteSampleFeedbackByEmailAndName(targetEmail, targetUsername)
+                        return@withWritePermit Result.success(false)
+                    }
+
+                    // Ambiguity guard 1: If candidates exist by both email and username, they must refer to the exact same user ID
+                    if (candidateByEmail != null && candidateByUsername != null && candidateByEmail.id != candidateByUsername.id) {
+                        return@withWritePermit Result.failure(
+                            IllegalStateException("Purge aborted: multiple distinct candidate users found for target identity ($targetUsername vs $targetEmail).")
+                        )
+                    }
+
+                    // Ambiguity guard 2: If found by email, username must match targetUsername
+                    if (candidateByEmail != null && !candidateByEmail.username.equals(targetUsername, ignoreCase = true)) {
+                        return@withWritePermit Result.failure(
+                            IllegalStateException("Purge aborted: user with email '$targetEmail' has mismatched username '${candidateByEmail.username}'.")
+                        )
+                    }
+
+                    // Ambiguity guard 3: If found by username, email must match targetEmail
+                    if (candidateByUsername != null && !candidateByUsername.email.equals(targetEmail, ignoreCase = true)) {
+                        return@withWritePermit Result.failure(
+                            IllegalStateException("Purge aborted: user with username '$targetUsername' has mismatched email '${candidateByUsername.email}'.")
+                        )
+                    }
+
+                    val targetUser = candidateByEmail ?: candidateByUsername!!
+
+                    // Target identity guard 4: User role must strictly match MASTER_DEV
+                    if (targetUser.role != com.example.data.model.UserRole.MASTER_DEV) {
+                        return@withWritePermit Result.failure(
+                            IllegalStateException("Purge aborted: user '$targetUsername' has mismatched role '${targetUser.role}' (expected MASTER_DEV).")
+                        )
+                    }
+
+                    val targetUserId = targetUser.id
+
+                    database.withTransaction {
+                        val dbHelper = database.openHelper.writableDatabase
+                        // Ordered transactional deletion of RESTRICT foreign key children
+                        dbHelper.execSQL("DELETE FROM installment_payment_allocations WHERE userId = $targetUserId")
+                        dbHelper.execSQL("DELETE FROM installment_payments WHERE userId = $targetUserId")
+                        dbHelper.execSQL("DELETE FROM installment_periods WHERE userId = $targetUserId")
+                        dbHelper.execSQL("DELETE FROM installment_plans WHERE userId = $targetUserId")
+                        dbHelper.execSQL("DELETE FROM recurring_schedules WHERE userId = $targetUserId")
+                        dbHelper.execSQL("DELETE FROM feedbacks WHERE userId = $targetUserId OR (userId IS NULL AND LOWER(userEmail) = LOWER('$targetEmail') AND LOWER(userName) = LOWER('$targetUsername'))")
+
+                        // Delete target user row (cascades to wallets, transactions, debts, assets, budgets, categories)
+                        userDao.deleteUser(targetUser)
+
+                        // Post-purge database verification inside transaction: database is source of truth
+                        if (userDao.getUserById(targetUserId) != null ||
+                            userDao.getUserByEmail(targetEmail) != null ||
+                            userDao.getUserByIdentifier(targetUsername) != null) {
+                            throw IllegalStateException("Purge verification failed: target user still exists in database after deletion.")
+                        }
+                    }
+
+                    // Clear active session and saved credentials if they belonged to target user
+                    if (com.example.data.session.SessionManager.getActiveUserId() == targetUserId) {
+                        com.example.data.session.SessionManager.logout()
+                    }
+
+                    android.util.Log.i("FinSmartDatabase", "Target developer account '$targetUsername' ($targetUserId) purged atomically and verified.")
+                    Result.success(true)
+                } catch (e: Exception) {
+                    android.util.Log.e("FinSmartDatabase", "Purge failed and transaction rolled back: ${e.message}", e)
+                    Result.failure(e)
+                }
+            }
+        }
+
+        suspend fun populateInitialData(
+            database: FinSmartDatabase,
+            isDebug: Boolean = com.example.BuildConfig.DEBUG
+        ) {
+            database.writeCoordinator.withWritePermit {
+                val categoryDao = database.categoryDao()
+
+                // Canonical system categories are ALWAYS seeded for all builds (Release & Debug)
+                if (categoryDao.getCategoryCount() == 0) {
+                    categoryDao.insertCategories(DEFAULT_CATEGORIES)
+                }
+            }
+        }
+
+        /**
+         * Ensures canonical categories exist and verified developer accounts have MASTER_DEV role.
+         * Phase 1G: Lukas and default wallets are permanently deleted and never auto-provisioned.
+         */
+        suspend fun ensureMasterDevAccount(
+            database: FinSmartDatabase,
+            isDebug: Boolean = com.example.BuildConfig.DEBUG
+        ): Long {
+            return database.writeCoordinator.withWritePermit {
+                val userDao = database.userDao()
+                val categoryDao = database.categoryDao()
+
+                // Ensure canonical system categories exist
+                if (categoryDao.getCategoryCount() == 0) {
+                    categoryDao.insertCategories(DEFAULT_CATEGORIES)
+                }
+
+                if (!isDebug) {
+                    return@withWritePermit 0L
+                }
+
+                // Ensure all trusted developer emails present in database possess verified MASTER_DEV role
+                var primaryDevId = 0L
+                for (devEmail in com.example.config.DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS) {
+                    val devUser = userDao.getUserByEmail(devEmail)
+                    if (devUser != null) {
+                        if (devUser.role != com.example.data.model.UserRole.MASTER_DEV || devUser.subscriptionExpiresAt != null) {
+                            userDao.updateUserRole(devUser.id, com.example.data.model.UserRole.MASTER_DEV, null)
+                        }
+                        if (primaryDevId == 0L) primaryDevId = devUser.id
+                    }
+                }
+
+                primaryDevId
+            }
+        }
+
+
+        /**
+         * Provisions the dedicated Google Play Reviewer account idempotently.
+         * Safe for Release builds: provides isolated synthetic data with SMART_MASTER entitlement,
+         * without developer privileges or exposure of real user data.
+         */
+        suspend fun ensureReviewerAccount(database: FinSmartDatabase) {
+            database.writeCoordinator.withWritePermit {
+                val userDao = database.userDao()
+            val existing = userDao.getUserByIdentifier(ReviewerAccountConfig.REVIEWER_EMAIL)
+                ?: userDao.getUserByIdentifier(ReviewerAccountConfig.REVIEWER_USERNAME)
+
+            val reviewerId = if (existing != null) {
+                // Ensure role and entitlement remain SMART_MASTER without expiry
+                if (existing.role != UserRole.SMART_MASTER || existing.subscriptionExpiresAt != null) {
+                    userDao.updateUserRole(existing.id, UserRole.SMART_MASTER, null)
+                }
+                existing.id
+            } else {
+                val candidateId = if (userDao.getUserById(ReviewerAccountConfig.DEFAULT_REVIEWER_USER_ID) == null) {
+                    ReviewerAccountConfig.DEFAULT_REVIEWER_USER_ID
+                } else {
+                    0L // auto-generate primary key to prevent collision with existing user ID
+                }
+                val newReviewer = User(
+                    id = candidateId,
+                    username = ReviewerAccountConfig.REVIEWER_USERNAME,
+                    email = ReviewerAccountConfig.REVIEWER_EMAIL,
+                    passwordHash = ReviewerAccountConfig.REVIEWER_PASSWORD_HASH,
+                    role = UserRole.SMART_MASTER,
+                    subscriptionExpiresAt = null,
+                    isApproved = true,
+                    isGuest = false
                 )
-                userDao.insertUsers(initialUsers)
+                val insertedId = userDao.insertUser(newReviewer)
+                if (insertedId > 0L) insertedId else candidateId
             }
 
-            if (categoryDao.getCategoryCount() == 0) {
-                categoryDao.insertCategories(DEFAULT_CATEGORIES)
-            }
-
-            if (walletDao.getWalletCount() == 0) {
-                val initialWallets = listOf(
+            // Provision synthetic wallets if none exist for this reviewer
+            val walletDao = database.walletDao()
+            if (walletDao.getWalletCount(reviewerId) == 0) {
+                val reviewerWallets = listOf(
                     Wallet(
                         name = "Dompet Utama (BCA)",
                         type = WalletType.BANK,
-                        accountNumber = "1234567890",
-                        balance = 0.0,
+                        accountNumber = "8899001122",
+                        balance = 25000000.0,
                         colorHex = "#0B57D0",
                         iconName = "bca",
                         accountMode = AccountMode.PERSONAL.name,
                         isDefault = true,
-                        userId = 1L
+                        userId = reviewerId
                     ),
                     Wallet(
-                        name = "GoPay",
+                        name = "E-Wallet (GoPay)",
                         type = WalletType.EWALLET,
-                        accountNumber = "08123456789",
-                        balance = 0.0,
+                        accountNumber = "081199887766",
+                        balance = 1500000.0,
                         colorHex = "#00897B",
                         iconName = "gopay",
                         accountMode = AccountMode.PERSONAL.name,
                         isDefault = false,
-                        userId = 1L
+                        userId = reviewerId
                     ),
                     Wallet(
-                        name = "Uang Tunai",
+                        name = "Uang Tunai Reviewer",
                         type = WalletType.CASH,
                         accountNumber = "",
-                        balance = 0.0,
+                        balance = 500000.0,
                         colorHex = "#10B981",
                         iconName = "cash",
                         accountMode = AccountMode.PERSONAL.name,
                         isDefault = false,
-                        userId = 1L
+                        userId = reviewerId
                     ),
                     Wallet(
                         name = "Rekening Bisnis (Mandiri)",
                         type = WalletType.BANK,
-                        accountNumber = "9876543210",
-                        balance = 0.0,
+                        accountNumber = "7766554433",
+                        balance = 50000000.0,
                         colorHex = "#D97706",
                         iconName = "mandiri",
                         accountMode = AccountMode.BUSINESS.name,
                         isDefault = true,
-                        userId = 1L
+                        userId = reviewerId
                     )
                 )
-                walletDao.insertWallets(initialWallets)
+                walletDao.insertWallets(reviewerWallets)
             }
 
+            // Provision synthetic transactions if none exist for this reviewer
+            val transactionDao = database.transactionDao()
+            if (transactionDao.getTransactionCount(reviewerId) == 0) {
+                val personalWallets = walletDao.getAllWallets(reviewerId).first()
+                val primaryWallet = personalWallets.firstOrNull { it.isDefault && it.accountMode == AccountMode.PERSONAL.name }
+                    ?: personalWallets.firstOrNull()
+                val walletId = primaryWallet?.id ?: 0L
+                val walletName = primaryWallet?.name ?: "Dompet Utama (BCA)"
+
+                val initialTransactions = listOf(
+                    TransactionItem(
+                        title = "Gaji Pokok Bulanan",
+                        amount = 15000000.0,
+                        type = TransactionType.INCOME,
+                        category = "Gaji Pokok",
+                        categoryIcon = "payments",
+                        walletId = walletId,
+                        walletName = walletName,
+                        accountMode = AccountMode.PERSONAL.name,
+                        userId = reviewerId
+                    ),
+                    TransactionItem(
+                        title = "Makan Siang & Kopi",
+                        amount = 75000.0,
+                        type = TransactionType.EXPENSE,
+                        category = "Makanan & Minuman",
+                        categoryIcon = "restaurant",
+                        walletId = walletId,
+                        walletName = walletName,
+                        accountMode = AccountMode.PERSONAL.name,
+                        userId = reviewerId
+                    ),
+                    TransactionItem(
+                        title = "Bensin Kendaraan",
+                        amount = 100000.0,
+                        type = TransactionType.EXPENSE,
+                        category = "Transportasi & Bensin",
+                        categoryIcon = "commute",
+                        walletId = walletId,
+                        walletName = walletName,
+                        accountMode = AccountMode.PERSONAL.name,
+                        userId = reviewerId
+                    )
+                )
+                initialTransactions.forEach { transactionDao.insertTransaction(it) }
+            }
+
+            // Provision synthetic debts if none exist for reviewer
             val debtDao = database.debtDao()
-            if (debtDao.getDebtCount(1L) == 0) {
-                val initialDebts = listOf(
-                    DebtItem(name = "Kartu Kredit BCA", amount = 15000000.0, interestRatePercent = 21.0, minMonthlyPayment = 1500000.0, category = "Kartu Kredit", dueDate = "Tgl 15 tiap bulan", userId = 1L),
-                    DebtItem(name = "Pinjaman Online A", amount = 3000000.0, interestRatePercent = 18.0, minMonthlyPayment = 500000.0, category = "Pinjaman Online", dueDate = "Tgl 20 tiap bulan", userId = 1L),
-                    DebtItem(name = "Cicilan Motor", amount = 8000000.0, interestRatePercent = 12.0, minMonthlyPayment = 800000.0, category = "Cicilan Kendaraan", dueDate = "Tgl 5 tiap bulan", userId = 1L)
+            if (debtDao.getDebtCount(reviewerId) == 0) {
+                val reviewerDebts = listOf(
+                    DebtItem(
+                        name = "Kartu Kredit Bank Reviewer",
+                        amount = 5000000.0,
+                        interestRatePercent = 15.0,
+                        minMonthlyPayment = 500000.0,
+                        category = "Kartu Kredit",
+                        dueDate = "Tgl 25 tiap bulan",
+                        userId = reviewerId
+                    )
                 )
-                debtDao.insertDebts(initialDebts)
+                debtDao.insertDebts(reviewerDebts)
             }
 
+            // Provision synthetic assets if none exist for reviewer
             val assetDao = database.assetDao()
-            if (assetDao.getAssetCount(1L) == 0) {
-                val initialAssets = listOf(
-                    AssetItem(name = "MacBook Pro M2", initialValue = 24000000.0, purchaseYear = 2024, category = AssetCategory.ELECTRONICS, userId = 1L),
-                    AssetItem(name = "Honda Vario 160", initialValue = 28000000.0, purchaseYear = 2023, category = AssetCategory.VEHICLE, userId = 1L),
-                    AssetItem(name = "Logam Mulia Antam 10g", initialValue = 13000000.0, purchaseYear = 2022, category = AssetCategory.GOLD_INVESTMENT, userId = 1L)
+            if (assetDao.getAssetCount(reviewerId) == 0) {
+                val reviewerAssets = listOf(
+                    AssetItem(
+                        name = "Laptop Kerja Reviewer",
+                        initialValue = 18000000.0,
+                        purchaseYear = 2024,
+                        category = AssetCategory.ELECTRONICS,
+                        userId = reviewerId
+                    ),
+                    AssetItem(
+                        name = "Logam Mulia Antam 5g",
+                        initialValue = 6500000.0,
+                        purchaseYear = 2023,
+                        category = AssetCategory.GOLD_INVESTMENT,
+                        userId = reviewerId
+                    )
                 )
-                assetDao.insertAssets(initialAssets)
+                assetDao.insertAssets(reviewerAssets)
+            }
+
+            // Provision synthetic budget limits if none exist for reviewer
+            val budgetLimitDao = database.budgetLimitDao()
+            if (budgetLimitDao.getBudgetLimitCount(reviewerId) == 0) {
+                budgetLimitDao.insertBudgetLimit(
+                    BudgetLimitItem(
+                        id = "total_monthly",
+                        limitAmount = 10000000.0,
+                        isCategory = false,
+                        userId = reviewerId
+                    )
+                )
+                budgetLimitDao.insertBudgetLimit(
+                    BudgetLimitItem(
+                        id = "Makanan & Minuman",
+                        limitAmount = 3000000.0,
+                        isCategory = true,
+                        userId = reviewerId
+                    )
+                )
+            }
             }
         }
     }

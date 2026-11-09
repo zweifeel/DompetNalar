@@ -6,8 +6,11 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <include domain="sharedpref" path="."/>
+    <!-- Cegah kebocoran sesi login, PIN keamanan, dan token kredensial developer melintasi reinstall via Android Auto Backup -->
+    <exclude domain="sharedpref" path="finsmart_session_prefs.xml"/>
+    <exclude domain="sharedpref" path="finsmart_auth_prefs.xml"/>
+    <exclude domain="sharedpref" path="finsmart_prefs.xml"/>
+    <exclude domain="sharedpref" path="finsmart_theme_prefs.xml"/>
 </full-backup-content>
+

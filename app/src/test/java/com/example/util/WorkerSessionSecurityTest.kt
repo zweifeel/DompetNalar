@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -32,7 +33,7 @@ import java.util.Calendar
  * - Worker executes correctly and updates balance when wallet is owned by the matching userId.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [34])
 class WorkerSessionSecurityTest {
 
     private lateinit var context: Context
@@ -70,7 +71,7 @@ class WorkerSessionSecurityTest {
     @Test
     fun testWorker_missingUserId_failsSafelyWithoutModifyingData() = runBlocking {
         val walletAId = db.walletDao().insertWallet(
-            Wallet(name = "Wallet A", type = WalletType.BANK, balance = 500000.0, accountMode = AccountMode.PERSONAL.name, userId = userAId)
+            Wallet(name = "Wallet A", type = WalletType.BANK, balance = 500000.0, accountMode = AccountMode.PERSONAL.name, userId = userAId, currencyCode = "IDR")
         )
 
         // Work input with NO USER_ID (legacy format)
@@ -130,7 +131,7 @@ class WorkerSessionSecurityTest {
         val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
 
         val walletAId = db.walletDao().insertWallet(
-            Wallet(name = "Wallet A", type = WalletType.BANK, balance = 500000.0, accountMode = AccountMode.PERSONAL.name, userId = userAId)
+            Wallet(name = "Wallet A", type = WalletType.BANK, balance = 500000.0, accountMode = AccountMode.PERSONAL.name, userId = userAId, currencyCode = "IDR")
         )
 
         val input = Data.Builder()
@@ -161,5 +162,43 @@ class WorkerSessionSecurityTest {
         assertEquals(1, txs.size)
         assertEquals(userAId, txs[0].userId)
         assertEquals("Gaji Bulanan (Auto Recurring)", txs[0].title)
+    }
+
+    @Test
+    fun testWorker_state2UnassignedWallet_failsSafelyWithoutMutation() = runBlocking {
+        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+
+        // Wallet inserted with NULL currencyCode (State 2: unassigned)
+        val walletAId = db.walletDao().insertWallet(
+            Wallet(name = "Wallet State 2", type = WalletType.BANK, balance = 500000.0, accountMode = AccountMode.PERSONAL.name, userId = userAId, currencyCode = null)
+        )
+
+        val input = Data.Builder()
+            .putLong("USER_ID", userAId)
+            .putString("TITLE", "Gaji Bulanan")
+            .putDouble("AMOUNT", 2500000.0)
+            .putString("TYPE", "INCOME")
+            .putString("CATEGORY", "Gaji")
+            .putLong("WALLET_ID", walletAId)
+            .putString("WALLET_NAME", "Wallet State 2")
+            .putInt("DAY_OF_MONTH", currentDay)
+            .putString("INTERVAL", "MONTHLY")
+            .build()
+
+        val worker = TestListenableWorkerBuilder<RecurringTransactionWorker>(context)
+            .setInputData(input)
+            .build()
+
+        val result = worker.doWork()
+        // Must fail safely without touching financial ledger
+        assertEquals(ListenableWorker.Result.failure(), result)
+
+        // Wallet balance must NOT be altered
+        val wallet = db.walletDao().getWalletById(walletAId, userAId)
+        assertEquals(500000.0, wallet!!.balance, 0.01)
+        assertNull(wallet.currencyCode)
+
+        // Zero transactions recorded
+        assertEquals(0, db.transactionDao().getAllTransactions(userAId).first().size)
     }
 }

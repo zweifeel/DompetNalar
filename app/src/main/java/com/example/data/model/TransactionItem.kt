@@ -1,5 +1,6 @@
 package com.example.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -8,6 +9,8 @@ import androidx.room.PrimaryKey
 /**
  * DEF-03 (Room v7): [userId] is the owning user. `NULL` means ownership is unknown
  * (legacy v6 data) and must never be implicitly assigned to any user.
+ *
+ * Room 10: Adds [idempotencyKey] with unique index for durable recurring idempotency.
  */
 @Entity(
     tableName = "transactions",
@@ -19,7 +22,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["userId"])]
+    indices = [
+        Index(value = ["userId"]),
+        Index(value = ["idempotencyKey"], unique = true),
+        Index(value = ["reversedTransactionId"])
+    ]
 )
 data class TransactionItem(
     @PrimaryKey(autoGenerate = true)
@@ -37,5 +44,15 @@ data class TransactionItem(
     val note: String = "",
     val tags: String = "",
     val accountMode: String = AccountMode.PERSONAL.name,
-    val userId: Long? = null
+    @ColumnInfo(name = "idempotencyKey", defaultValue = "NULL")
+    val idempotencyKey: String? = null,
+    val userId: Long? = null,
+    @ColumnInfo(name = "currencyCode", defaultValue = "NULL")
+    val currencyCode: String? = null,
+    @ColumnInfo(name = "amountMinorUnits", defaultValue = "0")
+    val amountMinorUnits: Long = if (amount != 0.0) com.example.util.CurrencyRegistry.displayToCanonicalMinorUnits(amount, currencyCode) else 0L,
+    @ColumnInfo(name = "isReversal", defaultValue = "0")
+    val isReversal: Boolean = false,
+    @ColumnInfo(name = "reversedTransactionId", defaultValue = "NULL")
+    val reversedTransactionId: Long? = null
 )

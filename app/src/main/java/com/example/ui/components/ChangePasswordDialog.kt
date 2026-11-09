@@ -1,4 +1,5 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -73,7 +74,7 @@ fun ChangePasswordDialog(
                     tint = FinSmartPrimary
                 )
                 Text(
-                    text = "Ubah Kata Sandi",
+                    text = AppStrings.t("Ubah Kata Sandi", "Change Password"),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -95,14 +96,14 @@ fun ChangePasswordDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "🔒 Keamanan Kredensial Akun:",
+                            text = AppStrings.t("🔒 Keamanan Kredensial Akun:", "🔒 Account Credential Security:"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = FinSmartPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Masukkan kata sandi saat ini untuk verifikasi kepemilikan, lalu buat kata sandi baru minimal 6 karakter. Kata sandi di-hash menggunakan algoritma PBKDF2.",
+                            text = AppStrings.t("Masukkan kata sandi saat ini untuk verifikasi kepemilikan, lalu buat kata sandi baru minimal 6 karakter. Kata sandi di-hash menggunakan algoritma PBKDF2.", "Enter your current password to verify ownership, then create a new password of at least 6 characters. Passwords are hashed using PBKDF2."),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -118,8 +119,8 @@ fun ChangePasswordDialog(
                         currentPassword = it
                         localError = null
                     },
-                    label = { Text("Kata Sandi Saat Ini") },
-                    placeholder = { Text("Masukkan kata sandi lama") },
+                    label = { Text(com.example.util.AppStrings.t("Kata Sandi Saat Ini", "Current Password")) },
+                    placeholder = { Text(com.example.util.AppStrings.t("Masukkan kata sandi lama", "Enter current password")) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
@@ -147,8 +148,8 @@ fun ChangePasswordDialog(
                         newPassword = it
                         localError = null
                     },
-                    label = { Text("Kata Sandi Baru") },
-                    placeholder = { Text("Minimal 6 karakter") },
+                    label = { Text(com.example.util.AppStrings.t("Kata Sandi Baru", "New Password")) },
+                    placeholder = { Text(com.example.util.AppStrings.t("Minimal 6 karakter", "Minimum 6 characters")) },
                     leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
@@ -176,8 +177,8 @@ fun ChangePasswordDialog(
                         confirmPassword = it
                         localError = null
                     },
-                    label = { Text("Konfirmasi Kata Sandi Baru") },
-                    placeholder = { Text("Ulangi kata sandi baru") },
+                    label = { Text(com.example.util.AppStrings.t("Konfirmasi Kata Sandi Baru", "Confirm New Password")) },
+                    placeholder = { Text(com.example.util.AppStrings.t("Ulangi kata sandi baru", "Repeat new password")) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
@@ -232,7 +233,7 @@ fun ChangePasswordDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
                 modifier = Modifier.testTag("btn_save_change_password")
             ) {
-                Text("Simpan Kata Sandi", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(com.example.util.AppStrings.t("Simpan Kata Sandi", "Save Password"), color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -240,7 +241,7 @@ fun ChangePasswordDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_change_password")
             ) {
-                Text("Batal")
+                Text(com.example.util.AppStrings.cancel)
             }
         }
     )

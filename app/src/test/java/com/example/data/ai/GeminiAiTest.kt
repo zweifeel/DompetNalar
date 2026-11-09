@@ -1,31 +1,23 @@
 package com.example.data.ai
 
 import com.example.config.AppConfig
-import com.example.data.model.ReceiptScanResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import retrofit2.http.POST
 
 class GeminiAiTest {
 
     @Test
-    fun testDefaultGeminiModelIsFlashLite() {
-        // Inspect the GeminiApiService Retrofit annotation to guarantee gemini-3.5-flash-lite
-        val method = GeminiApiService::class.java.getMethod(
-            "generateContent",
-            String::class.java,
-            GeminiGenerateRequest::class.java,
-            kotlin.coroutines.Continuation::class.java
-        )
-        val postAnnotation = method.getAnnotation(POST::class.java)
-        assertNotNull("generateContent harus memiliki anotasi @POST", postAnnotation)
-        assertEquals(
-            "Endpoint default harus mengarah ke v1beta/models/gemini-3.5-flash-lite:generateContent",
-            "v1beta/models/gemini-3.5-flash-lite:generateContent",
-            postAnnotation!!.value
-        )
+    fun testZeroGeminiApiDependency() {
+        // Guarantee that GeminiApiService is completely removed and no longer present in classpath
+        val classExists = try {
+            Class.forName("com.example.data.ai.GeminiApiService")
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
+        assertTrue("GeminiApiService must be completely removed from codebase", !classExists)
     }
 
     @Test

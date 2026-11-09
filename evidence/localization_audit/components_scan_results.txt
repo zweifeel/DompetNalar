@@ -1,0 +1,318 @@
+
+==========================================
+COMPONENT: AddTransactionSheet.kt (Total lines: 1220)
+==========================================
+  Line  603: "+${CurrencyFormatter.formatCompactRupiah(amt)}"
+
+==========================================
+COMPONENT: AdMobBanner.kt (Total lines: 71)
+==========================================
+
+==========================================
+COMPONENT: AssetTrackerModalDialog.kt (Total lines: 601)
+==========================================
+  Line  176: "Estimasi Total Kekayaan Bersih (Net Worth)"
+  Line  195: "Saldo Kas"
+  Line  204: "Aset Fisik"
+  Line  210: "Beban Hutang"
+  Line  211: "-${CurrencyFormatter.formatCompactRupiah(totalDebtsAmount)}"
+  Line  233: "Kelola Kategori"
+  Line  374: "Nama Aset (Misal: Laptop Asus / Honda Vario)"
+  Line  386: "Harga Beli (Rp)"
+  Line  396: "Tahun Beli"
+  Line  419: "Batal Edit"
+  Line  488: "Reset Semua Aset?"
+  Line  492: "Apakah Anda yakin ingin menghapus seluruh catatan aset fisik (Fresh Start)? Tindakan ini tidak dapat dibatalkan."
+  Line  504: "Reset Semua"
+  Line  509: "Batal"
+  Line  523: "Hapus Kategori Aset"
+  Line  528: "Pilih kategori yang ingin dihapus seluruh aset fisiknya:"
+  Line  532: "Tidak ada kategori aset aktif."
+  Line  553: "Hapus"
+  Line  562: "Tutup"
+  Line  576: "Hapus Aset?"
+  Line  580: "Hapus aset '${asset.name}' (${asset.category.displayName}) senilai ${CurrencyFormatter.formatRupiah(asset.currentValue)}?"
+  Line  591: "Hapus"
+  Line  596: "Batal"
+
+==========================================
+COMPONENT: AuthModalDialog.kt (Total lines: 493)
+==========================================
+  Line  196: "Email atau Username"
+  Line  197: "misal: user123 atau nama@email.com"
+  Line  211: "Kata Sandi"
+  Line  212: "••••••••"
+  Line  244: "Masuk Sekarang"
+  Line  252: "Nama Lengkap / Panggilan"
+  Line  253: "misal: Nama Lengkap"
+  Line  267: "Alamat Email"
+  Line  268: "nama@email.com"
+  Line  283: "Buat Kata Sandi"
+  Line  308: "Kirim Kode OTP Verifikasi"
+  Line  346: "Masukkan 6-Digit Kode OTP"
+  Line  347: "123456"
+  Line  369: "Verifikasi & Aktifkan Akun"
+  Line  373: "← Ubah Email / Data"
+  Line  411: "Menghubungkan Akun Google..."
+  Line  413: "Masuk dengan Akun Google"
+
+==========================================
+COMPONENT: CashflowChart.kt (Total lines: 599)
+==========================================
+  Line  270: "Pemasukan"
+  Line  280: "Pengeluaran"
+  Line  385: "Pemasukan ($incomePercent%)"
+  Line  394: "Pengeluaran ($expensePercent%)"
+
+==========================================
+COMPONENT: ChangelogBottomSheet.kt (Total lines: 248)
+==========================================
+  Line  205: "Tutup Catatan Rilis"
+
+==========================================
+COMPONENT: ChangePasswordDialog.kt (Total lines: 247)
+==========================================
+  Line  121: "Kata Sandi Saat Ini"
+  Line  122: "Masukkan kata sandi lama"
+  Line  150: "Kata Sandi Baru"
+  Line  151: "Minimal 6 karakter"
+  Line  179: "Konfirmasi Kata Sandi Baru"
+  Line  180: "Ulangi kata sandi baru"
+  Line  235: "Simpan Kata Sandi"
+  Line  243: "Batal"
+
+==========================================
+COMPONENT: DebtPlannerModalDialog.kt (Total lines: 2161)
+==========================================
+  Line  334: "Hutang & Pinjaman (${debtList.size})"
+  Line  340: "Cicilan Berjangka (${installmentPlans.size})"
+  Line  918: "Contoh: 2000000"
+  Line  941: "Kelola Kategori"
+  Line 1016: "#${index + 1}"
+  Line 1107: "Kategori Pinjaman:"
+  Line 1629: "Apakah Anda yakin ingin menghapus seluruh catatan pinjaman/hutang dan rencana cicilan ($totalAffectedCount item: ${debtList.size} pinjaman, ${activeInstallmentPlans.size} rencana cicilan)?\n\nTransaksi buku kas (wallet) dan riwayat pengeluaran umum Anda akan tetap aman. Tindakan ini tidak dapat dibatalkan."
+  Line 1641: "Reset Semua"
+  Line 1646: "Batal"
+  Line 1660: "Hapus Kategori Hutang"
+  Line 1665: "Pilih kategori yang ingin dihapus seluruh itemnya dari planner:"
+  Line 1669: "Tidak ada kategori hutang aktif."
+  Line 1690: "Hapus"
+  Line 1699: "Tutup"
+  Line 1713: "Hapus Pinjaman?"
+  Line 1717: "Hapus pinjaman '${debt.name}' senilai ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)} dari planner?"
+  Line 1728: "Hapus"
+  Line 1733: "Batal"
+  Line 1772: "Memproses Tagihan AI"
+  Line 1783: "Membaca screenshot tagihan..."
+  Line 1798: "Gagal Scan Tagihan"
+  Line 1813: "Coba Lagi"
+  Line 1818: "Tutup"
+  Line 1829: "Pilih Contoh Tagihan"
+  Line 1845: "Shopee PayLater (SPayLater)"
+  Line 1854: "DANA Cicil (Cicilan 4x)"
+  Line 1863: "GoPayLater (Limit Bulanan)"
+  Line 1869: "Batal"
+  Line 1897: "Nama Cicilan (wajib)"
+  Line 1898: "Contoh: Cicilan Motor Vario"
+  Line 1906: "Kreditur / Penyedia (opsional)"
+  Line 1907: "Contoh: FIF Group, BCA Finance"
+  Line 1916: "Total Tenor"
+  Line 1926: "Sudah Bayar"
+  Line 1937: "Angsuran per Bulan (Rp)"
+  Line 1938: "Contoh: 850000"
+  Line 1947: "Tanggal Jatuh Tempo (1-31)"
+  Line 1957: "Total Sisa Pokok (opsional)"
+  Line 1958: "Biarkan kosong jika belum pasti"
+  Line 1967: "Catatan (opsional)"
+  Line 2033: "Batal"
+  Line 2047: "Konfirmasi Bayar Angsuran"
+  Line 2083: "Tanpa potong saldo dompet"
+  Line 2116: "Konfirmasi Bayar"
+  Line 2121: "Batal"
+  Line 2135: "Hapus Rencana Cicilan?"
+  Line 2139: "Apakah Anda yakin ingin menghapus rencana cicilan '${plan.name}'? Catatan progres (${plan.paidCount}/${plan.totalTenor}) akan dihapus."
+  Line 2150: "Hapus"
+  Line 2155: "Batal"
+
+==========================================
+COMPONENT: DeleteAccountDialog.kt (Total lines: 181)
+==========================================
+  Line  139: "Masukkan kata sandi akun"
+  Line  140: "••••••••"
+  Line  172: "Hapus Permanen"
+  Line  177: "Batal"
+
+==========================================
+COMPONENT: DuressPinModalDialog.kt (Total lines: 272)
+==========================================
+  Line  156: "PIN Utama (Akun Asli)"
+  Line  171: "Duress PIN (Mode Stealth / Dummy)"
+  Line  190: "Aktifkan Biometric (Fingerprint)"
+  Line  221: "Simpan Pengaturan PIN"
+  Line  248: "Masukkan PIN..."
+  Line  265: "Tes Unlock"
+
+==========================================
+COMPONENT: ExportFormatManagementDialog.kt (Total lines: 495)
+==========================================
+  Line  118: "Kelola Format Ekspor"
+  Line  119: "Atur format bawaan & kustom laporan"
+  Line  140: "Tambah Format Kustom Baru"
+  Line  267: "Tutup"
+  Line  337: "Nama Format"
+  Line  338: "Contoh: CSV Analisis Akuntansi"
+  Line  346: "Pemisah Nilai (Delimiter):"
+  Line  371: "Format Tanggal:"
+  Line  405: "Sertakan baris header pada baris pertama"
+  Line  410: "Pilih Kolom Data:"
+  Line  465: "Batal"
+  Line  489: "Simpan"
+
+==========================================
+COMPONENT: FinSmartIcons.kt (Total lines: 72)
+==========================================
+
+==========================================
+COMPONENT: FinSmartLogo.kt (Total lines: 268)
+==========================================
+
+==========================================
+COMPONENT: GamificationHubDialog.kt (Total lines: 531)
+==========================================
+  Line  198: "🔥 ${state.dailyStreak} Hari"
+  Line  360: "Tes Ulang"
+  Line  475: "Butuh Streak ${icon.requiredStreak} Hari"
+  Line  514: "No-Spend Day Challenge 🦸"
+
+==========================================
+COMPONENT: GuestReminderBanner.kt (Total lines: 149)
+==========================================
+
+==========================================
+COMPONENT: InitialMasterSetupDialog.kt (Total lines: 212)
+==========================================
+  Line  118: "Kata Sandi Baru"
+  Line  119: "Minimal 6 karakter"
+  Line  146: "Konfirmasi Kata Sandi"
+  Line  147: "Ulangi kata sandi baru"
+  Line  200: "Simpan & Masuk"
+  Line  208: "Batal"
+
+==========================================
+COMPONENT: MasterDevPanelSheet.kt (Total lines: 637)
+==========================================
+  Line  184: "Cari User ID, nama, atau email pengguna..."
+  Line  212: "Semua"
+  Line  217: "Member"
+  Line  222: "Smart Master"
+  Line  290: "Pilih Durasi Smart Master"
+  Line  304: "Preset Durasi:"
+  Line  345: "Durasi Khusus (Kustom)"
+  Line  356: "Jumlah Hari (1 - 3650)"
+  Line  357: "Contoh: 45"
+  Line  387: "Lanjutkan ke Konfirmasi"
+  Line  392: "Batal"
+  Line  408: "Konfirmasi Pemberian Membership"
+  Line  411: "Harap tinjau detail perubahan sebelum menyimpan:"
+  Line  413: "• Target Pengguna: [ID #${targetUser.id}] ${targetUser.username}"
+  Line  414: "• Email: ${targetUser.email}"
+  Line  415: "• Status Sebelumnya: ${targetUser.role.displayName}"
+  Line  416: "• Durasi Tambahan: $days Hari"
+  Line  417: "• Masa Berlaku Baru: ${sdf.format(Date(newExpiry))}"
+  Line  428: "Konfirmasi & Simpan"
+  Line  433: "Batal"
+  Line  445: "Konfirmasi Cabut Membership"
+  Line  460: "Ya, Cabut Membership"
+  Line  465: "Batal"
+  Line  630: "Cabut"
+
+==========================================
+COMPONENT: NotificationCenterBottomSheet.kt (Total lines: 412)
+==========================================
+  Line  267: "Belum Ada Notifikasi Baru"
+
+==========================================
+COMPONENT: PayLaterBillReviewDialog.kt (Total lines: 949)
+==========================================
+  Line  403: "Sebelumnya"
+  Line  449: "Selanjutnya"
+  Line  549: "Penyedia Layanan / Platform *"
+  Line  550: "misal: GoPay Pinjam, DANA Cicil"
+  Line  561: "Nama Produk / Kontrak"
+  Line  562: "misal: Pinjaman Tunai #1, Cicilan 4x"
+  Line  625: "Cicilan Ke"
+  Line  636: "Total Tenor"
+  Line  670: "Tgl (1-31)"
+  Line  687: "Bln (1-12)"
+  Line  704: "Tahun"
+  Line  817: "Simpan sbg Rencana Cicilan ($totInstallment x)"
+  Line  831: "Batal"
+  Line  944: "Simpan Semua (${itemsList.size} Tagihan)"
+
+==========================================
+COMPONENT: PersonalityQuizModalDialog.kt (Total lines: 316)
+==========================================
+
+==========================================
+COMPONENT: ProminentDisclosureDialog.kt (Total lines: 333)
+==========================================
+
+==========================================
+COMPONENT: PublishUpdateBottomSheet.kt (Total lines: 319)
+==========================================
+  Line  183: "Target Version Name"
+  Line  184: "Contoh: 1.0.4"
+  Line  198: "Version Code"
+  Line  214: "Catatan Rilis / Changelog (1 baris = 1 poin)"
+  Line  215: "• Fitur baru...\n• Perbaikan bug..."
+
+==========================================
+COMPONENT: ReceiptGeneratorModalDialog.kt (Total lines: 397)
+==========================================
+  Line  223: "No. Bukti:"
+  Line  231: "Tanggal:"
+  Line  239: "Jenis:"
+  Line  254: "Deskripsi:"
+  Line  262: "Kategori:"
+  Line  271: "Dari:"
+  Line  278: "Ke:"
+  Line  286: "Sumber Dana:"
+  Line  296: "Catatan:"
+  Line  363: "Bukti Transaksi DompetNalar"
+  Line  372: "Salin Teks"
+  Line  392: "Bagikan"
+
+==========================================
+COMPONENT: ShimmerLoading.kt (Total lines: 97)
+==========================================
+
+==========================================
+COMPONENT: SleepyKoalaStartupScreen.kt (Total lines: 251)
+==========================================
+
+==========================================
+COMPONENT: SmartMasterPaywallDialog.kt (Total lines: 635)
+==========================================
+  Line  408: "Memproses Transaksi..."
+
+==========================================
+COMPONENT: SummaryCards.kt (Total lines: 590)
+==========================================
+
+==========================================
+COMPONENT: TransactionItemRow.kt (Total lines: 195)
+==========================================
+
+==========================================
+COMPONENT: UpdateAvailableBottomSheet.kt (Total lines: 227)
+==========================================
+  Line  134: "Versi Terpasang:"
+  Line  135: "v${AppConfig.APP_VERSION_NAME} (Build ${AppConfig.APP_VERSION_CODE})"
+  Line  139: "Versi Baru di Drive:"
+  Line  140: "v${metadata.version_name} (Build ${metadata.version_code})"
+  Line  191: "Mengunduh APK dari Google Drive..."
+
+==========================================
+COMPONENT: WalletComponents.kt (Total lines: 789)
+==========================================
+  Line  488: "misal: 1234567890"

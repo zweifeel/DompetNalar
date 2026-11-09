@@ -1,0 +1,137 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny-all security baseline
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() in [
+          'lunachroc01@gmail.com',
+          'zweifeel@gmail.com'
+        ];
+    }
+
+    function isValidFeedback() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+        'feedbackId', 'userId', 'userName', 'userEmail',
+        'rating', 'category', 'message', 'appVersion', 'createdAt'
+      ]) &&
+      data.feedbackId is string && data.feedbackId.size() > 0 &&
+      data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+      data.category in ['Bug / Kendala', 'Saran Fitur', 'Desain / UI', 'Lainnya'] &&
+      data.message is string && data.message.size() > 0 && data.message.size() <= 1000 &&
+      data.userName is string && data.userName.size() <= 100 &&
+      data.userEmail is string && data.userEmail.size() <= 150 &&
+      data.appVersion is string &&
+      data.createdAt == request.time;
+    }
+
+    function isValidGrant() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+        'email', 'role', 'grantedBy', 'grantedAt',
+        'expiresAt', 'revoked', 'updatedAt', 'notes'
+      ]) &&
+      data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+      data.role == 'SMART_MASTER' && // KEAMANAN: HANYA BOLEH SMART_MASTER, DILARANG MASTER_DEV!
+      data.grantedBy is string &&
+      data.revoked is bool &&
+      (data.expiresAt == null || data.expiresAt is int || data.expiresAt is timestamp);
+    }
+
+    function isValidRegistryCreate(uid) {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+        'uid', 'email', 'displayName', 'firstSeenAt',
+        'lastSeenAt', 'appVersion', 'platform'
+      ]) &&
+      data.uid == uid &&
+      request.auth.token.email != null &&
+      data.email == request.auth.token.email.lower() &&
+      data.email is string && data.email.size() <= 150 &&
+      data.displayName is string && data.displayName.size() <= 100 &&
+      data.appVersion is string && data.appVersion.size() <= 30 &&
+      data.platform is string && data.platform.size() <= 20;
+    }
+
+    function isValidRegistryUpdate(uid) {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+        'uid', 'email', 'displayName', 'firstSeenAt',
+        'lastSeenAt', 'appVersion', 'platform'
+      ]) &&
+      data.uid == uid &&
+      data.uid == resource.data.uid &&
+      data.firstSeenAt == resource.data.firstSeenAt &&
+      data.email == resource.data.email &&
+      request.auth.token.email != null &&
+      data.email == request.auth.token.email.lower() &&
+      data.email is string && data.email.size() <= 150 &&
+      data.displayName is string && data.displayName.size() <= 100 &&
+      data.appVersion is string && data.appVersion.size() <= 30 &&
+      data.platform is string && data.platform.size() <= 20;
+    }
+
+    // Centralized User Feedback Collection (P2)
+    match /feedbacks/{feedbackId} {
+      // Any authenticated user or anonymous app instance can create feedback adhering to strict schema
+      allow create: if request.resource.data.feedbackId == feedbackId && isValidFeedback();
+
+      // Only authorized administrators can inspect, list, modify, or purge feedback
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Remote Smart Master Grants Collection (Phase 4B)
+    match /tester_grants/{grantId} {
+      // Hanya administrator resmi yang dapat melihat daftar grant
+      allow list: if isAdmin();
+
+      // Pembuatan dan pembaruan (termasuk pencabutan/revoke) wajib divalidasi oleh isValidGrant()
+      allow create, update: if isAdmin() && isValidGrant();
+
+      // Penghapusan dokumen grant hanya diizinkan untuk admin resmi tanpa mengevaluasi request.resource
+      allow delete: if isAdmin();
+
+      // Tester penerima HANYA dapat membaca (get) dokumen grant miliknya sendiri
+      // Akses publik atau tester membaca grant pengguna lain DITOLAK
+      allow get: if isAdmin() || (
+        request.auth != null &&
+        request.auth.token.email != null &&
+        resource.data.email.lower() == request.auth.token.email.lower()
+      );
+    }
+
+    // User Registry Collection (Phase 4B)
+    match /user_registry/{uid} {
+      // Hanya administrator resmi yang dapat melihat direktori seluruh akun
+      allow list: if isAdmin();
+
+      // Pengguna hanya dapat membaca data miliknya sendiri; Admin dapat membaca semua
+      allow get: if isAdmin() || (
+        request.auth != null &&
+        request.auth.uid == uid
+      );
+
+      // Pengguna terotentikasi dapat mencatat metadata akunnya sendiri
+      allow create: if request.auth != null &&
+                       request.auth.uid == uid &&
+                       isValidRegistryCreate(uid);
+
+      allow update: if request.auth != null &&
+                       request.auth.uid == uid &&
+                       isValidRegistryUpdate(uid);
+
+      // Hanya administrator resmi yang dapat menghapus data registry jika diperlukan
+      allow delete: if isAdmin();
+    }
+  }
+}

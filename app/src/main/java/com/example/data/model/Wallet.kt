@@ -1,13 +1,17 @@
 package com.example.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * DEF-03 (Room v7): [userId] is the owning user. `NULL` means ownership is unknown
- * (legacy v6 data) and must never be implicitly assigned to any user.
+ * Room 10 Wallet Entity.
+ *
+ * - [userId]: Owning user ID (nullable Long? preserved from Room 9 DEF-03 legacy v6 isolation).
+ * - [isArchived]: Lifecycle flag (default 0).
+ * - [currencyCode]: Nullable ISO 4217 code (default NULL). Zero silent fallback to IDR/USD.
  */
 @Entity(
     tableName = "wallets",
@@ -19,7 +23,10 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["userId"])]
+    indices = [
+        Index(value = ["userId"]),
+        Index(value = ["id", "userId"], unique = true)
+    ]
 )
 data class Wallet(
     @PrimaryKey(autoGenerate = true)
@@ -33,5 +40,13 @@ data class Wallet(
     val accountMode: String = AccountMode.PERSONAL.name,
     val isDefault: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val userId: Long? = null
-)
+    @ColumnInfo(name = "isArchived", defaultValue = "0")
+    val isArchived: Boolean = false,
+    @ColumnInfo(name = "currencyCode", defaultValue = "NULL")
+    val currencyCode: String? = null,
+    val userId: Long? = null,
+    @ColumnInfo(name = "balanceMinorUnits", defaultValue = "0")
+    val balanceMinorUnits: Long = if (balance != 0.0) com.example.util.CurrencyRegistry.displayToCanonicalMinorUnits(balance, currencyCode) else 0L
+) {
+    val hasAssignedCurrency: Boolean get() = !currencyCode.isNullOrBlank()
+}

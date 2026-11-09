@@ -1,0 +1,180 @@
+{
+  "_metadata": {
+    "status": "SYNTHETIC_ANONYMIZED_FIXTURE",
+    "description": "Synthetic Room 9 backup payload for legacy v1 format testing. Not a genuine user export.",
+    "schemaVersion": 9,
+    "appVersion": "1.0.10"
+  },
+  "version": 1,
+  "exportedAt": 1704067200000,
+  "wallets": [
+    {
+      "id": 1,
+      "name": "Dompet Tunai",
+      "type": "CASH",
+      "accountNumber": "",
+      "balance": 500000.0,
+      "colorHex": "#4CAF50",
+      "iconName": "cash",
+      "accountMode": "PERSONAL",
+      "isDefault": true,
+      "createdAt": 1704067200000,
+      "userId": 101
+    },
+    {
+      "id": 2,
+      "name": "Rekening Bank",
+      "type": "BANK",
+      "accountNumber": "1234567890",
+      "balance": 2500000.0,
+      "colorHex": "#0B57D0",
+      "iconName": "bank",
+      "accountMode": "PERSONAL",
+      "isDefault": false,
+      "createdAt": 1704067200000,
+      "userId": 101
+    }
+  ],
+  "transactions": [
+    {
+      "id": 10,
+      "title": "Gaji Bulanan",
+      "amount": 3000000.0,
+      "type": "INCOME",
+      "category": "Gaji",
+      "categoryIcon": "wallet",
+      "walletId": 2,
+      "walletName": "Rekening Bank",
+      "targetWalletId": null,
+      "targetWalletName": null,
+      "timestamp": 1704153600000,
+      "note": "Gaji Januari 2024",
+      "tags": "#gaji",
+      "accountMode": "PERSONAL",
+      "userId": 101
+    },
+    {
+      "id": 11,
+      "title": "Belanja Kebutuhan",
+      "amount": 250000.0,
+      "type": "EXPENSE",
+      "category": "Makanan",
+      "categoryIcon": "food",
+      "walletId": 1,
+      "walletName": "Dompet Tunai",
+      "targetWalletId": null,
+      "targetWalletName": null,
+      "timestamp": 1704240000000,
+      "note": "Belanja dapur mingguan",
+      "tags": "#belanja",
+      "accountMode": "PERSONAL",
+      "userId": 101
+    },
+    {
+      "id": 12,
+      "title": "Tarik Tunai",
+      "amount": 500000.0,
+      "type": "TRANSFER",
+      "category": "Transfer",
+      "categoryIcon": "swap",
+      "walletId": 2,
+      "walletName": "Rekening Bank",
+      "targetWalletId": 1,
+      "targetWalletName": "Dompet Tunai",
+      "timestamp": 1704326400000,
+      "note": "Tarik tunai ATM",
+      "tags": "#transfer",
+      "accountMode": "PERSONAL",
+      "userId": 101
+    }
+  ],
+  "categories": [
+    {
+      "id": 100,
+      "name": "Hobi Koleksi",
+      "type": "EXPENSE",
+      "iconName": "star",
+      "colorHex": "#9C27B0",
+      "userId": 101,
+      "isSystem": false
+    }
+  ],
+  "users": [
+    {
+      "id": 101,
+      "username": "synthetic_user",
+      "email": "synthetic@example.com",
+      "passwordHash": "hash_synthetic_salt",
+      "role": "FREE_MEMBER",
+      "createdAt": 1704067200000,
+      "trialStartDate": 0,
+      "subscriptionExpiresAt": null,
+      "isApproved": true,
+      "isGuest": false
+    }
+  ],
+  "splitBillHistory": [
+    {
+      "id": "sb-syn-01",
+      "merchantName": "Kafe Kopi Nalar",
+      "date": "2024-01-05",
+      "totalAmount": 120000.0,
+      "formattedText": "Total: 120.000 (2 orang @ 60.000)",
+      "timestamp": 1704412800000,
+      "userId": 101
+    }
+  ],
+  "budgetLimits": [
+    {
+      "id": "total_monthly",
+      "limitAmount": 5000000.0,
+      "isCategory": false,
+      "userId": 101,
+      "localId": 1
+    }
+  ],
+  "debts": [
+    {
+      "id": "debt-syn-01",
+      "name": "Pinjaman Koperasi",
+      "amount": 10000000.0,
+      "interestRatePercent": 6.0,
+      "minMonthlyPayment": 500000.0,
+      "category": "Koperasi",
+      "dueDate": "10 tiap bulan",
+      "createdAt": 1704067200000,
+      "userId": 101
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-syn-01",
+      "name": "Laptop Kantor",
+      "initialValue": 15000000.0,
+      "purchaseYear": 2023,
+      "category": "ELECTRONICS",
+      "createdAt": 1704067200000,
+      "userId": 101
+    }
+  ],
+  "installmentPlans": [
+    {
+      "id": "plan-syn-01",
+      "name": "Cicilan Kulkas 2 Pintu",
+      "provider": "Toko Elektronik",
+      "installmentAmount": 450000.0,
+      "totalTenor": 12,
+      "paidCount": 2,
+      "frequency": "Bulanan",
+      "startDate": "2024-01-01",
+      "nextDueDate": "2024-03-01",
+      "anchorDay": 1,
+      "totalRemainingPrincipal": 4500000.0,
+      "status": "AKTIF",
+      "notes": "Garansi resmi 5 tahun",
+      "createdAt": 1704067200000,
+      "lastPaymentDate": 1706745600000,
+      "userId": 101
+    }
+  ]
+}

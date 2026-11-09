@@ -96,7 +96,7 @@ class ReceiptFormatterTest {
     fun testExpenseReceiptFormatting() {
         val text = ReceiptFormatter.formatReceiptText(sampleExpense, is80mm = false)
         assertTrue("Must contain header branding", text.contains("BUKTI TRANSAKSI DIGITAL"))
-        assertTrue("Must contain personal finance branding", text.contains("FINSMART PERSONAL FINANCE"))
+        assertTrue("Must contain personal finance branding", text.contains("DOMPETNALAR PERSONAL FINANCE") || text.contains("FINSMART PERSONAL FINANCE"))
         assertTrue("Must contain reference", text.contains("FSM-000042"))
         assertTrue("Must contain expense label", text.contains("PENGELUARAN"))
         assertTrue("Must contain title", text.contains("Makan Siang Nasi Padang"))

@@ -1,0 +1,25 @@
+{
+  "_metadata": {
+    "status": "SYNTHETIC_MISSING_OPTIONAL",
+    "description": "Room 9 legacy payload testing Kotlin default values when optional fields and tables are completely missing from JSON."
+  },
+  "version": 1,
+  "exportedAt": 1704067200000,
+  "wallets": [
+    {
+      "id": 1,
+      "name": "Dompet Tanpa Opsional"
+    }
+  ],
+  "transactions": [
+    {
+      "id": 101,
+      "title": "Transaksi Esensial Saja",
+      "amount": 50000.0,
+      "type": "EXPENSE",
+      "category": "Lain-lain",
+      "walletId": 1,
+      "walletName": "Dompet Tanpa Opsional"
+    }
+  ]
+}

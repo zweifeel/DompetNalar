@@ -1,9 +1,7 @@
 package com.example.ui.components
+import com.example.util.AppStrings
 
-import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,24 +79,19 @@ fun GamificationHubDialog(
     onDismiss: () -> Unit,
     onSelectAppIcon: (AppIconEdition) -> Unit,
     onToggleNoSpendChallenge: (Boolean) -> Unit,
-    onUpdateCustomBackground: (String?, Float) -> Unit,
+    onUpdateCustomBackground: (String?, Float) -> Unit = { _, _ -> },
     onTriggerPersonalityTest: () -> Unit,
-    onClaimStreakReward: () -> Unit = {}
+    canClaimStreakReward: Boolean = false,
+    streakRewardRemainingHours: Long = 0L,
+    onClaimStreakReward: () -> Unit = {},
+    canClaim30DayStreakReward: Boolean = false,
+    streak30RewardRemainingHours: Long = 0L,
+    onClaim30DayStreakReward: () -> Unit = {},
+    isWallpaperUnlocked: Boolean = false
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val badges = GamificationManager.getAllBadges(state.dailyStreak, state.level, state.unlockedBadgeIds)
-    var bgOpacity by remember { mutableStateOf(state.customBackgroundOpacity) }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri: Uri? ->
-            if (uri != null) {
-                onUpdateCustomBackground(uri.toString(), bgOpacity)
-                Toast.makeText(context, "Custom Background berhasil diterapkan!", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -132,7 +125,7 @@ fun GamificationHubDialog(
                         Icon(Icons.Default.Stars, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "FINSMART GAMIFICATION & REWARDS",
+                            text = "DOMPETNALAR GAMIFICATION & REWARDS",
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
                             color = Color(0xFFD97706)
@@ -245,21 +238,90 @@ fun GamificationHubDialog(
                             color = Color(0xFF92400E)
                         )
                         Text(
-                            text = "24 Jam Smart Master Pass + 3x Action Pass Credits",
+                            text = "5 Jam Smart Member Pass + 3x Action Pass Credits",
                             fontSize = 11.sp,
                             color = Color(0xFFB45309)
                         )
                     }
 
+                    val buttonText = when {
+                        state.dailyStreak < 7 -> "Streak < 7"
+                        !canClaimStreakReward -> if (streakRewardRemainingHours > 0) "Klaim (${streakRewardRemainingHours}j)" else "Sudah Diklaim"
+                        else -> "Klaim"
+                    }
+
                     Button(
                         onClick = {
-                            onClaimStreakReward()
-                            Toast.makeText(context, "Bonus Streak 7 Hari Berhasil Diklaim! 🎉", Toast.LENGTH_SHORT).show()
+                            if (canClaimStreakReward) {
+                                onClaimStreakReward()
+                            } else {
+                                Toast.makeText(context, "Reward streak 7 hari belum dapat diklaim saat ini.", Toast.LENGTH_SHORT).show()
+                            }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                        enabled = canClaimStreakReward,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFD97706),
+                            disabledContainerColor = Color(0xFFD97706).copy(alpha = 0.4f),
+                            disabledContentColor = Color.White.copy(alpha = 0.8f)
+                        ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Klaim", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(buttonText, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 30-Day Streak Reward Banner
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)),
+                border = BorderStroke(1.5.dp, Color(0xFFD97706))
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "👑 Reward Streak 30 Hari:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF92400E)
+                        )
+                        Text(
+                            text = "Akses Penuh Smart Member Gratis Selama 24 Jam ⚡",
+                            fontSize = 11.sp,
+                            color = Color(0xFFB45309)
+                        )
+                    }
+
+                    val button30Text = when {
+                        state.dailyStreak < 30 -> "Streak < 30"
+                        !canClaim30DayStreakReward -> if (streak30RewardRemainingHours > 0) "Klaim (${streak30RewardRemainingHours}j)" else "Sudah Diklaim"
+                        else -> "Klaim"
+                    }
+
+                    Button(
+                        onClick = {
+                            if (canClaim30DayStreakReward) {
+                                onClaim30DayStreakReward()
+                            } else {
+                                Toast.makeText(context, "Reward streak 30 hari belum dapat diklaim saat ini.", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        enabled = canClaim30DayStreakReward,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFD97706),
+                            disabledContainerColor = Color(0xFFD97706).copy(alpha = 0.4f),
+                            disabledContentColor = Color.White.copy(alpha = 0.8f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(button30Text, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -430,73 +492,6 @@ fun GamificationHubDialog(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Custom Background (Streak 30 Days)
-            Text(
-                text = "Custom Background Galeri (Streak 30+ Hari):",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-
-            val isBgUnlocked = state.dailyStreak >= 30
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Image, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "Ganti Foto Background", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                photoPickerLauncher.launch(
-                                    androidx.activity.result.PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
-                            },
-                            enabled = isBgUnlocked,
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(if (isBgUnlocked) "Pilih Foto" else "Streak 30H", fontSize = 11.sp)
-                        }
-                    }
-
-                    if (state.customBackgroundUri != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(text = "Transparansi Opacity Background: ${(bgOpacity * 100).toInt()}%", fontSize = 11.sp)
-                        Slider(
-                            value = bgOpacity,
-                            onValueChange = {
-                                bgOpacity = it
-                                onUpdateCustomBackground(state.customBackgroundUri, bgOpacity)
-                            },
-                            valueRange = 0.1f..0.8f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        TextButton(
-                            onClick = { onUpdateCustomBackground(null, 0.3f) },
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Text("Hapus Background", fontSize = 11.sp, color = Color.Red)
-                        }
-                    }
-                }
-            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -520,7 +515,7 @@ fun GamificationHubDialog(
                             Text(text = "No-Spend Day Challenge 🦸", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                         Text(
-                            text = "Tantangan 24 jam tanpa transaksi keluar. Dapatkan Streak Multiplier 2x!",
+                            text = AppStrings.t("Tantangan 24 jam tanpa transaksi keluar. Dapatkan Streak Multiplier 2x!", "24-hour challenge without spending. Earn a 2x Streak Multiplier!"),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
