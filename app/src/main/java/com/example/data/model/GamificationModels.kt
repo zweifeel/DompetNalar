@@ -22,7 +22,14 @@ enum class AppIconEdition(val displayName: String, val requiredStreak: Int, val 
     DEFAULT_CLASSIC("Default Classic", 0, false),
     GOLD_LUXURY("Gold Luxury Edition 👑", 14, true),
     DARK_OBSIDIAN("Dark Obsidian Edition 🖤", 14, true),
-    CYBERPUNK_NEON("Cyberpunk Neon Edition ⚡", 14, true)
+    CYBERPUNK_NEON("Cyberpunk Neon Edition ⚡", 14, true);
+
+    val localizedDisplayName: String get() = when (this) {
+        DEFAULT_CLASSIC -> com.example.util.AppStrings.t("Klasik Bawaan (Default Classic)", "Default Classic")
+        GOLD_LUXURY -> com.example.util.AppStrings.t("Edisi Emas Mewah 👑", "Gold Luxury Edition 👑")
+        DARK_OBSIDIAN -> com.example.util.AppStrings.t("Edisi Obsidian Gelap 🖤", "Dark Obsidian Edition 🖤")
+        CYBERPUNK_NEON -> com.example.util.AppStrings.t("Edisi Neon Cyberpunk ⚡", "Cyberpunk Neon Edition ⚡")
+    }
 }
 
 data class GamificationBadge(

@@ -200,7 +200,7 @@ fun WalletCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Menu Dompet",
+                                contentDescription = com.example.util.AppStrings.t("Menu Dompet", "Wallet Menu"),
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -545,7 +545,7 @@ fun WalletDialog(
                     value = accountNumber,
                     onValueChange = { accountNumber = it },
                     label = { Text(com.example.util.AppStrings.t("No. Rekening / No. HP (Opsional)", "Account / Phone No. (Optional)")) },
-                    placeholder = { Text("misal: 1234567890") },
+                    placeholder = { Text(com.example.util.AppStrings.t("misal: 1234567890", "e.g., 1234567890")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier

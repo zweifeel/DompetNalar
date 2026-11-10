@@ -318,11 +318,11 @@ fun PayLaterBillReviewDialog(
                                 else if (activeIndex >= itemsList.size) activeIndex = itemsList.size - 1
                             }
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Hapus item ini", tint = ExpenseRed)
+                            Icon(Icons.Default.Delete, contentDescription = com.example.util.AppStrings.t("Hapus item ini", "Delete this item"), tint = ExpenseRed)
                         }
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        Icon(Icons.Default.Close, contentDescription = com.example.util.AppStrings.t("Tutup", "Close"))
                     }
                 }
             }
@@ -399,9 +399,9 @@ fun PayLaterBillReviewDialog(
                             .weight(1f)
                             .testTag("btn_review_prev")
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Sebelumnya", modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.ArrowBack, contentDescription = com.example.util.AppStrings.previous, modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(1.dp))
-                        Text("Sebelumnya", fontSize = 12.sp, maxLines = 1)
+                        Text(com.example.util.AppStrings.previous, fontSize = 12.sp, maxLines = 1)
                     }
 
                     Column(
@@ -447,9 +447,9 @@ fun PayLaterBillReviewDialog(
                             .weight(1f)
                             .testTag("btn_review_next")
                     ) {
-                        Text("Selanjutnya", fontSize = 12.sp, maxLines = 1)
+                        Text(com.example.util.AppStrings.next, fontSize = 12.sp, maxLines = 1)
                         Spacer(modifier = Modifier.width(2.dp))
-                        Icon(Icons.Default.ArrowForward, contentDescription = "Selanjutnya", modifier = Modifier.size(15.dp))
+                        Icon(Icons.Default.ArrowForward, contentDescription = com.example.util.AppStrings.next, modifier = Modifier.size(15.dp))
                     }
                 }
             }
@@ -579,13 +579,13 @@ fun PayLaterBillReviewDialog(
                     onValueChange = { currentBillText = formatInputDigits(it) },
                     label = {
                         Text(
-                            text = "Tagihan Berjalan",
+                            text = com.example.util.AppStrings.t("Tagihan Berjalan", "Current Bill"),
                             fontSize = 11.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     },
-                    prefix = { Text("Rp ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    prefix = { Text(com.example.util.CurrencyFormatter.activeCurrency.prefix + " ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     placeholder = { Text("0", fontSize = 12.sp) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -598,13 +598,13 @@ fun PayLaterBillReviewDialog(
                     onValueChange = { totalDebtText = formatInputDigits(it) },
                     label = {
                         Text(
-                            text = "Total Sisa Pokok",
+                            text = com.example.util.AppStrings.t("Total Sisa Pokok", "Total Remaining Principal"),
                             fontSize = 11.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     },
-                    prefix = { Text("Rp ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    prefix = { Text(com.example.util.CurrencyFormatter.activeCurrency.prefix + " ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     placeholder = { Text("0", fontSize = 12.sp) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,

@@ -81,6 +81,7 @@ object CurrencyFormatter {
 
     private val _selectedCurrency = MutableStateFlow(AppCurrency.IDR)
     val selectedCurrency: StateFlow<AppCurrency> = _selectedCurrency.asStateFlow()
+    val activeCurrency: AppCurrency get() = _selectedCurrency.value
 
     fun initialize(context: Context) {
         if (prefs == null) {

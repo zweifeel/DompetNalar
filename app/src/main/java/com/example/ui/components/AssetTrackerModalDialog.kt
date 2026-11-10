@@ -160,7 +160,7 @@ fun AssetTrackerModalDialog(
                     }
 
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        Icon(Icons.Default.Close, contentDescription = AppStrings.t("Tutup", "Close"))
                     }
                 }
             }
@@ -560,7 +560,7 @@ fun AssetTrackerModalDialog(
             },
             confirmButton = {
                 TextButton(onClick = { isDeleteCategoryDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )

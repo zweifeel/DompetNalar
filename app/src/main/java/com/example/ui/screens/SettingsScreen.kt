@@ -595,7 +595,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     Text(
-                        text = "Preferences & Security",
+                        text = AppStrings.t("Preferensi & Keamanan", "Preferences & Security"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -604,8 +604,8 @@ fun SettingsScreen(
 
                     SettingsRowToggle(
                         icon = Icons.Default.Person,
-                        title = "Mode Keuangan Aktif",
-                        subtitle = "Beralih antara Mode ${accountMode.displayName}",
+                        title = AppStrings.t("Mode Keuangan Aktif", "Active Financial Mode"),
+                        subtitle = AppStrings.t("Beralih antara Mode ${accountMode.displayName}", "Switch between ${accountMode.displayName} Mode"),
                         checked = accountMode == AccountMode.BUSINESS,
                         onCheckedChange = { onToggleAccountMode() }
                     )
@@ -624,8 +624,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.DarkMode,
-                        title = "Tema Tampilan",
-                        subtitle = currentThemeMode.title,
+                        title = AppStrings.t("Tema Tampilan", "Theme"),
+                        subtitle = currentThemeMode.localizedTitle,
                         onClick = { isThemeDialogOpen = true }
                     )
 
@@ -633,8 +633,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.ColorLens,
-                        title = "Warna Aksen Aplikasi",
-                        subtitle = currentAccentColor.displayName,
+                        title = AppStrings.t("Warna Aksen Aplikasi", "App Accent Color"),
+                        subtitle = currentAccentColor.localizedDisplayName,
                         onClick = { isAccentDialogOpen = true }
                     )
 
@@ -644,8 +644,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Wallpaper,
-                        title = "Latar Belakang Dasbor (Wallpaper)",
-                        subtitle = if (!customWallpaperUri.isNullOrEmpty()) "Custom Wallpaper Aktif (${(customWallpaperOpacity * 100).toInt()}%)" else if (isWallpaperUnlocked) AppStrings.t("Bawaan Tema DompetNalar (Terbuka)", "DompetNalar Default Theme (Unlocked)") else "Terkunci (Khusus Pengguna Smart Master 👑)",
+                        title = AppStrings.t("Latar Belakang Dasbor (Wallpaper)", "Dashboard Background (Wallpaper)"),
+                        subtitle = if (!customWallpaperUri.isNullOrEmpty()) AppStrings.t("Custom Wallpaper Aktif (${(customWallpaperOpacity * 100).toInt()}%)", "Custom Wallpaper Active (${(customWallpaperOpacity * 100).toInt()}%)") else if (isWallpaperUnlocked) AppStrings.t("Bawaan Tema DompetNalar (Terbuka)", "DompetNalar Default Theme (Unlocked)") else AppStrings.t("Terkunci (Khusus Pengguna Smart Master 👑)", "Locked (Smart Master Only 👑)"),
                         onClick = { isWallpaperDialogOpen = true }
                     )
 
@@ -653,8 +653,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Apps,
-                        title = "Dynamic Launcher Icon (Homescreen)",
-                        subtitle = activeIconEdition.displayName,
+                        title = AppStrings.t("Ikon Peluncur Dinamis (Homescreen)", "Dynamic Launcher Icon (Homescreen)"),
+                        subtitle = activeIconEdition.localizedDisplayName,
                         onClick = { isAppIconDialogOpen = true }
                     )
 
@@ -662,8 +662,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Stars,
-                        title = "Gamifikasi, Daily Streak & Badges",
-                        subtitle = "Level XP, lencana digital & tantangan streak",
+                        title = AppStrings.t("Gamifikasi, Daily Streak & Badges", "Gamification, Daily Streak & Badges"),
+                        subtitle = AppStrings.t("Level XP, lencana digital & tantangan streak", "XP levels, digital badges & streak challenges"),
                         onClick = onOpenGamificationHub
                     )
 
@@ -671,8 +671,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Person,
-                        title = "Tes Profil Finansial AI",
-                        subtitle = "Ukur tipe kepribadian finansial (Saver/Investor/Impulse)",
+                        title = AppStrings.t("Tes Profil Finansial AI", "AI Financial Personality Quiz"),
+                        subtitle = AppStrings.t("Ukur tipe kepribadian finansial (Saver/Investor/Impulse)", "Discover your financial personality type (Saver/Investor/Impulse)"),
                         onClick = onOpenPersonalityQuiz
                     )
 
@@ -689,8 +689,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Paid,
-                        title = "Mata Uang (Currency Selector)",
-                        subtitle = "${selectedCurrency.displayName} • Format Global Aktif",
+                        title = AppStrings.t("Mata Uang (Currency Selector)", "Currency (Currency Selector)"),
+                        subtitle = "${selectedCurrency.displayName} • " + AppStrings.t("Format Global Aktif", "Active Global Format"),
                         onClick = { isCurrencyDialogOpen = true }
                     )
 
@@ -698,8 +698,8 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Security,
-                        title = "Duress PIN & Security Suite",
-                        subtitle = "PIN Utama & PIN Darurat (Mode Stealth / Kamuflase)",
+                        title = AppStrings.t("Duress PIN & Sistem Keamanan", "Duress PIN & Security Suite"),
+                        subtitle = AppStrings.t("PIN Utama & PIN Darurat (Mode Stealth / Kamuflase)", "Primary PIN & Emergency PIN (Stealth / Camouflage Mode)"),
                         onClick = onOpenDuressPinModal
                     )
 
@@ -707,11 +707,11 @@ fun SettingsScreen(
 
                     SettingsRowItem(
                         icon = Icons.Default.Vibration,
-                        title = "Aksi Goyang HP (Shake Gesture)",
+                        title = AppStrings.t("Aksi Goyang HP (Shake Gesture)", "Shake Phone Action (Shake Gesture)"),
                         subtitle = when (shakeGestureAction) {
-                            "TRANSACTION" -> "Catat Cepat (Buka Lembar Transaksi)"
-                            "STEALTH" -> "Mode Stealth Darurat (Samarkan Aplikasi)"
-                            else -> "Nonaktif (Default)"
+                            "TRANSACTION" -> AppStrings.t("Catat Cepat (Buka Lembar Transaksi)", "Quick Record (Open Transaction Sheet)")
+                            "STEALTH" -> AppStrings.t("Mode Stealth Darurat (Samarkan Aplikasi)", "Emergency Stealth Mode (Camouflage App)")
+                            else -> AppStrings.t("Nonaktif (Bawaan)", "Disabled (Default)")
                         },
                         onClick = { isShakeGestureDialogOpen = true }
                     )
@@ -737,13 +737,13 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Google Drive & Cloud Sync",
+                                text = AppStrings.t("Google Drive & Sinkronisasi Cloud", "Google Drive & Cloud Sync"),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (isDriveConnected) "Terhubung: $driveEmail" else "Folder: DompetNalar/Backup Data & App Updates",
+                                text = if (isDriveConnected) AppStrings.t("Terhubung: $driveEmail", "Connected: $driveEmail") else AppStrings.t("Folder: DompetNalar/Backup Data & App Updates", "Folder: DompetNalar/Backup Data & App Updates"),
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -762,7 +762,7 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "Akses Cloud Sync Terbatas (Mode Tamu)",
+                                    text = AppStrings.t("Akses Cloud Sync Terbatas (Mode Tamu)", "Limited Cloud Sync Access (Guest Mode)"),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.error
@@ -829,13 +829,13 @@ fun SettingsScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "Backup Otomatis Google Drive",
+                                            text = AppStrings.t("Backup Otomatis Google Drive", "Google Drive Automatic Backup"),
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = if (driveAutoSync) "Aktif (Latar belakang via WorkManager)" else "Nonaktif",
+                                            text = if (driveAutoSync) AppStrings.t("Aktif (Latar belakang via WorkManager)", "Active (Background via WorkManager)") else AppStrings.t("Nonaktif", "Disabled"),
                                             fontSize = 10.sp,
                                             color = if (driveAutoSync) FinSmartPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -850,7 +850,7 @@ fun SettingsScreen(
                                 if (driveAutoSync) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "Interval Unggah:",
+                                        text = AppStrings.t("Interval Unggah:", "Upload Interval:"),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -883,7 +883,7 @@ fun SettingsScreen(
                                                 )
                                             ) {
                                                 Text(
-                                                    text = "${hours}j",
+                                                    text = if (LocaleHelper.isEnglish()) "${hours}h" else "${hours}j",
                                                     fontSize = 10.sp,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                                 )
@@ -895,7 +895,7 @@ fun SettingsScreen(
                                     if (nextBackupTime != null) {
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
-                                            text = "Perkiraan jadwal berikutnya: $nextBackupTime",
+                                            text = AppStrings.t("Perkiraan jadwal berikutnya: $nextBackupTime", "Estimated next schedule: $nextBackupTime"),
                                             fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.primary
                                         )
@@ -919,13 +919,13 @@ fun SettingsScreen(
                                     .padding(end = 12.dp)
                             ) {
                                 Text(
-                                    text = "Cadangan Terakhir:",
+                                    text = AppStrings.t("Cadangan Terakhir:", "Last Backup:"),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = if (driveLastBackup.isBlank()) "Belum ada cadangan" else driveLastBackup,
+                                    text = if (driveLastBackup.isBlank()) AppStrings.t("Belum ada cadangan", "No backups yet") else driveLastBackup,
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     lineHeight = 15.sp
@@ -942,7 +942,7 @@ fun SettingsScreen(
                                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                             ) {
                                 Text(
-                                    text = "Putuskan",
+                                    text = AppStrings.t("Putuskan", "Disconnect"),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
@@ -974,7 +974,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     Text(
-                        text = "About & Account",
+                        text = AppStrings.t("Tentang & Akun", "About & Account"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -1079,13 +1079,13 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Developer Tools & Update Publisher",
+                                    text = AppStrings.t("Alat Pengembang & Rilis Pembaruan", "Developer Tools & Update Publisher"),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFD97706)
                                 )
                                 Text(
-                                    text = "Pusat Kontrol Rilis Pembaruan Aplikasi ke Google Drive",
+                                    text = AppStrings.t("Pusat Kontrol Rilis Pembaruan Aplikasi ke Google Drive", "App Update Release Control Center to Google Drive"),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1104,7 +1104,7 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Publish Application Update (MasterDev)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(AppStrings.t("Rilis Pembaruan Aplikasi (MasterDev)", "Publish Application Update (MasterDev)"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1118,7 +1118,7 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Buka Master Dev User Manager", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Text(AppStrings.t("Buka Master Dev User Manager", "Open Master Dev User Manager"), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                         }
 
                     }
@@ -1170,9 +1170,9 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     val options = listOf(
-                        Triple("OFF", "Nonaktif", "Sensor mati, tidak ada aksi goyangan (Bawaan)"),
-                        Triple("TRANSACTION", "Catat Cepat", "Buka lembar input transaksi baru"),
-                        Triple("STEALTH", "Mode Stealth Darurat", "Samarkan antarmuka seketika ke mode stealth")
+                        Triple("OFF", AppStrings.t("Nonaktif", "Disabled"), AppStrings.t("Sensor mati, tidak ada aksi goyangan (Bawaan)", "Sensor off, no shake action (Default)")),
+                        Triple("TRANSACTION", AppStrings.t("Catat Cepat", "Quick Record"), AppStrings.t("Buka lembar input transaksi baru", "Open new transaction input sheet")),
+                        Triple("STEALTH", AppStrings.t("Mode Stealth Darurat", "Emergency Stealth Mode"), AppStrings.t("Samarkan antarmuka seketika ke mode stealth", "Immediately camouflage interface into stealth mode"))
                     )
 
                     options.forEach { (actionKey, title, desc) ->
@@ -1186,7 +1186,7 @@ fun SettingsScreen(
                                 .clickable {
                                     onUpdateShakeGestureAction(actionKey)
                                     isShakeGestureDialogOpen = false
-                                    Toast.makeText(context, "Aksi goyangan: $title", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, AppStrings.t("Aksi goyangan: $title", "Shake action: $title"), Toast.LENGTH_SHORT).show()
                                 }
                         ) {
                             Row(
@@ -1222,7 +1222,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { isShakeGestureDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )
@@ -1242,7 +1242,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Sesuaikan tampilan aplikasi dengan preferensi kenyamanan mata Anda:",
+                        text = AppStrings.t("Sesuaikan tampilan aplikasi dengan preferensi kenyamanan mata Anda:", "Customize the app appearance to your eye comfort preference:"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1258,7 +1258,7 @@ fun SettingsScreen(
                                 .clickable {
                                     ThemeEngine.setThemeMode(context, mode)
                                     isThemeDialogOpen = false
-                                    Toast.makeText(context, "Tema diubah: ${mode.title}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, AppStrings.t("Tema diubah: ${mode.localizedTitle}", "Theme changed: ${mode.localizedTitle}"), Toast.LENGTH_SHORT).show()
                                 }
                         ) {
                             Row(
@@ -1276,13 +1276,13 @@ fun SettingsScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = mode.title,
+                                        text = mode.localizedTitle,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = mode.subtitle,
+                                        text = mode.localizedSubtitle,
                                         fontSize = 10.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1294,7 +1294,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { isThemeDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )
@@ -1330,7 +1330,7 @@ fun SettingsScreen(
                                 .clickable {
                                     ThemeEngine.setAccentColor(context, accent)
                                     isAccentDialogOpen = false
-                                    Toast.makeText(context, "Aksen diubah: ${accent.displayName}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, AppStrings.t("Aksen diubah: ${accent.localizedDisplayName}", "Accent changed: ${accent.localizedDisplayName}"), Toast.LENGTH_SHORT).show()
                                 }
                         ) {
                             Row(
@@ -1349,7 +1349,7 @@ fun SettingsScreen(
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
-                                        text = accent.displayName,
+                                        text = accent.localizedDisplayName,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -1358,7 +1358,7 @@ fun SettingsScreen(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "Terpilih",
+                                        contentDescription = AppStrings.t("Terpilih", "Selected"),
                                         tint = accent.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -1370,7 +1370,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { isAccentDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )
@@ -1392,7 +1392,7 @@ fun SettingsScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Pasang foto dari galeri HP sebagai latar belakang layar dasbor Anda:",
+                        text = AppStrings.t("Pasang foto dari galeri HP sebagai latar belakang layar dasbor Anda:", "Set a photo from your device gallery as your dashboard background:"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1403,7 +1403,7 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Text(
-                                text = "🔒 Fitur Smart Master: Fitur ganti wallpaper dasbor ini terbuka otomatis bagi pengguna berstatus Smart Master 👑 (dapat diperoleh dari Reward Streak 30 Hari, Langganan, atau Hak Master Dev).",
+                                text = AppStrings.t("🔒 Fitur Smart Master: Fitur ganti wallpaper dasbor ini terbuka otomatis bagi pengguna berstatus Smart Master 👑 (dapat diperoleh dari Reward Streak 30 Hari, Langganan, atau Hak Master Dev).", "🔒 Smart Master Feature: Changing dashboard wallpaper unlocks automatically for Smart Master 👑 users (obtainable from 30-Day Streak Reward, Subscription, or Master Dev Access)."),
                                 fontSize = 11.sp,
                                 color = Color(0xFFD97706),
                                 modifier = Modifier.padding(10.dp)
@@ -1425,13 +1425,13 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(if (isWallpaperUnlocked) "Pilih Gambar dari Galeri" else "Terkunci (Butuh Streak 30 Hari)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isWallpaperUnlocked) AppStrings.t("Pilih Gambar dari Galeri", "Choose Image from Gallery") else AppStrings.t("Terkunci (Butuh Streak 30 Hari)", "Locked (Requires 30-Day Streak)"), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
                     if (!customWallpaperUri.isNullOrEmpty()) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Transparansi Gambar: ${(tempOpacity * 100).toInt()}%",
+                            text = AppStrings.t("Transparansi Gambar: ${(tempOpacity * 100).toInt()}%", "Image Opacity: ${(tempOpacity * 100).toInt()}%"),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -1522,7 +1522,7 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Apps, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Dynamic Launcher Icon", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(AppStrings.t("Ikon Peluncur Dinamis", "Dynamic Launcher Icon"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -1552,7 +1552,7 @@ fun SettingsScreen(
                                         isMasterDev = role == UserRole.MASTER_DEV
                                     )
                                     if (success) {
-                                        Toast.makeText(context, "Ikon berhasil diubah ke ${edition.displayName}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, AppStrings.t("Ikon berhasil diubah ke ${edition.localizedDisplayName}", "Icon successfully changed to ${edition.localizedDisplayName}"), Toast.LENGTH_SHORT).show()
                                         isAppIconDialogOpen = false
                                     }
                                 }
@@ -1580,19 +1580,19 @@ fun SettingsScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (!isUnlocked) {
-                                            Icon(Icons.Default.Lock, contentDescription = "Tergembok", tint = Color.White, modifier = Modifier.size(14.dp))
+                                            Icon(Icons.Default.Lock, contentDescription = AppStrings.t("Tergembok", "Locked"), tint = Color.White, modifier = Modifier.size(14.dp))
                                         }
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = edition.displayName,
+                                            text = edition.localizedDisplayName,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                                             fontSize = 12.sp,
                                             color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                         )
                                         Text(
-                                            text = if (isUnlocked) "Tersedia & Terbuka" else "Tergembok (Perlu Streak ${edition.requiredStreak} Hari)",
+                                            text = if (isUnlocked) AppStrings.t("Tersedia & Terbuka", "Available & Unlocked") else AppStrings.t("Tergembok (Perlu Streak ${edition.requiredStreak} Hari)", "Locked (Requires Streak of ${edition.requiredStreak} Days)"),
                                             fontSize = 10.sp,
                                             color = if (isUnlocked) MaterialTheme.colorScheme.primary else ExpenseRed
                                         )
@@ -1601,7 +1601,7 @@ fun SettingsScreen(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "Aktif",
+                                        contentDescription = AppStrings.t("Aktif", "Active"),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -1613,7 +1613,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { isAppIconDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )
@@ -1727,7 +1727,7 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = if (LocaleHelper.isEnglish()) "Follow Device Region (Automatic)" else "Ikuti Region Perangkat (Otomatis)",
+                                    text = if (LocaleHelper.isEnglish()) "Follow Device Region" else "Ikuti Region Perangkat",
                                     fontWeight = if (isFollowDevice) FontWeight.Bold else FontWeight.SemiBold,
                                     fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -1779,7 +1779,7 @@ fun SettingsScreen(
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = "Contoh: ${curr.prefix}50.000",
+                                            text = AppStrings.t("Contoh: ${curr.prefix}50.000", "Example: ${curr.prefix}50,000"),
                                             fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -1804,7 +1804,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { isCurrencyDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )
@@ -1875,7 +1875,7 @@ fun SettingsScreen(
                                 Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Mode Stealth Aktif: Operasi pencadangan dinonaktifkan demi perlindungan privasi data.",
+                                    AppStrings.t("Mode Stealth Aktif: Operasi pencadangan dinonaktifkan demi perlindungan privasi data.", "Stealth Mode Active: Backup operation is disabled for data privacy protection."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.error,
                                     fontWeight = FontWeight.SemiBold
@@ -1914,7 +1914,7 @@ fun SettingsScreen(
                                 Text(com.example.util.AppStrings.t("Cadangan Perangkat (Otomatis)", "Device Backup (Automatic)"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    "Menggunakan Android Keystore. Cepat, otomatis & tanpa perlu kata sandi.",
+                                    AppStrings.t("Menggunakan Android Keystore. Cepat, otomatis & tanpa perlu kata sandi.", "Uses Android Keystore. Fast, automatic & no password required."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1955,7 +1955,7 @@ fun SettingsScreen(
                                 Text(com.example.util.AppStrings.t("Cadangan Portabel (Kata Sandi)", "Portable Backup (Password)"), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    "Terenkripsi AES-256-GCM dengan kata sandi khusus. Dapat dipindahkan ke perangkat lain.",
+                                    AppStrings.t("Terenkripsi AES-256-GCM dengan kata sandi khusus. Dapat dipindahkan ke perangkat lain.", "AES-256-GCM encrypted with custom password. Can be transferred to another device."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1994,7 +1994,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Tentukan kata sandi untuk melindungi cadangan Anda. Data dienkripsi secara independen tanpa bergantung pada kunci hardware perangkat ini.",
+                        text = AppStrings.t("Tentukan kata sandi untuk melindungi cadangan Anda. Data dienkripsi secara independen tanpa bergantung pada kunci hardware perangkat ini.", "Set a password to protect your backup. Data is encrypted independently without relying on this device's hardware keys."),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2081,13 +2081,13 @@ fun SettingsScreen(
                         val confirmPass = portableBackupConfirmPassword.trim()
                         when {
                             pass.isEmpty() -> {
-                                portableBackupError = "Kata sandi cadangan tidak boleh kosong."
+                                portableBackupError = AppStrings.t("Kata sandi cadangan tidak boleh kosong.", "Backup password cannot be empty.")
                             }
                             pass.length < 6 -> {
-                                portableBackupError = "Kata sandi cadangan minimal 6 karakter."
+                                portableBackupError = AppStrings.t("Kata sandi cadangan minimal 6 karakter.", "Backup password must be at least 6 characters.")
                             }
                             pass != confirmPass -> {
-                                portableBackupError = "Konfirmasi kata sandi tidak cocok."
+                                portableBackupError = AppStrings.t("Konfirmasi kata sandi tidak cocok.", "Password confirmation does not match.")
                             }
                             else -> {
                                 isCreatingPortableBackup = true
@@ -2128,7 +2128,7 @@ fun SettingsScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
                     modifier = Modifier.testTag("btn_submit_portable_backup")
                 ) {
-                    Text(if (isCreatingPortableBackup) "Memproses..." else "Cadangkan & Ekspor", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(if (isCreatingPortableBackup) AppStrings.t("Memproses...", "Processing...") else AppStrings.t("Cadangkan & Ekspor", "Backup & Export"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             },
             dismissButton = {
@@ -2179,7 +2179,7 @@ fun SettingsScreen(
                                 Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Mode Stealth Aktif: Operasi pemulihan dinonaktifkan demi perlindungan privasi data.",
+                                    AppStrings.t("Mode Stealth Aktif: Operasi pemulihan dinonaktifkan demi perlindungan privasi data.", "Stealth Mode Active: Restore operation is disabled for data privacy protection."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.error,
                                     fontWeight = FontWeight.SemiBold
@@ -2218,7 +2218,7 @@ fun SettingsScreen(
                                 Text(com.example.util.AppStrings.t("Pulihkan Cadangan Perangkat", "Restore Device Backup"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    "Pulihkan dari cadangan lokal / Google Drive sandbox perangkat ini.",
+                                    AppStrings.t("Pulihkan dari cadangan lokal / Google Drive sandbox perangkat ini.", "Restore from local backup / Google Drive sandbox of this device."),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -2314,7 +2314,7 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
                             Text(
-                                text = if (selectedRestoreFileName != null) "File Terpilih: $selectedRestoreFileName" else "Sumber: dompetnalar_backup.json (Sandbox/Lokal)",
+                                text = if (selectedRestoreFileName != null) AppStrings.t("File Terpilih: $selectedRestoreFileName", "Selected File: $selectedRestoreFileName") else AppStrings.t("Sumber: dompetnalar_backup.json (Sandbox/Lokal)", "Source: dompetnalar_backup.json (Sandbox/Local)"),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -2376,7 +2376,7 @@ fun SettingsScreen(
                     onClick = {
                         val pass = portableRestorePassword.trim()
                         if (pass.isEmpty()) {
-                            portableRestoreError = "Kata sandi pemulihan tidak boleh kosong."
+                            portableRestoreError = AppStrings.t("Kata sandi pemulihan tidak boleh kosong.", "Recovery password cannot be empty.")
                             return@Button
                         }
                         isRestoringPortableBackup = true
@@ -2403,7 +2403,7 @@ fun SettingsScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
                     modifier = Modifier.testTag("btn_submit_portable_restore")
                 ) {
-                    Text(if (isRestoringPortableBackup) "Mendekripsi..." else "Pulihkan Data", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(if (isRestoringPortableBackup) AppStrings.t("Mendekripsi...", "Decrypting...") else AppStrings.t("Pulihkan Data", "Restore Data"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             },
             dismissButton = {

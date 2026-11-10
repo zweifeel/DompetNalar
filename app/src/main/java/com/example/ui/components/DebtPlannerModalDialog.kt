@@ -317,7 +317,7 @@ fun DebtPlannerModalDialog(
                     }
 
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        Icon(Icons.Default.Close, contentDescription = AppStrings.t("Tutup", "Close"))
                     }
                 }
             }
@@ -1698,7 +1698,7 @@ fun DebtPlannerModalDialog(
             },
             confirmButton = {
                 TextButton(onClick = { isDeleteCategoryDialogOpen = false }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )
@@ -1812,12 +1812,12 @@ fun DebtPlannerModalDialog(
                         )
                     }
                 ) {
-                    Text("Coba Lagi")
+                    Text(AppStrings.t("Coba Lagi", "Try Again"))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { payLaterScanError = null }) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         )

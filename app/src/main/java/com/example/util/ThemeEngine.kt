@@ -14,7 +14,21 @@ enum class AppThemeMode(val title: String, val subtitle: String) {
     SYSTEM("Ikuti Sistem HP (Default)", "Mengikuti mode terang/gelap bawaan pengaturan HP"),
     AUTO_TIME("Otomatis Sesuai Waktu", "Mode Gelap saat malam (18.00 - 06.00), Terang saat siang"),
     LIGHT("Mode Terang (Light Mode)", "Tampilan cerah dengan kontras tinggi"),
-    DARK("Mode Gelap (Dark Mode)", "Tampilan gelap elegan dan hemat daya")
+    DARK("Mode Gelap (Dark Mode)", "Tampilan gelap elegan dan hemat daya");
+
+    val localizedTitle: String get() = when (this) {
+        SYSTEM -> AppStrings.t("Ikuti Sistem HP", "Follow System")
+        AUTO_TIME -> AppStrings.t("Otomatis Sesuai Waktu", "Auto by Time")
+        LIGHT -> AppStrings.t("Mode Terang", "Light Mode")
+        DARK -> AppStrings.t("Mode Gelap", "Dark Mode")
+    }
+
+    val localizedSubtitle: String get() = when (this) {
+        SYSTEM -> AppStrings.t("Mengikuti mode terang/gelap bawaan pengaturan HP", "Follows device default light/dark system setting")
+        AUTO_TIME -> AppStrings.t("Mode Gelap saat malam (18.00 - 06.00), Terang saat siang", "Dark mode at night (18:00 - 06:00), Light mode by day")
+        LIGHT -> AppStrings.t("Tampilan cerah dengan kontras tinggi", "Bright display with high contrast")
+        DARK -> AppStrings.t("Tampilan gelap elegan dan hemat daya", "Elegant dark display and power efficient")
+    }
 }
 
 enum class AppAccentColor(
@@ -58,7 +72,15 @@ enum class AppAccentColor(
         primaryLight = Color(0xFFEF4444),
         primaryDark = Color(0xFFC62828),
         sampleHex = "#E53935"
-    )
+    );
+
+    val localizedDisplayName: String get() = when (this) {
+        OCEAN_BLUE -> AppStrings.t("Ocean Blue (Bawaan)", "Ocean Blue (Default)")
+        EMERALD_GREEN -> "Emerald Green"
+        SUNSET_GOLD -> "Sunset Gold"
+        CYBER_PURPLE -> "Cyber Purple"
+        CRIMSON_RED -> "Crimson Red"
+    }
 }
 
 object ThemeEngine {

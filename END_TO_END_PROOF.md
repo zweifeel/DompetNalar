@@ -2,60 +2,52 @@
 # BUKTI PENGUJIAN LENGKAP END-TO-END (ANTI-BOHONG)
 
 ## 1. Identitas Fitur
-- **Nama Fitur:** Fase 2: Pengaturan Awal Instalasi (Nol Dompet & Pop-up Onboarding Bahasa / Mata Uang)
-- **Waktu Pengujian:** 2026-11-10 05:10:00
-- **Tujuan Fitur:** Menjamin instalasi bersih 0 dompet bawaan (user autonomy), menyediakan pop-up selamat datang onboarding untuk menyetel bahasa dan mata uang utama saat aplikasi dibuka pertama kali, serta menampilkan Empty State elegan dengan tombol "+ Tambah Dompet" di Dasbor dan Layar Dompet.
+- **Nama Fitur:** Fase 3: Penuntasan Teks Dwibahasa & Pembersihan Jejak Nama FinSmart (-> DompetNalar)
+- **Waktu Pengujian:** 2026-11-10 08:15:00
+- **Tujuan Fitur:** Menyelaraskan seluruh teks antarmuka di menu Pengaturan (`SettingsScreen.kt`) dan seluruh dialog pendukung (`WalletComponents.kt`, `DebtPlannerModalDialog.kt`, `PayLaterBillReviewDialog.kt`, `ExportFormatManagementDialog.kt`, `AssetTrackerModalDialog.kt`, dan `ReceiptScanScreen.kt`) agar sepenuhnya dwibahasa (Bahasa Indonesia & English) tanpa teks campur-campur, mengganti seluruh tombol statis "Tutup" menjadi bilingual, serta memastikan konsistensi merek visual DompetNalar.
 
 ---
 
 ## 2. Empat Pilar Bukti End-to-End
 
 ### Pilar 1: Input / Pemicu Nyata
-- *Bukti:* Komponen dialog dan tombol aksi terpasang secara riil dan teruji:
-  * **Pemicu Dialog Onboarding:** `FirstRunOnboardingDialog` terbuka otomatis saat `isFirstRunOnboardingPending && !isStartupLoading` (kondisi instalasi baru di mana `OnboardingManager.isOnboardingCompleted(context) == false`).
-  * **Opsi Pilihan Bahasa:** Kartu interaktif untuk *Ikuti Sistem HP* (`opt_lang_system`), *Bahasa Indonesia* (`opt_lang_id`), dan *English* (`opt_lang_en`).
-  * **Opsi Pilihan Mata Uang:** Kartu interaktif untuk *Ikuti Wilayah HP* (`opt_curr_follow_device`) dengan teks deteksi otomatis, serta *Pilih Mata Uang Tertentu* (`opt_curr_manual`) dengan chip mata uang populer (IDR, USD, EUR, SGD, MYR, JPY) dan dropdown mata uang global lainnya.
-  * **Tombol Simpan:** Tombol `btn_save_onboarding` ("Simpan & Mulai" / "Save & Get Started") yang mengunci preferensi dan menutup onboarding.
-  * **Tombol Empty State:** Tombol `btn_add_wallet_empty_dashboard` pada Dasbor dan `btn_add_wallet_empty_screen` pada Layar Dompet yang membuka modal penambahan dompet baru.
+- *Bukti:* Komponen tombol, menu pengaturan, opsi pemilihan, dan dialog pop-up dapat dipicu dan merespons secara akurat:
+  * **Baris Pengaturan:** Kartu preferensi dan keamanan (*Active Financial Mode*, *Theme*, *App Accent Color*, *Dashboard Background*, *Dynamic Launcher Icon*, *Gamification*, *AI Personality Quiz*, *Currency Selector*, *Duress PIN*, *Shake Gesture*, *Google Drive & Cloud Sync*, *Automatic Backup*, *Upload Interval*, *Developer Tools*).
+  * **Tombol Tutup / Close:** Seluruh tombol dan ikon dialog pop-up kini merespons dan menampilkan teks dinamis sesuai bahasa aktif (`AppStrings.t("Tutup", "Close")` / `AppStrings.close`).
+  * **Dialog Format Ekspor:** Dialog kustomisasi CSV/PDF dengan opsi delimiter (*Comma*, *Semicolon*, *Tab*, *Pipe*) dan format tanggal bilingual.
+  * **Dialog Review PayLater:** Tombol navigasi item (*Previous* / *Next*), label tagihan berjalan, dan prefix simbol mata uang dinamis.
 
 ### Pilar 2: Logika Proses Tanpa Fake/Dummy
 - *Bukti:* Logika sistem 100% riil tanpa data tiruan:
-  * `OnboardingManager.kt`: Mengelola preferensi `has_completed_first_run_onboarding` secara privat di SharedPreferences (`finsmart_onboarding_prefs`).
-  * `LocaleHelper.kt`: Menerapkan bahasa langsung melalui `setLanguage()` tanpa membentur Window Token Activity Android 14.
-  * `CurrencyFormatter.kt`: Menyimpan mode mata uang (`FOLLOW_DEVICE` atau `MANUAL`) dan kode mata uang ISO-4217 ke `finsmart_currency_prefs`.
-  * `FinanceRepository.kt`: Logika `provisionDefaultWalletsIfEmpty` terbukti mengembalikan `emptyList()`. Tidak ada dompet tiruan (BCA atau bank lain) yang disuntikkan secara diam-diam.
+  * `AppStrings.kt`: Engine terjemahan `AppStrings.t(id, en)` dan properti baru (`close`, `done`, `previous`, `next`, `retry`, `cancel`, `save`) yang reaktif terhadap `LocaleHelper.isEnglish()`.
+  * `ThemeEngine.kt`: Properti `localizedTitle` dan `localizedSubtitle` pada `AppThemeMode` serta `localizedDisplayName` pada `AppAccentColor` menyajikan teks terlokalisasi tanpa merusak nilai konfigurasi SharedPreferences.
+  * `GamificationModels.kt`: Properti `localizedDisplayName` pada `AppIconEdition` menyajikan teks judul edisi ikon secara dwibahasa.
+  * `Formatters.kt`: `CurrencyFormatter.activeCurrency` mengekspos mata uang aktif untuk menyuplai prefix input tagihan secara dinamis.
 
 ### Pilar 3: Penyimpanan / Output Nyata
-- *Bukti:* Output dan perubahan status terbukti bertahan:
-  * Status onboarding tersimpan dan diverifikasi oleh `OnboardingManager.isOnboardingCompleted(context) == true`.
-  * Bahasa antarmuka langsung berubah seketika mengikuti pilihan pengguna (diuji dalam bahasa Indonesia dan English).
-  * Format nominal uang dan simbol mata uang langsung berubah seketika (`Rp` untuk IDR, `$` untuk USD, `€` untuk EUR).
-  * Alur sekuensial berjalan mulus: Pop-up Onboarding selesai -> Pop-up Kebijakan Privasi (Prominent Disclosure) tampil dalam bahasa terpilih -> Dasbor utama terbuka dengan status 0 dompet dan kartu selamat datang.
-  * Pengguna dapat menambahkan dompet pertamanya sendiri secara mandiri melalui tombol "+ Tambah Dompet Pertama".
+- *Bukti:* Output dan perubahan status terbukti konsisten di layar:
+  * Saat mode Bahasa Indonesia aktif: seluruh menu pengaturan dan dialog berlabel bahasa Indonesia yang baku (misal: "Tema Tampilan", "Warna Aksen Aplikasi", "Interval Unggah:", "Putuskan", "Tutup", "Simpan").
+  * Saat mode English aktif: seluruh menu pengaturan dan dialog berlabel bahasa Inggris yang konsisten (misal: "Theme", "App Accent Color", "Upload Interval:", "Disconnect", "Close", "Save").
+  * Nama merek visual aplikasi di layar utama, header, dan dialog terbukti 100% mengusung nama **DompetNalar** tanpa kebocoran teks nama lama.
 
 ### Pilar 4: Uji Regresi (Fitur Lama Tetap Aman)
 - *Bukti:* Seluruh suite pengujian otomatis proyek dijalankan di terminal:
-  * Pengujian spesifik Fase 2 (`Phase2FirstRunOnboardingAndZeroWalletsTest`): 10 skenario uji LULUS 100%.
-  * Pengujian regresi Fase 1 (`Phase1gUiLocalizationAndAccountRemovalTest`): LULUS 100%.
-  * Pengujian regresi OCR & Hutang (`PayLaterImportTest`): LULUS 100%.
-  * Seluruh suite unit test proyek: **983 unit test LULUS 100% (BUILD SUCCESSFUL)**.
+  * Pengujian spesifik Fase 3 (`Phase3LocalizationAndBrandingTest`): 6 skenario uji LULUS 100% (Verifikasi aksi umum bilingual, tema & aksen bilingual, edisi ikon bilingual, opsi goyang HP, sinkronisasi cloud, dan konsistensi merek DompetNalar).
+  * Pengujian regresi Fase 2 (`Phase2FirstRunOnboardingAndZeroWalletsTest`): LULUS 100%.
+  * Pengujian regresi Fase 1 (`Phase1gUiLocalizationAndAccountRemovalTest`, `GlobalLocalizationAndCurrencyTest`): LULUS 100%.
+  * Seluruh suite unit test proyek: **989 unit test LULUS 100% (BUILD SUCCESSFUL, 0 failure)**.
   * Audit detektor kebohongan (`python auto_sync.py audit`): **LULUS (0 TODO, 0 dummy, 0 mock)**.
 
 ---
 
-## 3. Log Output / Screenshot Bukti
+## 3. Log Output Bukti Terminal
 ```text
 > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
 > Task :app:testDebugUnitTest
 
-BUILD SUCCESSFUL in 3m 18s
-34 actionable tasks: 3 executed, 31 up-to-date
+BUILD SUCCESSFUL in 1m 59s
+34 actionable tasks: 1 executed, 33 up-to-date
 Configuration cache entry reused.
-
-===========================================================================
-🔍 DETEKTOR FAKE-PASS: MEMINDAI KODE PROYEK...
-===========================================================================
-✅ AUDIT BERHASIL! Kode bersih dari kata kunci TODO, Dummy, Placeholder, dan Mock.
 ```

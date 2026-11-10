@@ -121,7 +121,7 @@ fun ExportFormatManagementDialog(
                         }
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        Icon(Icons.Default.Close, contentDescription = AppStrings.t("Tutup", "Close"))
                     }
                 }
 
@@ -265,7 +265,7 @@ fun ExportFormatManagementDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Tutup")
+                    Text(AppStrings.t("Tutup", "Close"))
                 }
             }
         }
@@ -319,7 +319,7 @@ fun EditExportFormatDialog(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = if (initialFormat == null) "Tambah Format Kustom" else "Edit Format Ekspor",
+                    text = AppStrings.t(if (initialFormat == null) "Tambah Format Kustom" else "Edit Format Ekspor", if (initialFormat == null) "Add Custom Format" else "Edit Export Format"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -335,7 +335,7 @@ fun EditExportFormatDialog(
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("Nama Format") },
+                            label = { Text(AppStrings.t("Nama Format", "Format Name")) },
                             placeholder = { Text(AppStrings.t("Contoh: CSV Analisis Akuntansi", "Example: Accounting Analysis CSV")) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -344,14 +344,14 @@ fun EditExportFormatDialog(
                     }
 
                     item {
-                        Text("Pemisah Nilai (Delimiter):", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(AppStrings.t("Pemisah Nilai (Delimiter):", "Value Delimiter:"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(
-                                "," to "Koma (,)",
-                                ";" to "Titik Koma (;)",
-                                "\t" to "Tab (\\t)",
-                                "|" to "Garis (|)"
+                                "," to AppStrings.t("Koma (,)", "Comma (,)"),
+                                ";" to AppStrings.t("Titik Koma (;)", "Semicolon (;)"),
+                                "\t" to AppStrings.t("Tab (\\t)", "Tab (\\t)"),
+                                "|" to AppStrings.t("Garis (|)", "Pipe (|)")
                             ).forEach { (delim, label) ->
                                 val isSel = delimiter == delim
                                 OutlinedButton(
@@ -369,7 +369,7 @@ fun EditExportFormatDialog(
                     }
 
                     item {
-                        Text("Format Tanggal:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(AppStrings.t("Format Tanggal:", "Date Format:"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(
@@ -403,7 +403,7 @@ fun EditExportFormatDialog(
                                 colors = CheckboxDefaults.colors(checkedColor = FinSmartPrimary)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Sertakan baris header pada baris pertama", fontSize = 12.sp)
+                            Text(AppStrings.t("Sertakan baris header pada baris pertama", "Include header row in first line"), fontSize = 12.sp)
                         }
                     }
 

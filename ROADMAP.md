@@ -57,19 +57,19 @@ Untuk menjamin kualitas dan keamanan proyek, pengembangan ini dikawal oleh 4 per
 
 ---
 
-### 🟡 Fase 3: Penuntasan Teks Dwibahasa & Pembersihan Jejak Nama FinSmart (Prioritas P1) — [BERIKUTNYA]
-* [ ] **3.1. Audit & Penyelarasan Menu `SettingsScreen.kt`:**
+### 🌟 Fase 3: Penuntasan Teks Dwibahasa & Pembersihan Jejak Nama FinSmart (Prioritas P1) — [SELESAI 100% PASS]
+* [x] **3.1. Audit & Penyelarasan Menu `SettingsScreen.kt`:**
   * Ubah seluruh judul dan subjudul yang masih berbahasa Indonesia saat mode Inggris aktif (Gamifikasi, Tes Profil Finansial AI, Mata Uang, Duress PIN, Aksi Goyang HP, Google Drive Sync).
   * Terjemahkan istilah bahasa Inggris yang belum di-Indonesiakan di mode Indonesia.
   * Ganti seluruh tombol **"Tutup"** menjadi bilingual (`AppStrings.t("Tutup", "Close")`).
-* [ ] **3.2. Audit Dialog & Komponen Pendukung:**
+* [x] **3.2. Audit Dialog & Komponen Pendukung:**
   * Periksa dan selaraskan teks pada `WalletComponents.kt`, `DebtPlannerModalDialog.kt`, `PayLaterBillReviewDialog.kt`, dan `ExportFormatManagementDialog.kt`.
-* [ ] **3.3. Pembersihan Nama Merek Visual (FinSmart -> DompetNalar):**
+* [x] **3.3. Pembersihan Nama Merek Visual (FinSmart -> DompetNalar):**
   * Ganti semua sisa teks `FinSmart` yang tampak di layar menjadi `DompetNalar`.
 
 ---
 
-### 🟢 Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan (Prioritas P2)
+### 🌟 Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan (Prioritas P2) — [BERIKUTNYA]
 * [ ] **4.1. Perbaikan Bug Tulisan Vertikal di Split Bill (`SplitBillScreen.kt`):**
   * Berikan `Modifier.weight(1f, fill = false)` pada kolom kiri dan `maxLines = 1, softWrap = false` pada nominal rupiah di kanan pada:
     1. Kartu ringkasan total tagihan (nama toko vs total harga).

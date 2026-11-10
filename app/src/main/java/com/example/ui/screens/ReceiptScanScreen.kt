@@ -679,7 +679,7 @@ fun ReceiptScanScreen(
                                 TextButton(
                                     onClick = { scanErrorMessage = null }
                                 ) {
-                                    Text("Tutup", fontSize = 12.sp)
+                                    Text(AppStrings.t("Tutup", "Close"), fontSize = 12.sp)
                                 }
                             }
                         }
