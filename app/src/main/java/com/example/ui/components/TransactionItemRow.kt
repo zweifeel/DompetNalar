@@ -101,7 +101,7 @@ fun TransactionItemRow(
 
             // Center details column with flex weight
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f, fill = false)
             ) {
                 Text(
                     text = transaction.title,
@@ -165,13 +165,15 @@ fun TransactionItemRow(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = amountColor,
-                        maxLines = 1
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Text(
                         text = transaction.walletName,
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
+                        softWrap = false,
                         overflow = TextOverflow.Ellipsis
                     )
                 }

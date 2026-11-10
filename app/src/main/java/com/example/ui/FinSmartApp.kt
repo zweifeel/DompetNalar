@@ -5,6 +5,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -375,7 +380,14 @@ fun FinSmartApp(
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues)
         ) {
-            when (currentScreen) {
+            AnimatedContent(
+                targetState = currentScreen,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+                },
+                label = "screen_transition"
+            ) { activeScreen ->
+            when (activeScreen) {
                 NavigationScreen.DASHBOARD -> {
                     DashboardScreen(
                         totalBalance = totalBalance,
@@ -716,6 +728,7 @@ fun FinSmartApp(
                         onNavigateBack = { currentScreen = NavigationScreen.SETTINGS }
                     )
                 }
+            }
             }
 
             // Modal Sheets and Dialogs

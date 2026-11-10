@@ -87,6 +87,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.ReceiptItem
@@ -363,23 +364,30 @@ fun SplitBillScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
                                         text = currentReceiptState.merchantName.ifBlank { com.example.util.AppStrings.t("Struk Belanja", "Shopping Receipt") },
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
+                                        fontSize = 16.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = "${com.example.util.AppStrings.t("Total Tagihan", "Total Bill")} (${items.size} ${com.example.util.AppStrings.t("Item + Pajak/Service):", "Items + Tax/Service):")}",
                                         fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = CurrencyFormatter.formatRupiah(currentReceiptState.totalAmount),
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 18.sp,
-                                    color = FinSmartPrimary
+                                    color = FinSmartPrimary,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -398,13 +406,18 @@ fun SplitBillScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    ) {
                                         Icon(Icons.Default.Group, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = "${com.example.util.AppStrings.t("Daftar Teman", "Friends List")} (${people.size} ${com.example.util.AppStrings.t("Orang", "People")})",
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
+                                            fontSize = 14.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     TextButton(
@@ -416,7 +429,7 @@ fun SplitBillScreen(
                                     ) {
                                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(com.example.util.AppStrings.t("Tambah Teman", "Add Friend"), fontSize = 12.sp)
+                                        Text(com.example.util.AppStrings.t("Tambah Teman", "Add Friend"), fontSize = 12.sp, maxLines = 1, softWrap = false)
                                     }
                                 }
 
@@ -490,7 +503,10 @@ fun SplitBillScreen(
                             Text(
                                 text = com.example.util.AppStrings.t("Bagi Item ke Teman:", "Assign Items to Friends:"),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             // + Tambah Item Manual Button
@@ -507,7 +523,7 @@ fun SplitBillScreen(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(com.example.util.AppStrings.t("Tambah Item", "Add Item"), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(com.example.util.AppStrings.t("Tambah Item", "Add Item"), fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             }
                         }
                     }
@@ -593,7 +609,10 @@ fun SplitBillScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    ) {
                                         Box(
                                             modifier = Modifier
                                                 .size(32.dp)
@@ -612,27 +631,36 @@ fun SplitBillScreen(
                                             Text(
                                                 text = breakdown.person.name,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 15.sp
+                                                fontSize = 15.sp,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
                                                 text = "${breakdown.assignedItems.size} Item pesanan",
                                                 fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                     }
 
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
                                             text = com.example.util.AppStrings.t("Total Bayar:", "Total Payable:"),
                                             fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                         Text(
                                             text = CurrencyFormatter.formatRupiah(breakdown.totalToPay),
                                             fontWeight = FontWeight.ExtraBold,
                                             fontSize = 16.sp,
-                                            color = personColor
+                                            color = personColor,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
@@ -649,17 +677,24 @@ fun SplitBillScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(vertical = 2.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
                                                 text = "${item.qty}x ${item.name}" + if (isShared) " (dibagi ${item.assignedPersonIds.size})" else "",
                                                 fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                            Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = CurrencyFormatter.formatRupiah(itemShare),
                                                 fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
@@ -669,17 +704,24 @@ fun SplitBillScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(top = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
                                                 text = com.example.util.AppStrings.t("Porsi PB1 & Service:", "Tax & Service Share:"),
                                                 fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                            Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = "+ " + CurrencyFormatter.formatRupiah(breakdown.taxShare + breakdown.serviceShare),
                                                 fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
@@ -717,7 +759,10 @@ fun SplitBillScreen(
                                     Text(
                                         text = com.example.util.AppStrings.t("Pilih Cepat dari Dompet Aktif:", "Quick Select from Active Wallets:"),
                                         fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
 
                                     TextButton(
@@ -731,7 +776,7 @@ fun SplitBillScreen(
                                     ) {
                                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                                         Spacer(modifier = Modifier.width(2.dp))
-                                        Text(AppStrings.t("+ Tambah Dompet Baru", "+ Add New Wallet"), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FinSmartPrimary)
+                                        Text(AppStrings.t("+ Tambah Dompet Baru", "+ Add New Wallet"), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FinSmartPrimary, maxLines = 1, softWrap = false)
                                     }
                                 }
 
@@ -929,23 +974,30 @@ fun SplitBillScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Column {
+                                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                                 Text(
                                                     text = item.merchantName,
                                                     fontWeight = FontWeight.Bold,
-                                                    fontSize = 15.sp
+                                                    fontSize = 15.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
                                                     text = item.date.ifBlank { "Tanpa Tanggal" },
                                                     fontSize = 11.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
+                                            Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = CurrencyFormatter.formatRupiah(item.totalAmount),
                                                 fontWeight = FontWeight.ExtraBold,
                                                 fontSize = 15.sp,
-                                                color = FinSmartPrimary
+                                                color = FinSmartPrimary,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
 
@@ -1032,14 +1084,16 @@ fun SplitBillScreen(
             onDismissRequest = { isAddPersonDialogOpen = false },
             title = { Text(com.example.util.AppStrings.t("Tambah Teman", "Add Friend"), fontWeight = FontWeight.Bold) },
             text = {
-                OutlinedTextField(
-                    value = newPersonName,
-                    onValueChange = { newPersonName = it },
-                    label = { Text(com.example.util.AppStrings.t("Nama Teman", "Friend Name")) },
-                    placeholder = { Text(com.example.util.AppStrings.t("Contoh: Rian, Dita, Maya, dll.", "e.g. John, Alice, Bob, etc.")) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    OutlinedTextField(
+                        value = newPersonName,
+                        onValueChange = { newPersonName = it },
+                        label = { Text(com.example.util.AppStrings.t("Nama Teman", "Friend Name")) },
+                        placeholder = { Text(com.example.util.AppStrings.t("Contoh: Rian, Dita, Maya, dll.", "e.g. John, Alice, Bob, etc.")) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             confirmButton = {
                 Button(
@@ -1073,7 +1127,10 @@ fun SplitBillScreen(
             onDismissRequest = { isItemDialogOpen = false },
             title = { Text(if (editingItemId != null) com.example.util.AppStrings.t("Edit Item Pesanan", "Edit Order Item") else com.example.util.AppStrings.t("Tambah Item Manual", "Add Item Manually"), fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     OutlinedTextField(
                         value = editingItemName,
                         onValueChange = { editingItemName = it },
@@ -1153,7 +1210,10 @@ fun SplitBillScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     OutlinedTextField(
                         value = newWalletNameInput,
                         onValueChange = { newWalletNameInput = it },
@@ -1266,7 +1326,9 @@ fun SplitBillScreen(
                 }
             },
             text = {
-                Text(com.example.util.AppStrings.t("Apakah Anda yakin ingin menghapus seluruh data kalkulasi patungan saat ini (item, teman, dan rincian transfer) dan memulainya dari awal?", "Are you sure you want to reset all current split bill calculations (items, friends, and transfer details) and start fresh?"))
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(com.example.util.AppStrings.t("Apakah Anda yakin ingin menghapus seluruh data kalkulasi patungan saat ini (item, teman, dan rincian transfer) dan memulainya dari awal?", "Are you sure you want to reset all current split bill calculations (items, friends, and transfer details) and start fresh?"))
+                }
             },
             confirmButton = {
                 Button(
@@ -1387,25 +1449,33 @@ private fun SplitBillItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f, fill = false)) {
                     Text(
                         text = item.name,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "${item.qty}x @ ${CurrencyFormatter.formatRupiah(item.price)}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = CurrencyFormatter.formatRupiah(item.total),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
-                        color = FinSmartPrimary
+                        color = FinSmartPrimary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Spacer(modifier = Modifier.width(6.dp))
 

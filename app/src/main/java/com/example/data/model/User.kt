@@ -6,7 +6,15 @@ import androidx.room.PrimaryKey
 enum class UserRole(val displayName: String, val badgeText: String) {
     FREE_MEMBER("DompetNalar Member", "Member"),
     SMART_MASTER("Smart Master", "Smart Master 👑"),
-    MASTER_DEV("Master Developer", "MasterDev 👑")
+    MASTER_DEV("Master Developer", "MasterDev 👑");
+
+    fun resolveBadgeLabel(isGuest: Boolean, isEnglish: Boolean = false): String {
+        return if (isGuest) {
+            if (isEnglish) "Guest" else "Tamu"
+        } else {
+            badgeText
+        }
+    }
 }
 
 @Entity(tableName = "users")

@@ -31,8 +31,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -425,43 +427,51 @@ fun SettingsScreen(
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = displayedUsername,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    color = when (role) {
-                                        UserRole.MASTER_DEV -> Color(0xFFD97706)
-                                        UserRole.SMART_MASTER -> Color(0xFFF59E0B).copy(alpha = 0.25f)
-                                        UserRole.FREE_MEMBER -> FinSmartPrimary.copy(alpha = 0.15f)
-                                    },
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = if (currentUser?.isGuest == true) "Tamu" else role.badgeText,
-                                        color = when (role) {
-                                            UserRole.MASTER_DEV -> Color.White
-                                            UserRole.SMART_MASTER -> Color(0xFFD97706)
-                                            UserRole.FREE_MEMBER -> FinSmartPrimary
-                                        },
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Text(
-                                text = if (currentUser?.isGuest == true) "" else (currentUser?.email ?: ""),
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = displayedUsername,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Surface(
+                                color = when (role) {
+                                    UserRole.MASTER_DEV -> Color(0xFFD97706)
+                                    UserRole.SMART_MASTER -> Color(0xFFF59E0B).copy(alpha = 0.25f)
+                                    UserRole.FREE_MEMBER -> FinSmartPrimary.copy(alpha = 0.15f)
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = role.resolveBadgeLabel(
+                                        isGuest = currentUser?.isGuest == true,
+                                        isEnglish = LocaleHelper.isEnglish()
+                                    ),
+                                    color = when (role) {
+                                        UserRole.MASTER_DEV -> Color.White
+                                        UserRole.SMART_MASTER -> Color(0xFFD97706)
+                                        UserRole.FREE_MEMBER -> FinSmartPrimary
+                                    },
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                            if (currentUser?.isGuest != true && !currentUser?.email.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = currentUser?.email ?: "",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
 
@@ -495,7 +505,7 @@ fun SettingsScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
                                     text = statusInfo.title,
                                     fontSize = 12.sp,
@@ -520,6 +530,8 @@ fun SettingsScreen(
                                     color = statusInfo.color,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                                 )
                             }
@@ -1161,7 +1173,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Pilih aksi pintas saat perangkat digoyangkan secara mantap (> 2.5g):", "Choose shortcut action when device is shaken firmly (> 2.5g):"),
                         fontSize = 11.sp,
@@ -1240,7 +1255,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Sesuaikan tampilan aplikasi dengan preferensi kenyamanan mata Anda:", "Customize the app appearance to your eye comfort preference:"),
                         fontSize = 11.sp,
@@ -1312,7 +1330,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Pilih skema warna utama untuk tombol, highlight, dan indikator tab:", "Choose primary color scheme for buttons, highlights, and tab indicators:"),
                         fontSize = 11.sp,
@@ -1526,7 +1547,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Ubah ikon aplikasi di homescreen HP secara dinamis. Streak harian saat ini: ", "Dynamically change app home screen icon. Current daily streak: ") + "$dailyStreak " + AppStrings.t("Hari", "Days"),
                         fontSize = 11.sp,
@@ -1631,7 +1655,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     AppLanguage.entries.forEach { lang ->
                         val isSelected = selectedLanguage == lang
                         Surface(
@@ -1696,7 +1723,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     val currentMode by CurrencyFormatter.currencyMode.collectAsState()
                     Text(if (LocaleHelper.isEnglish()) "Select currency display format:" else "Format angka & simbol mata uang akan otomatis diperbarui secara global di seluruh UI:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1855,7 +1885,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Pilih metode pencadangan yang sesuai dengan kebutuhan Anda:", "Choose the backup method that suits your needs:"),
                         fontSize = 12.sp,
@@ -1992,7 +2025,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Tentukan kata sandi untuk melindungi cadangan Anda. Data dienkripsi secara independen tanpa bergantung pada kunci hardware perangkat ini.", "Set a password to protect your backup. Data is encrypted independently without relying on this device's hardware keys."),
                         fontSize = 11.sp,
@@ -2159,7 +2195,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Pilih sumber data cadangan yang ingin dipulihkan ke aplikasi ini:", "Select the backup data source you want to restore to this app:"),
                         fontSize = 12.sp,
@@ -2298,7 +2337,10 @@ fun SettingsScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     Text(
                         text = AppStrings.t("Pilih file cadangan dan masukkan kata sandi yang digunakan saat pencadangan:", "Select the backup file and enter the password used during backup:"),
                         fontSize = 11.sp,

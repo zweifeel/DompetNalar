@@ -69,20 +69,20 @@ Untuk menjamin kualitas dan keamanan proyek, pengembangan ini dikawal oleh 4 per
 
 ---
 
-### 🌟 Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan (Prioritas P2) — [BERIKUTNYA]
-* [ ] **4.1. Perbaikan Bug Tulisan Vertikal di Split Bill (`SplitBillScreen.kt`):**
+### 🌟 Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan (Prioritas P2) — [SELESAI 100% PASS]
+* [x] **4.1. Perbaikan Bug Tulisan Vertikal di Split Bill (`SplitBillScreen.kt`):**
   * Berikan `Modifier.weight(1f, fill = false)` pada kolom kiri dan `maxLines = 1, softWrap = false` pada nominal rupiah di kanan pada:
     1. Kartu ringkasan total tagihan (nama toko vs total harga).
     2. Kartu rincian tagihan per orang (nama teman vs total bayar).
     3. Daftar item pesanan dan baris porsi pajak/service.
     4. Kartu riwayat split bill.
-* [ ] **4.2. Audit Menyeluruh UI Kaku & Perapian Antarmuka Lainnya:**
-  * Periksa seluruh layar yang memiliki pola teks bersampingan tanpa bobot (seperti `TransactionItemCard`, `WalletsSection`, `DebtPlannerModalDialog`).
+* [x] **4.2. Audit Menyeluruh UI Kaku & Perapian Antarmuka Lainnya:**
+  * Periksa seluruh layar yang memiliki pola teks bersampingan tanpa bobot (seperti `TransactionItemCard`, `WalletsSection`, `DebtPlannerModalDialog`, `BudgetScreen`, dan `AssetTrackerModalDialog`).
   * Tambahkan `softWrap = false` dan penanganan elipsis agar nominal uang tidak pernah terlipat vertikal per huruf.
-* [ ] **4.3. Perapian Badge Smart Member di Pengaturan (`SettingsScreen.kt`):**
+* [x] **4.3. Perapian Badge Smart Member di Pengaturan (`SettingsScreen.kt`):**
   * Pindahkan badge status keanggotaan dari posisi samping nama ke posisi bawah nama user di dalam `Column`.
   * Beri jarak dan padding yang proporsional sehingga kartu profil pengguna tampak rapi, modern, dan tidak sesak.
-* [ ] **4.4. Peningkatan Responsivitas & Animasi Halus Antar Tab:**
+* [x] **4.4. Peningkatan Responsivitas & Animasi Halus Antar Tab:**
   * Pasang transisi lembut antar tab utama di `FinSmartApp.kt` (`AnimatedContent`) dan pastikan seluruh dialog memiliki `verticalScroll(rememberScrollState())`.
 
 ---

@@ -19,9 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -66,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.BudgetLimitItem
@@ -292,18 +295,25 @@ fun BudgetScreen(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = "${com.example.util.AppStrings.t("Terpakai:", "Spent:")} ${CurrencyFormatter.formatRupiah(totalExpenseAmount)}",
                                     fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "${com.example.util.AppStrings.t("Limit:", "Limit:")} ${CurrencyFormatter.formatRupiah(totalLimitAmount)}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = FinSmartPrimary
+                                    color = FinSmartPrimary,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
 
@@ -330,7 +340,10 @@ fun BudgetScreen(
                                     text = "${com.example.util.AppStrings.t("Sisa Anggaran:", "Remaining Budget:")} ${CurrencyFormatter.formatRupiah(remaining)}",
                                     fontSize = 11.sp,
                                     color = if (remaining > 0.0) IncomeGreen else ExpenseRed,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
 
                                 val usagePercentage = ((totalExpenseAmount / totalLimitAmount) * 100).toInt()
@@ -338,7 +351,9 @@ fun BudgetScreen(
                                     text = "$usagePercentage%",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = progressColor
+                                    color = progressColor,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         } else {
@@ -414,7 +429,10 @@ fun BudgetScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                ) {
                                     val catColor = try {
                                         Color(android.graphics.Color.parseColor(category.colorHex))
                                     } catch (e: Exception) {
@@ -436,14 +454,18 @@ fun BudgetScreen(
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
-                                        Text(category.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text(category.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text(
                                             text = "${com.example.util.AppStrings.t("Terpakai:", "Spent:")} ${CurrencyFormatter.formatRupiah(spent)}",
                                             fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (limit > 0.0) {
@@ -451,13 +473,17 @@ fun BudgetScreen(
                                             text = CurrencyFormatter.formatRupiah(limit),
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = FinSmartPrimary
+                                            color = FinSmartPrimary,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     } else {
                                         Text(
                                             text = com.example.util.AppStrings.t("Belum Diatur", "Not Set"),
                                             fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
 
@@ -541,7 +567,10 @@ fun BudgetScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(com.example.util.AppStrings.t("Masukkan batas maksimal total pengeluaran bulanan gabungan Anda.", "Enter your combined monthly maximum spending limit."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = totalLimitInput,
@@ -597,7 +626,10 @@ fun BudgetScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(com.example.util.AppStrings.t("Masukkan batas maksimal pengeluaran bulanan untuk kategori [$selectedCategoryName]. Biarkan kosong atau 0 untuk menonaktifkan.", "Enter monthly spending limit for category [$selectedCategoryName]. Leave empty or 0 to disable."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = categoryLimitInput,
@@ -652,7 +684,10 @@ fun BudgetScreen(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(com.example.util.AppStrings.t("Buat kategori pengeluaran baru lengkap dengan alokasi batas anggaran.", "Create a new expense category with budget limit allocation."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = newCategoryNameInput,

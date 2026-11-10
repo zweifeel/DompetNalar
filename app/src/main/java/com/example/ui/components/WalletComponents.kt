@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -60,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Wallet
@@ -337,7 +340,10 @@ fun WalletsSection(
                 text = com.example.util.AppStrings.t("Dompet & Rekening", "Wallets & Accounts"),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             TextButton(
                 onClick = onAddWalletClick,
@@ -345,7 +351,7 @@ fun WalletsSection(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(com.example.util.AppStrings.t("Tambah", "Add"), fontSize = 12.sp)
+                Text(com.example.util.AppStrings.t("Tambah", "Add"), fontSize = 12.sp, maxLines = 1, softWrap = false)
             }
         }
 
@@ -470,6 +476,7 @@ fun WalletDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -643,17 +650,19 @@ fun DeleteWalletConfirmDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.example.util.AppStrings.t("Hapus Dompet?", "Delete Wallet?"), fontWeight = FontWeight.Bold) },
         text = {
-            Text(
-                if (com.example.util.LocaleHelper.isEnglish()) {
-                    "Are you sure you want to delete wallet '${wallet.name}'?\n" +
-                            "Current balance: ${CurrencyFormatter.formatCurrency(wallet.balance, wallet.currencyCode)}.\n\n" +
-                            "Note: Wallets with transaction history cannot be deleted permanently for financial integrity. Please use the Archive option if this wallet is no longer in use."
-                } else {
-                    "Apakah Anda yakin ingin menghapus dompet '${wallet.name}'?\n" +
-                            "Saldo saat ini: ${CurrencyFormatter.formatRupiah(wallet.balance)}.\n\n" +
-                            "Catatan: Dompet dengan riwayat data tidak dapat dihapus permanen demi integritas finansial. Silakan gunakan opsi Arsipkan jika dompet tidak lagi digunakan."
-                }
-            )
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    if (com.example.util.LocaleHelper.isEnglish()) {
+                        "Are you sure you want to delete wallet '${wallet.name}'?\n" +
+                                "Current balance: ${CurrencyFormatter.formatCurrency(wallet.balance, wallet.currencyCode)}.\n\n" +
+                                "Note: Wallets with transaction history cannot be deleted permanently for financial integrity. Please use the Archive option if this wallet is no longer in use."
+                    } else {
+                        "Apakah Anda yakin ingin menghapus dompet '${wallet.name}'?\n" +
+                                "Saldo saat ini: ${CurrencyFormatter.formatRupiah(wallet.balance)}.\n\n" +
+                                "Catatan: Dompet dengan riwayat data tidak dapat dihapus permanen demi integritas finansial. Silakan gunakan opsi Arsipkan jika dompet tidak lagi digunakan."
+                    }
+                )
+            }
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -712,6 +721,7 @@ fun CurrencyAssignmentWizardDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -737,8 +747,20 @@ fun CurrencyAssignmentWizardDialog(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(wallet.name, fontWeight = FontWeight.SemiBold)
-                            Text(CurrencyFormatter.formatRupiah(wallet.balance), fontSize = 12.sp)
+                            Text(
+                                text = wallet.name,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f, fill = false),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = CurrencyFormatter.formatRupiah(wallet.balance),
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
                     }
                 }
@@ -793,6 +815,7 @@ fun LegacyWalletClaimDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -820,19 +843,27 @@ fun LegacyWalletClaimDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(wallet.name, fontWeight = FontWeight.SemiBold)
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
-                                        com.example.util.AppStrings.t("Saldo: ", "Balance: ") + CurrencyFormatter.formatRupiah(wallet.balance),
+                                        text = wallet.name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = com.example.util.AppStrings.t("Saldo: ", "Balance: ") + CurrencyFormatter.formatRupiah(wallet.balance),
                                         fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Button(
                                     onClick = { onClaimWallet(wallet.id) },
                                     modifier = Modifier.testTag("btn_claim_wallet_" + wallet.id)
                                 ) {
-                                    Text(com.example.util.AppStrings.t("Klaim", "Claim"))
+                                    Text(com.example.util.AppStrings.t("Klaim", "Claim"), maxLines = 1, softWrap = false)
                                 }
                             }
                         }

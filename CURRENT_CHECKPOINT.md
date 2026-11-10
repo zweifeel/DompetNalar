@@ -14,7 +14,7 @@
 - **Status Database:** Room v11 (Utuh, Aman, 0 modifikasi manual)
 - **Status Git:** Branch `main` (Terkoneksi ke `https://github.com/zweifeel/DompetNalar.git`)
 - **Status Proteksi:** Template Proyek Aman aktif (`auto_sync.py`, `.antigravityrules`, `GEMINI.md`)
-- **Status Fase Terakhir:** **Fase 3: Penuntasan Teks Dwibahasa & Pembersihan Jejak Nama FinSmart (-> DompetNalar) — SELESAI 100% (PASS 989 Unit Test, Verified E2E)**
+- **Status Fase Terakhir:** **Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan — SELESAI 100% (PASS 995 Unit Test, Verified E2E)**
 
 ---
 
@@ -24,62 +24,49 @@
 
 ---
 
-## 🔍 3. Rincian Penyelesaian Fase 3
-1. **Penyelarasan Penuh Layar Pengaturan (`SettingsScreen.kt`):**
-   - Seluruh judul & subjudul baris preferensi dan kartu terbukti 100% dwibahasa reaktif terhadap `LocaleHelper.isEnglish()`:
-     * *Mode Keuangan Aktif* / *Active Financial Mode*
-     * *Tema Tampilan* / *Theme* (`localizedTitle`, `localizedSubtitle`)
-     * *Warna Aksen Aplikasi* / *App Accent Color* (`localizedDisplayName`)
-     * *Latar Belakang Dasbor (Wallpaper)* / *Dashboard Background (Wallpaper)*
-     * *Ikon Peluncur Dinamis (Homescreen)* / *Dynamic Launcher Icon (Homescreen)* (`localizedDisplayName`)
-     * *Gamifikasi, Daily Streak & Badges* / *Gamification, Daily Streak & Badges*
-     * *Tes Profil Finansial AI* / *AI Financial Personality Quiz*
-     * *Mata Uang (Currency Selector)* / *Currency (Currency Selector)* (Dihapus kata "(Otomatis)")
-     * *Duress PIN & Sistem Keamanan* / *Duress PIN & Security Suite*
-     * *Aksi Goyang HP (Shake Gesture)* / *Shake Phone Action (Shake Gesture)*
-     * *Google Drive & Sinkronisasi Cloud* / *Google Drive & Cloud Sync*
-     * *Backup Otomatis Google Drive* / *Google Drive Automatic Backup*
-     * *Interval Unggah:* (`3j` vs `3h`) / *Upload Interval:*
-     * *Cadangan Terakhir:* / *Last Backup:*
-     * *Putuskan* / *Disconnect*
-     * *Tentang & Akun* / *About & Account*
-     * *Alat Pengembang & Rilis Pembaruan* / *Developer Tools & Update Publisher*
-2. **Eliminasi Total Tombol Statis "Tutup":**
-   - Seluruh tombol dan ikon penutup dialog pop-up kini 100% menggunakan `AppStrings.close` / `AppStrings.t("Tutup", "Close")` (0 hardcode tersisa di seluruh paket UI).
-3. **Penyelarasan Seluruh Dialog & Komponen Pendukung:**
-   - `WalletComponents.kt`: Placeholder rekening `AppStrings.t("misal: 1234567890", "e.g., 1234567890")`, content description `Menu Dompet`.
-   - `DebtPlannerModalDialog.kt`: Tombol "Tutup", "Coba Lagi", content description "Tutup".
-   - `PayLaterBillReviewDialog.kt`: Tombol "Sebelumnya" & "Selanjutnya", label tagihan berjalan & total sisa pokok, serta prefix simbol mata uang dinamis (`CurrencyFormatter.activeCurrency.prefix`).
-   - `ExportFormatManagementDialog.kt`: Judul dialog edit, label "Nama Format", "Pemisah Nilai", "Format Tanggal", "Sertakan baris header", dan pilihan delimiter.
-   - `AssetTrackerModalDialog.kt` & `ReceiptScanScreen.kt`: Tombol dan ikon "Tutup" dwibahasa.
-4. **Pembersihan Merek Visual (DompetNalar):**
-   - Merek visual resmi **DompetNalar** 100% konsisten di header, dialog, dan ringkasan dasbor.
+## 🔍 3. Rincian Penyelesaian Fase 4
+1. **Solusi Definitif Tulisan Vertikal Rupiah (`SplitBillScreen.kt`):**
+   - Menetapkan pola bobot `Modifier.weight(1f, fill = false)` pada teks/kolom sebelah kiri dan `maxLines = 1, softWrap = false` pada teks nominal mata uang di sebelah kanan pada:
+     * Kartu ringkasan total tagihan struk belanja.
+     * Kartu rincian proporsional tagihan per orang (*breakdown per person*).
+     * Rincian item pesanan terpisah dan porsi pajak/layanan.
+     * Kartu riwayat perhitungan patungan (*split bill history card*).
+     * Kartu item belanja (*SplitBillItemCard*).
+2. **Audit Menyeluruh UI Kaku & Anti-Wrapping:**
+   - `TransactionItemRow.kt`: Menggunakan `Modifier.weight(1f, fill = false)` pada kolom informasi transaksi dan `softWrap = false` pada nominal rupiah serta nama dompet sumber.
+   - `WalletComponents.kt`: Memberikan `weight(1f, fill = false)` pada judul seksi dan dialog panduan dompet, serta menambahkan `verticalScroll(rememberScrollState())` pada seluruh dialog dompet.
+   - `DebtPlannerModalDialog.kt`: Mengamankan seluruh kartu kewajiban, perbandingan anggaran, jadwal cicilan bulanan, dan prioritas utang dengan `weight(1f, fill = false)` & `softWrap = false`. Menambahkan scroll vertikal pada kolom dialog.
+   - `BudgetScreen.kt`: Mengamankan kartu batas anggaran bulanan dan kartu anggaran kategori dengan `weight(1f, fill = false)` & `softWrap = false`. Menambahkan scroll vertikal pada dialog tambah/edit anggaran.
+   - `AssetTrackerModalDialog.kt`: Mengamankan baris rincian aset dengan `weight(1f, fill = false)` & `softWrap = false`, serta menambahkan scroll vertikal pada dialog penghapusan kategori aset.
+3. **Perapian Badge Smart Member (`SettingsScreen.kt`):**
+   - Memindahkan badge Smart Member / Guest Member dari sebelah kanan nama pengguna ke bawah nama pengguna di dalam susunan vertikal `Column(modifier = Modifier.weight(1f, fill = false))`.
+   - Memberikan jarak vertikal proporsional `4.dp` dan label bilingual dinamis (`UserRole.resolveBadgeLabel(isGuest, isEnglish)`), sehingga tampilan profil pengguna di menu pengaturan terlihat lega, modern, dan elegan.
+   - Menambahkan scroll vertikal `verticalScroll(rememberScrollState())` pada seluruh dialog preferensi pengaturan (`ChangePasswordDialog`, `DeleteAccountDialog`, `InitialMasterSetupDialog`, dan dialog-dialog kustomisasi pengaturan).
+4. **Peningkatan Responsivitas Navigasi & Animasi:**
+   - Membungkus pergantian tab utama di `FinSmartApp.kt` menggunakan `AnimatedContent` dengan transisi halus (`fadeIn` 220ms + `fadeOut` 180ms).
 5. **Verifikasi End-to-End di Terminal:**
-   - `Phase3LocalizationAndBrandingTest` -> LULUS 100% (6 skenario uji komprehensif).
-   - Seluruh 989 unit test proyek -> LULUS 100% (BUILD SUCCESSFUL, 0 failure).
+   - `Phase4UiResponsivenessAndLayoutContractTest` -> LULUS 100% (6 skenario uji kontrak tata letak & kelenturan UI).
+   - Seluruh 995 unit test proyek -> LULUS 100% (BUILD SUCCESSFUL, 0 failure).
    - `python auto_sync.py audit` -> LULUS (0 TODO, 0 dummy, 0 mock).
 
 ---
 
-## 🚀 4. Tugas Berikutnya: Fase 4 (Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan)
-- **4.1. Perbaikan Bug Tulisan Vertikal di Split Bill (`SplitBillScreen.kt`):**
-  Berikan `Modifier.weight(1f, fill = false)` pada kolom kiri dan `maxLines = 1, softWrap = false` pada nominal rupiah di kanan pada kartu ringkasan, rincian per orang, daftar item pesanan, dan riwayat split bill.
-- **4.2. Audit Menyeluruh UI Kaku:**
-  Periksa seluruh layar yang memiliki pola teks bersampingan tanpa bobot (`TransactionItemCard`, `WalletsSection`, `DebtPlannerModalDialog`).
-- **4.3. Perapian Badge Smart Member di Pengaturan (`SettingsScreen.kt`):**
-  Pindahkan badge status keanggotaan dari posisi samping nama ke posisi bawah nama user di dalam `Column` dengan jarak proporsional.
-- **4.4. Transisi Animasi Halus Antar Tab & Dialog Scroll:**
-  Pasang transisi lembut antar tab utama (`AnimatedContent`) dan pastikan seluruh dialog memiliki `verticalScroll(rememberScrollState())`.
+## 🚀 4. Tugas Berikutnya: Fase 5 (Pengujian Akhir End-to-End, Build APK & Penyerahan ke Owner)
+- **5.1. Kompilasi & Verifikasi Akhir Seluruh Modul:**
+  Menjalankan build release/debug APK secara utuh dan memverifikasi integritas seluruh fitur utama (Dasbor, Transaksi, Dompet, Anggaran, Split Bill, Perencana Utang, Catatan Aset, dan Pengaturan).
+- **5.2. Pembuatan Dokumen Panduan Rilis untuk Non-Coder Owner:**
+  Menyusun ringkasan panduan penggunaan yang ramah dan siap pakai.
+- **5.3. Sinkronisasi Final Git ke GitHub (`zweifeel/DompetNalar`):**
+  Memastikan seluruh commit dan tag tersimpan rapi di repositori cloud.
 
 ---
 
 ## 📜 5. Log Riwayat Selesai (Verified E2E)
+- [2026-11-10 10:20:00] Berhasil menyelesaikan Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan. Seluruh 995 unit test lulus 100% (Verified E2E).
 - [2026-11-10 08:15:00] Berhasil menyelesaikan Fase 3: Penuntasan Teks Dwibahasa & Pembersihan Merek FinSmart (-> DompetNalar). Seluruh 989 unit test lulus 100% (Verified E2E).
 - [2026-11-10 07:41:50] Berhasil menyelesaikan migrasi penuh repositori GitHub ke akun `zweifeel` (`https://github.com/zweifeel/DompetNalar.git`) dengan autentikasi PAT permanen.
 - [2026-11-10 05:10:45] Berhasil menyelesaikan Fase 2: Pengaturan Awal Instalasi (Nol Dompet & Onboarding Dialog). Seluruh 983 unit test lulus 100% (Verified E2E).
 - [2026-11-10 01:55:00] Berhasil menyelesaikan Fase 1 (Anti-Crash Bahasa Android 14, Hapus "(Otomatis)", & Penyelarasan Sistem HP Internasional). Seluruh unit test 970+ lulus 100%.
-- [2026-11-10 00:50:00] Pembaruan `ROADMAP.md` dengan memasukkan seluruh laporan bug UI (Split Bill vertikal, badge pengaturan, 0 dompet awal, & pop-up onboarding).
-- [2026-11-10 00:26:00] Audit mendalam crash bahasa berdasarkan bukti rekaman video.
 
 ## 📜 Log Riwayat Selesai (Verified E2E)
-- [2026-11-10 08:18:56] Verified E2E: Selesaikan Fase 3: Penuntasan Teks Dwibahasa & Pembersihan Merek FinSmart
+- [2026-11-10 10:23:06] Verified E2E: Selesai Fase 4: Solusi Bug Tulisan Vertikal, Audit UI Kaku & Perapian Badge Pengaturan

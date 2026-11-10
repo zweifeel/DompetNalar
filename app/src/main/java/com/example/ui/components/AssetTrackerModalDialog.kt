@@ -58,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.AssetCategory
@@ -226,12 +227,15 @@ fun AssetTrackerModalDialog(
                 Text(
                     text = AppStrings.t("Daftar Aset Fisik & Estimasi Nilai", "Physical Assets & Valuation") + " (${assetList.size}):",
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 if (assetList.isNotEmpty()) {
                     TextButton(onClick = { isDeleteCategoryDialogOpen = true }) {
-                        Text(com.example.util.AppStrings.t("Kelola Kategori", "Manage Categories"), fontSize = 11.sp, color = FinSmartPrimary)
+                        Text(com.example.util.AppStrings.t("Kelola Kategori", "Manage Categories"), fontSize = 11.sp, color = FinSmartPrimary, maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -264,7 +268,7 @@ fun AssetTrackerModalDialog(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f, fill = false)
                             ) {
                                 Icon(
                                     imageVector = when (asset.category) {
@@ -279,21 +283,27 @@ fun AssetTrackerModalDialog(
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
-                                    Text(text = asset.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(text = asset.name, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text(
                                         text = "Beli ${asset.purchaseYear} (${asset.category.displayName})",
                                         fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     val isDepreciating = asset.category.annualDepreciationPercent > 0
                                     Text(
                                         text = if (isDepreciating) "Depresiasi ${asset.category.annualDepreciationPercent.toInt()}%/thn" else "Apresiasi ${(-asset.category.annualDepreciationPercent).toInt()}%/thn",
                                         fontSize = 9.sp,
                                         color = if (isDepreciating) ExpenseRed else IncomeGreen,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
+
+                            Spacer(modifier = Modifier.width(8.dp))
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(horizontalAlignment = Alignment.End) {
@@ -301,12 +311,16 @@ fun AssetTrackerModalDialog(
                                         text = CurrencyFormatter.formatRupiah(asset.currentValue),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                     Text(
                                         text = "Awal: ${CurrencyFormatter.formatCompactRupiah(asset.initialValue)}",
                                         fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
 
@@ -525,7 +539,7 @@ fun AssetTrackerModalDialog(
                 }
             },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(com.example.util.AppStrings.t("Pilih kategori yang ingin dihapus seluruh aset fisiknya:", "Select category to delete all its physical assets:"))
                     Spacer(modifier = Modifier.height(10.dp))
                     val availableCategories = assetList.map { it.category }.distinct()

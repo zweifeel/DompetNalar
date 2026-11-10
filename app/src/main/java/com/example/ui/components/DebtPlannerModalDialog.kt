@@ -63,6 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.ExpenseRed
@@ -369,26 +370,34 @@ fun DebtPlannerModalDialog(
                                 Text(
                                     text = AppStrings.t("Kewajiban Pembayaran Bulan Berjalan", "Current Month Payment Obligations"),
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = com.example.util.CurrencyFormatter.formatRupiah(totalObligationThisMonth),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = ExpenseRed
+                                    color = ExpenseRed,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                             Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(0.8f)) {
                                 Text(
                                     text = "Total Sisa Pokok",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                                 Text(
                                     text = com.example.util.CurrencyFormatter.formatRupiah(totalKnownRemainingDebt),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -405,13 +414,18 @@ fun DebtPlannerModalDialog(
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
                                         text = AppStrings.t("Batas Anggaran Cicilan / Tagihan:", "Installment / Bill Budget Limit:"),
                                         fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = if (configuredDebtBudgetLimit != null && configuredDebtBudgetLimit > 0.0) {
                                             com.example.util.CurrencyFormatter.formatRupiah(configuredDebtBudgetLimit)
@@ -420,7 +434,9 @@ fun DebtPlannerModalDialog(
                                         },
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = FinSmartPrimary
+                                        color = FinSmartPrimary,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
 
@@ -428,13 +444,18 @@ fun DebtPlannerModalDialog(
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
                                         text = AppStrings.t("Status Terhadap Anggaran:", "Budget Status:"),
                                         fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     if (configuredDebtBudgetLimit != null && configuredDebtBudgetLimit > 0.0) {
                                         val diff = totalObligationThisMonth - configuredDebtBudgetLimit
                                         if (diff > 0.0) {
@@ -442,21 +463,27 @@ fun DebtPlannerModalDialog(
                                                 text = "${com.example.util.CurrencyFormatter.formatRupiah(diff)} di atas limit (Defisit) ⚠️",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = ExpenseRed
+                                                color = ExpenseRed,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         } else {
                                             Text(
                                                 text = "${com.example.util.CurrencyFormatter.formatRupiah(Math.abs(diff))} di bawah limit (Aman) ✅",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = IncomeGreen
+                                                color = IncomeGreen,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     } else {
                                         Text(
                                             text = AppStrings.t("Sesuaikan di menu Anggaran", "Adjust in Budget menu"),
                                             fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
@@ -547,13 +574,19 @@ fun DebtPlannerModalDialog(
                                     text = "Bulan Berjalan ($currentMonthName)",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
-                                    color = FinSmartPrimary
+                                    color = FinSmartPrimary,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = com.example.util.CurrencyFormatter.formatRupiah(totalObligationThisMonth),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
-                                    color = ExpenseRed
+                                    color = ExpenseRed,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -584,24 +617,31 @@ fun DebtPlannerModalDialog(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Column(modifier = Modifier.weight(1f)) {
+                                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                                 Text(
                                                     text = plan.name,
                                                     fontWeight = FontWeight.Bold,
-                                                    fontSize = 12.sp
+                                                    fontSize = 12.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
                                                     text = "${plan.provider.ifBlank { "Cicilan" }} • Jatuh Tempo: Tgl ${plan.anchorDay}",
                                                     fontSize = 10.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
+                                            Spacer(modifier = Modifier.width(8.dp))
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text(
                                                     text = com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount),
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 12.sp,
-                                                    color = ExpenseRed
+                                                    color = ExpenseRed,
+                                                    maxLines = 1,
+                                                    softWrap = false
                                                 )
                                                 Surface(
                                                     color = if (isOverdue) ExpenseRed.copy(alpha = 0.15f) else Color(0xFFF59E0B).copy(alpha = 0.15f),
@@ -612,7 +652,9 @@ fun DebtPlannerModalDialog(
                                                         fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         color = if (isOverdue) ExpenseRed else Color(0xFFD97706),
-                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                                        maxLines = 1,
+                                                        softWrap = false
                                                     )
                                                 }
                                             }
@@ -625,12 +667,18 @@ fun DebtPlannerModalDialog(
                                             Text(
                                                 text = "Tenor: Ke-${plan.currentPeriod}/${plan.totalTenor} • Sisa: ${com.example.util.CurrencyFormatter.formatRupiah(plan.totalRemainingPrincipal ?: (plan.installmentAmount * plan.remainingTenor))}",
                                                 fontSize = 9.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                            Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = "Sumber: $dataSource",
                                                 fontSize = 9.sp,
-                                                color = FinSmartPrimary
+                                                color = FinSmartPrimary,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
@@ -654,24 +702,31 @@ fun DebtPlannerModalDialog(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Column(modifier = Modifier.weight(1f)) {
+                                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                                 Text(
                                                     text = debt.name,
                                                     fontWeight = FontWeight.Bold,
-                                                    fontSize = 12.sp
+                                                    fontSize = 12.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
                                                     text = "${debt.category} • ${debt.dueDate}",
                                                     fontSize = 10.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
+                                            Spacer(modifier = Modifier.width(8.dp))
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text(
                                                     text = com.example.util.CurrencyFormatter.formatRupiah(minDue),
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 12.sp,
-                                                    color = ExpenseRed
+                                                    color = ExpenseRed,
+                                                    maxLines = 1,
+                                                    softWrap = false
                                                 )
                                                 Surface(
                                                     color = if (isOverdue) ExpenseRed.copy(alpha = 0.15f) else Color(0xFFF59E0B).copy(alpha = 0.15f),
@@ -682,7 +737,9 @@ fun DebtPlannerModalDialog(
                                                         fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         color = if (isOverdue) ExpenseRed else Color(0xFFD97706),
-                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                                        maxLines = 1,
+                                                        softWrap = false
                                                     )
                                                 }
                                             }
@@ -695,12 +752,18 @@ fun DebtPlannerModalDialog(
                                             Text(
                                                 text = "Sisa Pokok: ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)}",
                                                 fontSize = 9.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                            Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = AppStrings.t("Sumber: Catatan Manual", "Source: Manual Entry"),
                                                 fontSize = 9.sp,
-                                                color = FinSmartPrimary
+                                                color = FinSmartPrimary,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
@@ -728,7 +791,7 @@ fun DebtPlannerModalDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
                                         text = "Estimasi",
                                         fontWeight = FontWeight.SemiBold,
@@ -747,7 +810,9 @@ fun DebtPlannerModalDialog(
                                     text = com.example.util.CurrencyFormatter.formatRupiah(nextMonthEstimatedTotal),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp,
-                                    color = Color(0xFF4F46E5)
+                                    color = Color(0xFF4F46E5),
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -773,19 +838,24 @@ fun DebtPlannerModalDialog(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(text = plan.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                                        Column(modifier = Modifier.weight(1f, fill = false)) {
+                                            Text(text = plan.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             Text(
                                                 text = "Estimasi Tgl ${plan.anchorDay} $nextMonthName • Tenor ke-${plan.currentPeriod + 1}/${plan.totalTenor}",
                                                 fontSize = 9.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
@@ -803,19 +873,24 @@ fun DebtPlannerModalDialog(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(text = debt.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+                                        Column(modifier = Modifier.weight(1f, fill = false)) {
+                                            Text(text = debt.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             Text(
                                                 text = "Estimasi ${debt.dueDate} • Sisa: ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount - estPay)}",
                                                 fontSize = 9.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = com.example.util.CurrencyFormatter.formatRupiah(estPay),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
@@ -1007,7 +1082,7 @@ fun DebtPlannerModalDialog(
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f, fill = false)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -1019,11 +1094,13 @@ fun DebtPlannerModalDialog(
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
-                                        Text(text = debt.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text(text = debt.name, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text(
                                             text = "${debt.category} • Bunga ${debt.interestRatePercent}%/thn",
                                             fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Surface(
@@ -1035,11 +1112,15 @@ fun DebtPlannerModalDialog(
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = statusColor,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
                                 }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Column(horizontalAlignment = Alignment.End) {
@@ -1047,12 +1128,16 @@ fun DebtPlannerModalDialog(
                                             text = com.example.util.CurrencyFormatter.formatRupiah(debt.amount),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp,
-                                            color = ExpenseRed
+                                            color = ExpenseRed,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                         Text(
                                             text = "Min: ${com.example.util.CurrencyFormatter.formatRupiah(debt.minMonthlyPayment)}",
                                             fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
 
@@ -1407,17 +1492,21 @@ fun DebtPlannerModalDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
                                         text = plan.name,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     if (!plan.provider.isNullOrBlank()) {
                                         Text(
                                             text = "Kreditur: ${plan.provider}",
                                             fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -1438,7 +1527,9 @@ fun DebtPlannerModalDialog(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 10.sp,
                                         color = statusColor,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -1453,12 +1544,15 @@ fun DebtPlannerModalDialog(
                                 Text(
                                     text = "Progres: ${plan.paidCount}/${plan.totalTenor} kali",
                                     fontWeight = FontWeight.SemiBold,
-                                    fontSize = 12.sp
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                                 Text(
                                     text = if (plan.isCompleted) "Selesai 🎉" else "Sisa: ${plan.remainingTenor} kali lagi",
                                     fontSize = 11.sp,
-                                    color = if (plan.isCompleted) Color(0xFF059669) else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (plan.isCompleted) Color(0xFF059669) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
 
@@ -1478,13 +1572,15 @@ fun DebtPlannerModalDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(com.example.util.AppStrings.t("Angsuran:", "Installment:"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
                                         text = "${com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount)} / bln",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
@@ -1493,7 +1589,9 @@ fun DebtPlannerModalDialog(
                                         text = if (plan.isCompleted) "Lunas" else plan.nextDueDate,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 12.sp,
-                                        color = if (!plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate)) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                                        color = if (!plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate)) ExpenseRed else MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -1663,7 +1761,7 @@ fun DebtPlannerModalDialog(
                 }
             },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(com.example.util.AppStrings.t("Pilih kategori yang ingin dihapus seluruh itemnya dari planner:", "Select category to delete all its items from planner:"))
                     Spacer(modifier = Modifier.height(10.dp))
                     val availableCategories = debtList.map { it.category }.distinct()
@@ -2050,7 +2148,10 @@ fun DebtPlannerModalDialog(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = "Kontrak: ${plan.name}",
                         fontWeight = FontWeight.Bold,
