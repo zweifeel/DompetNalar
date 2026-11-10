@@ -58,6 +58,7 @@ def run_git_cmd(args, timeout=20):
     try:
         env = os.environ.copy()
         env["GIT_TERMINAL_PROMPT"] = "0"
+        env["GCM_INTERACTIVE"] = "never"
         res = subprocess.run(
             ["git"] + args,
             capture_output=True,
