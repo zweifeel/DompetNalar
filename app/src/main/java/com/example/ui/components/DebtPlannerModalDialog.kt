@@ -552,7 +552,7 @@ fun DebtPlannerModalDialog(
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Rincian kewajiban periode berjalan dan estimasi periode berikutnya.",
+                            text = AppStrings.t("Rincian kewajiban periode berjalan dan estimasi periode berikutnya.", "Details of current period liabilities and next period estimates."),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -571,7 +571,7 @@ fun DebtPlannerModalDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Bulan Berjalan ($currentMonthName)",
+                                    text = "${AppStrings.t("Bulan Berjalan", "Current Month")} ($currentMonthName)",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
                                     color = FinSmartPrimary,
@@ -626,7 +626,7 @@ fun DebtPlannerModalDialog(
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
-                                                    text = "${plan.provider.ifBlank { "Cicilan" }} • Jatuh Tempo: Tgl ${plan.anchorDay}",
+                                                    text = "${plan.provider.ifBlank { AppStrings.t("Cicilan", "Installment") }} • ${AppStrings.t("Jatuh Tempo: Tgl", "Due Date: Day")} ${plan.anchorDay}",
                                                     fontSize = 10.sp,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     maxLines = 1,
@@ -648,7 +648,7 @@ fun DebtPlannerModalDialog(
                                                     shape = RoundedCornerShape(4.dp)
                                                 ) {
                                                     Text(
-                                                        text = if (isOverdue) "Terlambat ⚠️" else "Belum Bayar",
+                                                        text = if (isOverdue) AppStrings.t("Terlambat ⚠️", "Overdue ⚠️") else AppStrings.t("Belum Bayar", "Unpaid"),
                                                         fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         color = if (isOverdue) ExpenseRed else Color(0xFFD97706),
@@ -665,7 +665,7 @@ fun DebtPlannerModalDialog(
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Text(
-                                                text = "Tenor: Ke-${plan.currentPeriod}/${plan.totalTenor} • Sisa: ${com.example.util.CurrencyFormatter.formatRupiah(plan.totalRemainingPrincipal ?: (plan.installmentAmount * plan.remainingTenor))}",
+                                                text = "${AppStrings.t("Tenor: Ke-", "Tenor: ")}${plan.currentPeriod}/${plan.totalTenor} • ${AppStrings.t("Sisa:", "Remaining:")} ${com.example.util.CurrencyFormatter.formatRupiah(plan.totalRemainingPrincipal ?: (plan.installmentAmount * plan.remainingTenor))}",
                                                 fontSize = 9.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.weight(1f, fill = false),
@@ -674,7 +674,7 @@ fun DebtPlannerModalDialog(
                                             )
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
-                                                text = "Sumber: $dataSource",
+                                                text = "${AppStrings.t("Sumber", "Source")}: ${if (dataSource == "Impor Tagihan AI") AppStrings.t("Impor Tagihan AI", "AI Bill Import") else AppStrings.t("Catatan Manual", "Manual Entry")}",
                                                 fontSize = 9.sp,
                                                 color = FinSmartPrimary,
                                                 maxLines = 1,
@@ -733,7 +733,7 @@ fun DebtPlannerModalDialog(
                                                     shape = RoundedCornerShape(4.dp)
                                                 ) {
                                                     Text(
-                                                        text = if (isOverdue) "Terlambat ⚠️" else "Belum Bayar",
+                                                        text = if (isOverdue) AppStrings.t("Terlambat ⚠️", "Overdue ⚠️") else AppStrings.t("Belum Bayar", "Unpaid"),
                                                         fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         color = if (isOverdue) ExpenseRed else Color(0xFFD97706),
@@ -750,7 +750,7 @@ fun DebtPlannerModalDialog(
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Text(
-                                                text = "Sisa Pokok: ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)}",
+                                                text = "${AppStrings.t("Sisa Pokok:", "Remaining Principal:")} ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount)}",
                                                 fontSize = 9.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.weight(1f, fill = false),
@@ -793,13 +793,13 @@ fun DebtPlannerModalDialog(
                             ) {
                                 Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(
-                                        text = "Estimasi",
+                                        text = AppStrings.t("Estimasi", "Estimated"),
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 11.sp,
                                         color = Color(0xFF6366F1)
                                     )
                                     Text(
-                                        text = "Bulan Berikutnya ($nextMonthName)",
+                                        text = "${AppStrings.t("Bulan Berikutnya", "Next Month")} ($nextMonthName)",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         color = Color(0xFF4F46E5)
@@ -821,7 +821,7 @@ fun DebtPlannerModalDialog(
 
                         if (nextMonthInstallments.isEmpty() && nextMonthDebts.isEmpty()) {
                             Text(
-                                text = "Tidak ada tagihan yang dijadwalkan untuk bulan berikutnya.",
+                                text = AppStrings.t("Tidak ada tagihan yang dijadwalkan untuk bulan berikutnya.", "No bills scheduled for next month."),
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -920,7 +920,7 @@ fun DebtPlannerModalDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Impor Tagihan dari Screenshot",
+                            text = AppStrings.t("Impor Tagihan dari Screenshot", "Import Bills from Screenshot"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = FinSmartPrimary
@@ -928,7 +928,7 @@ fun DebtPlannerModalDialog(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Scan otomatis Shopee PayLater, DANA Cicil, GoPayLater, Akulaku, AdaKami, dll.",
+                        text = AppStrings.t("Scan otomatis Shopee PayLater, DANA Cicil, GoPayLater, Akulaku, AdaKami, dll.", "Automatically scan Shopee PayLater, DANA Cicil, GoPayLater, Akulaku, AdaKami, etc."),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -981,7 +981,7 @@ fun DebtPlannerModalDialog(
                     FilterChip(
                         selected = selectedStrategy == strategy,
                         onClick = { selectedStrategy = strategy },
-                        label = { Text(strategy.title, fontSize = 11.sp) }
+                        label = { Text(AppStrings.translatePayoffStrategyTitle(strategy.title), fontSize = 11.sp) }
                     )
                 }
             }

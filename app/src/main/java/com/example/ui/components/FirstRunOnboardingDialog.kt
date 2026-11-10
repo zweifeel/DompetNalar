@@ -285,20 +285,20 @@ fun FirstRunOnboardingDialog(
                 // ACTION BUTTON: SIMPAN & MULAI
                 Button(
                     onClick = {
-                        // 1. Terapkan bahasa
-                        LocaleHelper.setLanguage(context, selectedLanguage)
+                        // 1. Simpan status onboarding terlebih dahulu ke SharedPreferences
+                        OnboardingManager.completeOnboarding(context)
 
-                        // 2. Terapkan mata uang
+                        // 2. Terapkan preferensi mata uang
                         if (selectedCurrencyMode == CurrencyMode.FOLLOW_DEVICE) {
                             CurrencyFormatter.setMode(context, CurrencyMode.FOLLOW_DEVICE)
                         } else {
                             CurrencyFormatter.setCurrency(selectedCurrency, context)
                         }
 
-                        // 3. Simpan status onboarding
-                        OnboardingManager.completeOnboarding(context)
+                        // 3. Terapkan bahasa (reaktif in-memory tanpa crash)
+                        LocaleHelper.setLanguage(context, selectedLanguage)
 
-                        // 4. Selesai
+                        // 4. Selesaikan dialog onboarding
                         onCompleted()
                     },
                     modifier = Modifier

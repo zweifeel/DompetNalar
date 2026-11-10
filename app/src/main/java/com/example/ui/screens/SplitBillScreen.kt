@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -868,27 +870,42 @@ fun SplitBillScreen(
                                         onClick = { shareToWhatsApp(whatsappSummaryText) },
                                         modifier = Modifier
                                             .weight(1.3f)
-                                            .height(48.dp)
+                                            .defaultMinSize(minHeight = 44.dp)
                                             .testTag("btn_share_whatsapp_split_bill"),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                                         shape = RoundedCornerShape(14.dp)
                                     ) {
                                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(com.example.util.AppStrings.t("Bagikan ke WhatsApp", "Share to WhatsApp"), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White)
+                                        Text(
+                                            text = com.example.util.AppStrings.t("Bagikan ke WhatsApp", "Share to WhatsApp"),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
 
                                     OutlinedButton(
                                         onClick = { copyToClipboard(whatsappSummaryText) },
                                         modifier = Modifier
                                             .weight(0.9f)
-                                            .height(48.dp)
+                                            .defaultMinSize(minHeight = 44.dp)
                                             .testTag("btn_copy_split_bill_text"),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                                         shape = RoundedCornerShape(14.dp)
                                     ) {
                                         Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(com.example.util.AppStrings.t("Salin Teks", "Copy Text"), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text(
+                                            text = com.example.util.AppStrings.t("Salin Teks", "Copy Text"),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                 }
 

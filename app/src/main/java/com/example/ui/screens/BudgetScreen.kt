@@ -198,7 +198,7 @@ fun BudgetScreen(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(com.example.util.AppStrings.t("+ Kategori", "+ Category"), fontWeight = FontWeight.Bold)
+                    Text(com.example.util.AppStrings.t("Kategori", "Category"), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -454,7 +454,7 @@ fun BudgetScreen(
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
-                                        Text(category.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(com.example.util.AppStrings.translateCategory(category.name), fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text(
                                             text = "${com.example.util.AppStrings.t("Terpakai:", "Spent:")} ${CurrencyFormatter.formatRupiah(spent)}",
                                             fontSize = 11.sp,
@@ -622,7 +622,7 @@ fun BudgetScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Warning, contentDescription = null, tint = FinSmartPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(AppStrings.t("Limit Kategori: ", "Category Limit: ") + selectedCategoryName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(AppStrings.t("Limit Kategori: ", "Category Limit: ") + AppStrings.translateCategory(selectedCategoryName), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -630,7 +630,7 @@ fun BudgetScreen(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(com.example.util.AppStrings.t("Masukkan batas maksimal pengeluaran bulanan untuk kategori [$selectedCategoryName]. Biarkan kosong atau 0 untuk menonaktifkan.", "Enter monthly spending limit for category [$selectedCategoryName]. Leave empty or 0 to disable."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(com.example.util.AppStrings.t("Masukkan batas maksimal pengeluaran bulanan untuk kategori [$selectedCategoryName]. Biarkan kosong atau 0 untuk menonaktifkan.", "Enter monthly spending limit for category [${AppStrings.translateCategory(selectedCategoryName)}]. Leave empty or 0 to disable."), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = categoryLimitInput,
                         onValueChange = { categoryLimitInput = it },

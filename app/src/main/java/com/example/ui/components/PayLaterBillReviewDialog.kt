@@ -745,7 +745,7 @@ fun PayLaterBillReviewDialog(
                         FilterChip(
                             selected = selectedCategory == cat,
                             onClick = { selectedCategory = cat },
-                            label = { Text(cat, fontSize = 11.sp) }
+                            label = { Text(AppStrings.translatePayLaterCategory(cat), fontSize = 11.sp) }
                         )
                     }
                 }
@@ -803,7 +803,7 @@ fun PayLaterBillReviewDialog(
                             } else {
                                 onSaveAsInstallmentPlan?.invoke(planToSave)
                             }
-                            Toast.makeText(context, "Kontrak cicilan '${planToSave.name}' disimpan!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${AppStrings.t("Kontrak cicilan", "Installment contract")} '${planToSave.name}' ${AppStrings.t("disimpan!", "saved!")}", Toast.LENGTH_SHORT).show()
                             val removedId = currentItem.id
                             itemsList.removeAt(activeIndex)
                             itemConfirmationMap.remove(removedId)
@@ -836,18 +836,18 @@ fun PayLaterBillReviewDialog(
                     onClick = {
                         if (!canSave) {
                             if (!isDateValid) {
-                                Toast.makeText(context, "Periksa kembali tanggal jatuh tempo yang valid.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, AppStrings.t("Periksa kembali tanggal jatuh tempo yang valid.", "Please verify a valid due date."), Toast.LENGTH_SHORT).show()
                             } else if (!isDateConfirmed) {
-                                Toast.makeText(context, "Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, AppStrings.t("Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan.", "Please confirm the due date before saving."), Toast.LENGTH_SHORT).show()
                             } else if (providerName.isBlank()) {
-                                Toast.makeText(context, "Nama penyedia layanan wajib diisi.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, AppStrings.t("Nama penyedia layanan wajib diisi.", "Service provider name is required."), Toast.LENGTH_SHORT).show()
                             }
                             return@Button
                         }
                         val finalResult = buildFinalResult()
                         val debtToSave = finalResult.toDebtItem(userId = currentUserId, customCategory = selectedCategory)
                         onConfirmSave(debtToSave)
-                        Toast.makeText(context, "Tagihan '${debtToSave.name}' disimpan.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${AppStrings.t("Tagihan", "Bill")} '${debtToSave.name}' ${AppStrings.t("disimpan.", "saved.")}", Toast.LENGTH_SHORT).show()
                         val removedId = currentItem.id
                         itemsList.removeAt(activeIndex)
                         itemConfirmationMap.remove(removedId)
@@ -860,7 +860,7 @@ fun PayLaterBillReviewDialog(
                     ),
                     modifier = Modifier.weight(1.5f).testTag("btn_save_paylater_bill")
                 ) {
-                    Text(if (itemsList.size > 1) "Simpan Item Ini" else "Simpan Tagihan")
+                    Text(if (itemsList.size > 1) AppStrings.t("Simpan Item Ini", "Save This Item") else AppStrings.t("Simpan Tagihan", "Save Bill"))
                 }
             }
 
@@ -900,12 +900,12 @@ fun PayLaterBillReviewDialog(
                         }
                         val unconfirmed = itemsList.firstOrNull { it.isDateAmbiguous && itemConfirmationMap[it.id] != true }
                         if (unconfirmed != null) {
-                            Toast.makeText(context, "Item '${unconfirmed.providerName.ifBlank { "Tagihan" }}' memerlukan konfirmasi tanggal jatuh tempo.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "${AppStrings.t("Item", "Item")} '${unconfirmed.providerName.ifBlank { AppStrings.t("Tagihan", "Bill") }}' ${AppStrings.t("memerlukan konfirmasi tanggal jatuh tempo.", "requires due date confirmation.")}", Toast.LENGTH_LONG).show()
                             return@Button
                         }
                         val blankProvider = itemsList.firstOrNull { it.providerName.isBlank() }
                         if (blankProvider != null) {
-                            Toast.makeText(context, "Penyedia layanan untuk salah satu tagihan belum diisi.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, AppStrings.t("Penyedia layanan untuk salah satu tagihan belum diisi.", "Service provider name for one of the bills is missing."), Toast.LENGTH_LONG).show()
                             return@Button
                         }
 
@@ -934,7 +934,7 @@ fun PayLaterBillReviewDialog(
                                 onSaveAsInstallmentPlanWithPeriods?.invoke(plan, periods) ?: onSaveAsInstallmentPlan?.invoke(plan)
                             }
                         }
-                        Toast.makeText(context, "Semua ${itemsList.size} tagihan berhasil disimpan!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${AppStrings.t("Semua", "All")} ${itemsList.size} ${AppStrings.t("tagihan berhasil disimpan!", "bills saved successfully!")}", Toast.LENGTH_SHORT).show()
                         itemsList.clear()
                         onDismiss()
                     },

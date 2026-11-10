@@ -96,8 +96,9 @@ object LocaleHelper {
     }
 
     /**
-     * Mengatur bahasa baru, menyimpan ke preferensi, menerapkan ke konfigurasi Android,
-     * dan me-recreate Activity jika diperlukan (pada API < 33 secara aman).
+     * Mengatur bahasa baru, menyimpan ke preferensi, dan menerapkan ke konfigurasi internal.
+     * Jetpack Compose mengamati StateFlow `currentLanguage` sehingga UI otomatis me-recompose
+     * secara instan tanpa perlu me-recreate Activity atau memicu crash OS pada OEM ROM.
      */
     fun setLanguage(context: Context, language: AppLanguage) {
         if (prefs == null) {
@@ -106,28 +107,8 @@ object LocaleHelper {
         prefs?.edit()?.putString(KEY_LANGUAGE, language.code)?.commit()
         _currentLanguage.value = language
 
-        // Terapkan ke konfigurasi Application dan Context lokal
-        val localeManagerApplied = applyLocaleInternal(context.applicationContext, language, isUserExplicitChange = true)
-
-        val activity = context.findActivity() ?: (if (context is Activity) context else null)
-
-        // Pada Android 13+ (API 33+), jika LocaleManager mengubah applicationLocales,
-        // sistem secara otomatis merestart Activity.
-        // Hanya lakukan recreate manual jika LocaleManager tidak mengubah konfigurasi atau gagal,
-        // dan jalankan melalui Handler Looper utama agar transisi Compose event loop selesai bersih.
-        if (!localeManagerApplied) {
-            if (activity != null && !activity.isFinishing && !activity.isDestroyed) {
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    try {
-                        if (!activity.isFinishing && !activity.isDestroyed) {
-                            activity.recreate()
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Gagal me-recreate activity: ${e.message}")
-                    }
-                }
-            }
-        }
+        // Terapkan locale ke Locale Java default dan Resources secara non-destruktif
+        applyLocaleInternal(context.applicationContext, language, isUserExplicitChange = true)
     }
 
     @androidx.annotation.VisibleForTesting
@@ -201,65 +182,28 @@ object LocaleHelper {
 
         Locale.setDefault(locale)
 
-        // Hanya modifikasi Resources.updateConfiguration jika versi Android < 33 (Tiramisu).
-        // Pada Android 13+ (API 33+), updateConfiguration deprecated dan merusak konfigurasi sistem serta token window Compose.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            try {
-                val res = context.resources
-                val config = Configuration(res.configuration)
-                config.setLocale(locale)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    config.setLocales(LocaleList(locale))
-                }
-                @Suppress("DEPRECATION")
-                res.updateConfiguration(config, res.displayMetrics)
-            } catch (e: Exception) {
-                Log.w(TAG, "Gagal mengupdate Resources configuration: ${e.message}")
+        // Perbarui Resources configuration secara non-destruktif
+        try {
+            val res = context.resources
+            val config = Configuration(res.configuration)
+            config.setLocale(locale)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(LocaleList(locale))
             }
+            @Suppress("DEPRECATION")
+            res.updateConfiguration(config, res.displayMetrics)
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal mengupdate Resources configuration: ${e.message}")
         }
-
-        // Dukungan Android 13 (API level 33) Per-App Language Preferences
-        // HANYA mutasi LocaleManager saat dipanggil dari perubahan eksplisit pengguna (setLanguage).
-        // Jangan mutasi saat initialize() agar tidak memicu configuration change / recreate cascade loop.
-        var localeManagerHandled = false
-        if (isUserExplicitChange && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            try {
-                val localeManager = context.getSystemService(LocaleManager::class.java)
-                if (localeManager != null) {
-                    val targetLocaleList = when (language) {
-                        AppLanguage.SYSTEM -> LocaleList.getEmptyLocaleList()
-                        AppLanguage.INDONESIAN -> LocaleList(Locale("id", "ID"))
-                        AppLanguage.ENGLISH -> LocaleList(Locale.US)
-                    }
-                    val currentLocales = localeManager.applicationLocales
-                    if (currentLocales != targetLocaleList) {
-                        localeManager.applicationLocales = targetLocaleList
-                        localeManagerHandled = true
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Gagal mengupdate LocaleManager: ${e.message}")
-            }
-        }
-        return localeManagerHandled
+        return true
     }
 
     /**
-     * Membungkus base context agar Activity langsung mewarisi konfigurasi locale yang benar pada API < 33.
-     * Pada Android 13+ (API 33+), pembungkusan createConfigurationContext di attachBaseContext DILARANG
-     * karena melepaskan Activity Window Token yang menyebabkan crash Jetpack Compose saat Activity direstart.
+     * Membungkus base context. Pada Jetpack Compose, wrapping createConfigurationContext
+     * pada Activity.attachBaseContext melepaskan window token dan menyebabkan BadTokenException / crash.
+     * Mengembalikan base context murni untuk stabilitas penuh.
      */
     fun wrapContext(base: Context): Context {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return base
-        }
-        val locale = getActiveLocale()
-        Locale.setDefault(locale)
-        val config = Configuration(base.resources.configuration)
-        config.setLocale(locale)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            config.setLocales(LocaleList(locale))
-        }
-        return base.createConfigurationContext(config)
+        return base
     }
 }

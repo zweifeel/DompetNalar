@@ -150,4 +150,69 @@ object AppStrings {
     val upcomingBillsTitle: String get() = t("Tagihan & Cicilan Terdekat", "Upcoming Bills & Installments")
     val noUpcomingBills: String get() = t("Tidak ada tagihan atau cicilan aktif yang tercatat.", "No active bills or installment plans found.")
     val financialHealthAnalytics: String get() = t("Analitik Kesehatan Finansial", "Financial Health Analytics")
+
+    // --- Dynamic Category & Entity Translation Helpers ---
+
+    /**
+     * Menerjemahkan kategori anggaran dan pengeluaran sistem ke Bahasa Inggris secara dinamis
+     * saat mode bahasa Inggris aktif, tanpa merusak nilai asli di database Room.
+     */
+    fun translateCategory(rawCategory: String): String {
+        if (!LocaleHelper.isEnglish()) return rawCategory
+        return when (rawCategory.trim()) {
+            "Belanja & Hobi" -> "Shopping & Hobbies"
+            "Hiburan & Langganan" -> "Entertainment & Subscriptions"
+            "Makanan & Minuman" -> "Food & Drinks"
+            "Transportasi" -> "Transportation"
+            "Kesehatan" -> "Health"
+            "Pendidikan" -> "Education"
+            "Gaji" -> "Salary"
+            "Investasi" -> "Investment"
+            "Bonus" -> "Bonus"
+            "Tagihan & Utilitas" -> "Bills & Utilities"
+            "Donasi & Amal" -> "Donation & Charity"
+            "Lain-lain" -> "Others"
+            else -> rawCategory
+        }
+    }
+
+    /**
+     * Menerjemahkan kategori tagihan PayLater ke Bahasa Inggris untuk UI chips.
+     */
+    fun translatePayLaterCategory(rawCategory: String): String {
+        if (!LocaleHelper.isEnglish()) return rawCategory
+        return when (rawCategory.trim()) {
+            "Pinjaman Online" -> "Online Loan"
+            "Kartu Kredit" -> "Credit Card"
+            "Cicilan Kendaraan" -> "Vehicle Installment"
+            "Lain-lain" -> "Others"
+            else -> rawCategory
+        }
+    }
+
+    /**
+     * Menerjemahkan judul strategi pelunasan utang.
+     */
+    fun translatePayoffStrategyTitle(rawTitle: String): String {
+        if (!LocaleHelper.isEnglish()) return rawTitle
+        return when {
+            rawTitle.contains("Tenggat Terdekat") -> "Earliest Due Date ⏰"
+            rawTitle.contains("Bunga Tertinggi") -> "Highest Interest ⚡"
+            rawTitle.contains("Nominal Terkecil") -> "Lowest Balance ⛄"
+            else -> rawTitle
+        }
+    }
+
+    /**
+     * Menerjemahkan deskripsi strategi pelunasan utang.
+     */
+    fun translatePayoffStrategyDesc(rawDesc: String): String {
+        if (!LocaleHelper.isEnglish()) return rawDesc
+        return when {
+            rawDesc.contains("jatuh tempo paling dekat") -> "Orders debts by nearest due date to furthest."
+            rawDesc.contains("persentase bunga tertinggi") -> "Orders debts by highest interest rate for financial efficiency."
+            rawDesc.contains("sisa pokok hutang terkecil") -> "Orders debts by lowest remaining balance for psychological momentum."
+            else -> rawDesc
+        }
+    }
 }

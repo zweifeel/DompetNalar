@@ -146,4 +146,27 @@ class LocalizationBilingualTest {
             assertEquals(target, LocaleHelper.currentLanguage.value)
         }
     }
+
+    @Test
+    fun scenarioF_categoryAndPayLaterTranslation_bilingualIntegrity() {
+        // Mode Bahasa Indonesia
+        LocaleHelper.setLanguage(context, AppLanguage.INDONESIAN)
+        assertEquals("Belanja & Hobi", AppStrings.translateCategory("Belanja & Hobi"))
+        assertEquals("Pinjaman Online", AppStrings.translatePayLaterCategory("Pinjaman Online"))
+        assertEquals("Kartu Kredit", AppStrings.translatePayLaterCategory("Kartu Kredit"))
+        assertEquals("Tenggat Terdekat ⏰", AppStrings.translatePayoffStrategyTitle("Tenggat Terdekat ⏰"))
+
+        // Mode Bahasa Inggris
+        LocaleHelper.setLanguage(context, AppLanguage.ENGLISH)
+        assertEquals("Shopping & Hobbies", AppStrings.translateCategory("Belanja & Hobi"))
+        assertEquals("Entertainment & Subscriptions", AppStrings.translateCategory("Hiburan & Langganan"))
+        assertEquals("Health", AppStrings.translateCategory("Kesehatan"))
+        assertEquals("Online Loan", AppStrings.translatePayLaterCategory("Pinjaman Online"))
+        assertEquals("Credit Card", AppStrings.translatePayLaterCategory("Kartu Kredit"))
+        assertEquals("Vehicle Installment", AppStrings.translatePayLaterCategory("Cicilan Kendaraan"))
+        assertEquals("Others", AppStrings.translatePayLaterCategory("Lain-lain"))
+        assertEquals("Earliest Due Date ⏰", AppStrings.translatePayoffStrategyTitle("Tenggat Terdekat ⏰"))
+        assertEquals("Highest Interest ⚡", AppStrings.translatePayoffStrategyTitle("Bunga Tertinggi ⚡"))
+        assertEquals("Lowest Balance ⛄", AppStrings.translatePayoffStrategyTitle("Nominal Terkecil ⛄"))
+    }
 }

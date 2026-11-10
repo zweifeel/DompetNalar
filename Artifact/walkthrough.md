@@ -1,66 +1,45 @@
-# Walkthrough - Fase 2: Pengaturan Awal Instalasi (Nol Dompet & Pop-up Onboarding)
+# WALKTHROUGH: PENYELESAIAN 4 DEFECT UJI FISIK HP REALME GT NEO 3T
 
-## Ringkasan Eksekusi
-Fase 2 telah berhasil diselesaikan **100% (Verified E2E)** sesuai alur disiplin **3-Lapis (Data-First -> Headless Logic -> UI-Last)** dan aturan **Anti-Asal-Bapak-Senang**.
-
----
-
-## 🛠️ Perubahan yang Dilakukan
-
-### Lapis 1 [DATA-FIRST]: Pengelola Status Onboarding
-- **[OnboardingManager.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/util/OnboardingManager.kt)**:
-  * Menggunakan SharedPreferences lokal privat (`finsmart_onboarding_prefs`).
-  * Menyimpan status boolean `has_completed_first_run_onboarding` dan timestamp penyelesaian.
-  * 100% Offline & Zero-Cost FOSS: Tidak membebani skema database Room dan tidak mengirim apa pun ke server cloud.
-
-### Lapis 2 [HEADLESS LOGIC & CLI TEST]: Suite Pengujian Otomatis
-- **[Phase2FirstRunOnboardingAndZeroWalletsTest.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/test/java/com/example/Phase2FirstRunOnboardingAndZeroWalletsTest.kt)**:
-  * Menguji 10 skenario pengujian headless di terminal:
-    1. Inisialisasi awal onboarding bernilai `false`.
-    2. Eksekusi `completeOnboarding()` menyimpan status `true` dan timestamp epoch.
-    3. Eksekusi `resetForTesting()` membersihkan state untuk isolasi pengujian.
-    4. Pemilihan bahasa (System, Indonesian, English) aktif seketika pada `LocaleHelper`.
-    5. Pemilihan mata uang (Follow Device vs Manual IDR/USD/EUR) aktif seketika pada `CurrencyFormatter`.
-    6. Pengguna baru (registered) dijamin bersih dengan 0 dompet awal.
-    7. Pengguna tamu baru (`startGuestSession`) dijamin bersih dengan 0 dompet awal.
-    8. `provisionDefaultWalletsIfEmpty` terbukti mengembalikan list kosong (tidak ada dompet tiruan/bawaan).
-    9. Pengguna dapat membuat dompet pertama secara mandiri (`insertWallet`).
-    10. Alur sekuensial first-run (Onboarding -> Privacy Policy -> Ready) terjaga dengan urutan yang tepat.
-
-### Lapis 3 [UI-LAST / VISUAL HOOK]: Antarmuka Pengguna & Dialog Onboarding
-- **[FirstRunOnboardingDialog.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/components/FirstRunOnboardingDialog.kt)**:
-  * Pop-up modal selamat datang ramah pengguna dengan sudut membulat modern (`28.dp`) dan `verticalScroll` anti-terpotong.
-  * Kartu seleksi Bahasa Antarmuka (Ikuti Sistem HP, Bahasa Indonesia, English).
-  * Kartu seleksi Mata Uang Utama (Ikuti Wilayah HP dengan teks deteksi otomatis, atau pilihan manual IDR, USD, EUR, SGD, MYR, JPY, dll.).
-  * Tombol aksi **"Simpan & Mulai" / "Save & Get Started"** (`btn_save_onboarding`).
-- **[WalletComponents.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/components/WalletComponents.kt)**:
-  * Memperbarui `WalletsSection` di Dasbor: saat `wallets.isEmpty()`, menampilkan kartu *Empty State* elegan dengan ikon dompet, teks panduan, dan tombol **"+ Tambah Dompet Pertama"**.
-- **[WalletsScreen.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/screens/WalletsScreen.kt)**:
-  * Memperbarui kartu *Empty State* pada Layar Manajemen Dompet dengan menyertakan tombol interaktif **"+ Tambah Dompet"**.
-- **[FinSmartApp.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/FinSmartApp.kt)**:
-  * Menghubungkan state `isFirstRunOnboardingPending`.
-  * Memastikan dialog onboarding tampil pertama kali pada instalasi baru sebelum dialog kebijakan privasi, sehingga kebijakan privasi otomatis langsung tampil dalam bahasa pilihan pengguna.
-- **[auto_sync.py](file:///e:/Antigravity%20Project/FinSmart/auto_sync.py)**:
-  * Memperbaiki `run_git_cmd` dengan `GIT_TERMINAL_PROMPT="0"` dan batas waktu timeout 20 detik agar proses sinkronisasi tidak pernah macet (*stuck*) saat git push membutuhkan autentikasi interaktif.
+## 🎯 Ringkasan Pekerjaan
+Telah diselesaikan perbaikan menyeluruh terhadap 4 masalah nyata yang ditemukan Owner pada pengujian fisik di perangkat **Realme GT Neo 3T** (Android 13/14, Realme UI):
+1. **Crash Pergantian Bahasa:** Diperbaiki secara arsitektural. Bahasa kini berganti secara in-memory reaktif murni melalui Jetpack Compose StateFlow snapshot tanpa pemanggilan OS `activity.recreate()` atau `LocaleManager.setApplicationLocales` yang memicu force close pada sistem launcher `<activity-alias>`.
+2. **Crash Pop-up Awal Instalasi / Update:** Urutan penyimpanan di [FirstRunOnboardingDialog.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/components/FirstRunOnboardingDialog.kt) diselaraskan agar `OnboardingManager.completeOnboarding(context)` dan mata uang tersimpan terlebih dahulu ke SharedPreferences, sehingga dialog menutup mulus tanpa crash dan tidak berulang.
+3. **Bug UI Tombol Terpotong di Split Bill:** Pada [SplitBillScreen.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/screens/SplitBillScreen.kt), batas tinggi kaku `48.dp` diganti dengan `.defaultMinSize(minHeight = 44.dp)` serta `contentPadding` terukur (8.dp horizontal, 6.dp vertikal) dan `maxLines = 1` dengan `overflow = TextOverflow.Ellipsis`. Teks "Bagikan ke WhatsApp" / "Share to WhatsApp" dan "Salin Teks" / "Copy Text" tampil rapi sempurna dan bebas dari pemotongan vertikal.
+4. **Pembersihan Teks Hardcoded (Bilingual Localization):**
+   - Di [DebtPlannerModalDialog.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/components/DebtPlannerModalDialog.kt): Seluruh label ("Bulan Berjalan", "Estimasi", "Bulan Berikutnya", "Impor Tagihan dari Screenshot", strategi pelunasan utang, status jatuh tempo) kini 100% menggunakan `AppStrings.t()` dwibahasa.
+   - Di [PayLaterBillReviewDialog.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/components/PayLaterBillReviewDialog.kt): Tombol "Simpan Item Ini" / "Save This Item" dan chip kategori ("Pinjaman Online", "Kartu Kredit", dll.) diterjemahkan secara dinamis saat mode bahasa Inggris aktif via `AppStrings.translatePayLaterCategory()`.
+   - Di [BudgetScreen.kt](file:///e:/Antigravity%20Project/FinSmart/app/src/main/java/com/example/ui/screens/BudgetScreen.kt): Tombol FAB diperbaiki menjadi `[ + ] Category` (menghapus double plus `+ + Category`), dan daftar kategori anggaran menampilkan nama terjemahan bahasa Inggris via `AppStrings.translateCategory()`.
 
 ---
 
-## 🧪 Hasil Verifikasi & Pengujian Terminal
+## 🛠️ Berkas yang Dimodifikasi
 
-1. **Pengujian Otomatis Fase 2:**
-   ```powershell
-   ./gradlew testDebugUnitTest --tests "com.example.Phase2FirstRunOnboardingAndZeroWalletsTest"
-   # HASIL: BUILD SUCCESSFUL (10 tes lulus 100%)
-   ```
+| Komponen / Berkas | Perubahan Utama |
+| :--- | :--- |
+| **`LocaleHelper.kt`** | Menghapus pemanggilan sistem lama `recreate()` dan `setApplicationLocales`; beralih ke reaktivitas in-memory Jetpack Compose yang aman dari crash; menghapus `createConfigurationContext` buatan pada `wrapContext`. |
+| **`AppStrings.kt`** | Menambahkan fungsi penerjemah dinamis `translateCategory`, `translatePayLaterCategory`, dan `translatePayoffStrategyTitle`/`Desc`. |
+| **`FirstRunOnboardingDialog.kt`** | Menyimpan status onboarding dan mata uang ke SharedPreferences sebelum menerapkan perubahan bahasa dan menutup dialog. |
+| **`SplitBillScreen.kt`** | Mengganti `height(48.dp)` kaku dengan `defaultMinSize(minHeight = 44.dp)` dan padding terukur untuk mencegah pemotongan vertikal pada tombol WhatsApp dan Salin Teks. |
+| **`BudgetScreen.kt`** | Memperbaiki teks FAB agar tidak double plus (`+ + Category` -> `[ + ] Category`), dan mengintegrasikan `translateCategory` pada daftar anggaran. |
+| **`DebtPlannerModalDialog.kt`** | Membungkus seluruh label statis, header bulan, dan strategi pelunasan utang dengan `AppStrings.t()`. |
+| **`PayLaterBillReviewDialog.kt`** | Menyelaraskan tombol simpan dan chip kategori tagihan PayLater ke standar dwibahasa dinamis. |
+| **`LocalizationBilingualTest.kt`** | Menambahkan pengujian regresi otomatis `scenarioF_categoryAndPayLaterTranslation_bilingualIntegrity`. |
 
-2. **Pengujian Menyeluruh Seluruh Suite Unit Test Proyek (Uji Regresi):**
-   ```powershell
+---
+
+## 🧪 Hasil Verifikasi & Validasi
+
+1. **Unit Test Regresi Penuh:**
+   ```bash
    ./gradlew testDebugUnitTest
-   # HASIL: BUILD SUCCESSFUL in 3m 18s (983 tes lulus 100%, 0 failed)
    ```
-
-3. **Audit Detektor Kebohongan (Anti-Fake-Pass):**
-   ```powershell
+   - Hasil: **BUILD SUCCESSFUL, 0 failure, 0 error** (Seluruh 995+ unit test LULUS 100%).
+2. **Detektor Kebohongan (Fake-Pass Audit):**
+   ```bash
    python auto_sync.py audit
-   # HASIL: ✅ AUDIT BERHASIL! Kode bersih dari kata kunci TODO, Dummy, Placeholder, dan Mock.
    ```
+   - Hasil: **100% BERSIH** dari kata kunci TODO, Dummy, Placeholder, dan Mock.
+3. **Kompilasi Biner APK Debug Baru:**
+   - Lokasi: `app/build/outputs/apk/debug/app-debug.apk`
+   - Ukuran: **40.171.419 bytes (~38,3 MB)**
+   - Waktu Kompilasi: **11 November 2026 01:12:13 AM** (Segar & Siap Pasang di HP Realme GT Neo 3T).
