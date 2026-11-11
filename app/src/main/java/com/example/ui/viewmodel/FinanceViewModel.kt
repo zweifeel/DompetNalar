@@ -23,6 +23,7 @@ import com.example.data.model.DebtItem
 import com.example.data.model.InstallmentPlanItem
 import com.example.data.model.SplitBillHistoryItem
 import com.example.data.model.TransactionItem
+import com.example.util.AppStrings
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
 import com.example.data.model.WalletType
@@ -265,7 +266,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
     ) {
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId() ?: run {
-                onComplete?.invoke(Result.failure(IllegalStateException("Pengguna belum login")))
+                onComplete?.invoke(Result.failure(IllegalStateException(AppStrings.t("Pengguna belum login", "User is not logged in"))))
                 return@launch
             }
             val result = repository.saveBatchPayLaterBills(debtsToSave, plansWithPeriods, userId)
@@ -593,7 +594,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 _aggregationError.value = null
                 res
             } catch (e: ArithmeticException) {
-                _aggregationError.value = "Kalkulasi saldo melampaui batas numerik 64-bit (Overflow)"
+                _aggregationError.value = AppStrings.t(
+                    "Kalkulasi saldo melampaui batas numerik 64-bit (Overflow)",
+                    "Balance calculation exceeded 64-bit numeric limit (Overflow)"
+                )
                 null
             }
         }
@@ -720,7 +724,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     .map { it.amountMinorUnits }
                 safeSumMinorUnits(matching)
             } catch (e: ArithmeticException) {
-                _aggregationError.value = "Kalkulasi pemasukan melampaui batas numerik 64-bit (Overflow)"
+                _aggregationError.value = AppStrings.t(
+                    "Kalkulasi pemasukan melampaui batas numerik 64-bit (Overflow)",
+                    "Income calculation exceeded 64-bit numeric limit (Overflow)"
+                )
                 null
             }
         }
@@ -747,7 +754,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     .map { it.amountMinorUnits }
                 safeSumMinorUnits(matching)
             } catch (e: ArithmeticException) {
-                _aggregationError.value = "Kalkulasi pengeluaran melampaui batas numerik 64-bit (Overflow)"
+                _aggregationError.value = AppStrings.t(
+                    "Kalkulasi pengeluaran melampaui batas numerik 64-bit (Overflow)",
+                    "Expense calculation exceeded 64-bit numeric limit (Overflow)"
+                )
                 null
             }
         }
@@ -772,7 +782,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                     .subtract(java.math.BigInteger.valueOf(exp))
                     .longValueExact()
             } catch (e: ArithmeticException) {
-                _aggregationError.value = "Kalkulasi arus kas bersih melampaui batas numerik 64-bit (Overflow)"
+                _aggregationError.value = AppStrings.t(
+                    "Kalkulasi arus kas bersih melampaui batas numerik 64-bit (Overflow)",
+                    "Net cashflow calculation exceeded 64-bit numeric limit (Overflow)"
+                )
                 null
             }
         }
@@ -890,21 +903,21 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             val userId = SessionManager.getActiveUserId()
             if (userId == null || userId <= 0L) {
-                onError?.invoke("Sesi login tidak aktif. Silakan masuk akun terlebih dahulu.")
+                onError?.invoke(AppStrings.t("Sesi login tidak aktif. Silakan masuk akun terlebih dahulu.", "Login session inactive. Please log in first."))
                 return@launch
             }
             if (amount <= 0.0) {
-                onError?.invoke("Nominal transaksi harus lebih dari Rp 0.")
+                onError?.invoke(AppStrings.t("Nominal transaksi harus lebih dari Rp 0.", "Transaction amount must be greater than 0."))
                 return@launch
             }
 
             if (type == TransactionType.TRANSFER) {
                 if (targetWalletId == null || targetWalletId <= 0L) {
-                    onError?.invoke("Dompet tujuan transfer harus dipilih.")
+                    onError?.invoke(AppStrings.t("Dompet tujuan transfer harus dipilih.", "Target wallet must be selected."))
                     return@launch
                 }
                 if (walletId == targetWalletId) {
-                    onError?.invoke("Dompet sumber dan dompet tujuan transfer tidak boleh sama.")
+                    onError?.invoke(AppStrings.t("Dompet sumber dan dompet tujuan transfer tidak boleh sama.", "Source and target wallets cannot be the same."))
                     return@launch
                 }
             }
@@ -923,10 +936,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
 
             try {
                 val item = TransactionItem(
-                    title = title.ifBlank { "Transaksi" },
+                    title = title.ifBlank { AppStrings.t("Transaksi", "Transaction") },
                     amount = amount,
                     type = type,
-                    category = category.ifBlank { "Umum" },
+                    category = category.ifBlank { AppStrings.t("Umum", "General") },
                     categoryIcon = categoryIcon.ifBlank { "payments" },
                     walletId = wallet.id,
                     walletName = wallet.name,
@@ -942,7 +955,9 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 _isAddTransactionOpen.value = false
                 onSuccess?.invoke()
             } catch (e: Exception) {
-                onError?.invoke("Gagal menyimpan transaksi: ${e.message ?: "Kesalahan database"}")
+                val prefix = AppStrings.t("Gagal menyimpan transaksi: ", "Failed to save transaction: ")
+                val fallback = AppStrings.t("Kesalahan database", "Database error")
+                onError?.invoke("$prefix${e.message ?: fallback}")
             }
         }
     }
@@ -1031,7 +1046,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 repository.deleteWallet(userId, wallet)
                 closeDeleteWalletConfirm()
             } catch (e: Exception) {
-                val msg = e.message ?: "Gagal menghapus dompet."
+                val msg = e.message ?: AppStrings.t("Gagal menghapus dompet.", "Failed to delete wallet.")
                 deleteWalletErrorMessage.value = msg
                 onError(msg)
             }
@@ -1079,17 +1094,17 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 false
             }
             if (!isUnlocked) {
-                onError("Akses SmartMaster diperlukan untuk membuat dompet via AI.")
+                onError(AppStrings.t("Akses SmartMaster diperlukan untuk membuat dompet via AI.", "SmartMaster access required to create wallet via AI."))
                 return@launch
             }
             val userId = SessionManager.getActiveUserId()
             if (userId == null || userId <= 0L) {
-                onError("Sesi login tidak aktif.")
+                onError(AppStrings.t("Sesi login tidak aktif.", "Login session inactive."))
                 return@launch
             }
             val existingDraft = com.example.data.chatbot.parser.WalletDraftManager.getDraft(draftId)
             if (existingDraft == null || existingDraft.ownerUserId <= 0L || existingDraft.ownerUserId != userId) {
-                onError("Akses ditolak: Draft dompet ini tidak memiliki pemilik sah atau bukan milik sesi aktif.")
+                onError(AppStrings.t("Akses ditolak: Draft dompet ini tidak memiliki pemilik sah atau bukan milik sesi aktif.", "Access denied: This wallet draft has no valid owner or does not belong to active session."))
                 return@launch
             }
             val result = com.example.data.chatbot.parser.WalletDraftManager.confirmAndSave(
@@ -1102,7 +1117,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             result.onSuccess { wallet ->
                 onSuccess(wallet)
             }.onFailure { err ->
-                onError(err.localizedMessage ?: "Gagal membuat dompet.")
+                onError(err.localizedMessage ?: AppStrings.t("Gagal membuat dompet.", "Failed to create wallet."))
             }
         }
     }
@@ -1130,7 +1145,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             }
             val existingDraft = com.example.data.chatbot.parser.TransactionDraftManager.getDraft(draftId)
             if (existingDraft == null || existingDraft.ownerUserId <= 0L || existingDraft.ownerUserId != userId) {
-                onError("Akses ditolak: Draft transaksi ini tidak memiliki pemilik sah atau bukan milik sesi aktif.")
+                onError(AppStrings.t("Akses ditolak: Draft transaksi ini tidak memiliki pemilik sah atau bukan milik sesi aktif.", "Access denied: This transaction draft does not have a valid owner or belong to the active session."))
                 return@launch
             }
             val result = com.example.data.chatbot.parser.TransactionDraftManager.confirmAndSave(
@@ -1143,7 +1158,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             result.onSuccess { txId ->
                 onSuccess(txId)
             }.onFailure { err ->
-                onError(err.localizedMessage ?: "Gagal menyimpan transaksi.")
+                onError(err.localizedMessage ?: AppStrings.t("Gagal menyimpan transaksi.", "Failed to save transaction."))
             }
         }
     }
@@ -1327,64 +1342,64 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
             // Validasi nilai transaksi
             for (tx in payload.transactions) {
                 if (tx.amount.isNaN() || tx.amount.isInfinite() || tx.amount < 0.0) {
-                    throw IllegalArgumentException("Jumlah transaksi '${tx.title}' tidak valid.")
+                    throw IllegalArgumentException(AppStrings.t("Jumlah transaksi '${tx.title}' tidak valid.", "Invalid amount for transaction '${tx.title}'."))
                 }
             }
 
             // Validasi anggaran, hutang, dan aset
             for (b in payload.budgetLimits) {
                 if (b.limitAmount.isNaN() || b.limitAmount.isInfinite() || b.limitAmount < 0.0) {
-                    throw IllegalArgumentException("Batas anggaran untuk '${b.id}' tidak valid.")
+                    throw IllegalArgumentException(AppStrings.t("Batas anggaran untuk '${b.id}' tidak valid.", "Invalid budget limit for '${b.id}'."))
                 }
             }
             for (d in payload.debts) {
                 if (d.amount.isNaN() || d.amount.isInfinite() || d.amount < 0.0) {
-                    throw IllegalArgumentException("Jumlah hutang '${d.name}' tidak valid.")
+                    throw IllegalArgumentException(AppStrings.t("Jumlah hutang '${d.name}' tidak valid.", "Invalid debt amount for '${d.name}'."))
                 }
             }
             for (a in payload.assets) {
                 if (a.initialValue.isNaN() || a.initialValue.isInfinite() || a.initialValue < 0.0) {
-                    throw IllegalArgumentException("Nilai aset '${a.name}' tidak valid.")
+                    throw IllegalArgumentException(AppStrings.t("Nilai aset '${a.name}' tidak valid.", "Invalid asset value for '${a.name}'."))
                 }
             }
             for (p in payload.installmentPlans) {
                 if (p.installmentAmount.isNaN() || p.installmentAmount.isInfinite() || p.installmentAmount < 0.0) {
-                    throw IllegalArgumentException("Nominal angsuran '${p.name}' tidak valid.")
+                    throw IllegalArgumentException(AppStrings.t("Nominal angsuran '${p.name}' tidak valid.", "Invalid installment amount for '${p.name}'."))
                 }
             }
 
             // Validasi integritas relasi dompet sebelum mutasi basis data lokal (Zero Synthetic Wallets Rule)
             if (payload.wallets.isEmpty() && payload.transactions.isNotEmpty()) {
-                throw IllegalArgumentException("Data cadangan tidak valid: Ditemukan transaksi tetapi tidak ada dompet dalam cadangan.")
+                throw IllegalArgumentException(AppStrings.t("Data cadangan tidak valid: Ditemukan transaksi tetapi tidak ada dompet dalam cadangan.", "Invalid backup data: Transactions found but no wallets present in backup."))
             }
             if (payload.wallets.isEmpty() && payload.recurringSchedules.isNotEmpty()) {
-                throw IllegalArgumentException("Data cadangan tidak valid: Ditemukan jadwal berulang tetapi tidak ada dompet dalam cadangan.")
+                throw IllegalArgumentException(AppStrings.t("Data cadangan tidak valid: Ditemukan jadwal berulang tetapi tidak ada dompet dalam cadangan.", "Invalid backup data: Recurring schedules found but no wallets present in backup."))
             }
 
             val payloadWalletIdSet = payload.wallets.map { it.id }.toSet()
             for (tx in payload.transactions) {
                 if (tx.walletId !in payloadWalletIdSet) {
-                    throw IllegalArgumentException("Integritas data cadangan tidak valid: Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan.")
+                    throw IllegalArgumentException(AppStrings.t("Integritas data cadangan tidak valid: Transaksi '${tx.title}' merujuk pada dompet (ID: ${tx.walletId}) yang tidak ditemukan dalam data cadangan.", "Backup data integrity invalid: Transaction '${tx.title}' references wallet (ID: ${tx.walletId}) not found in backup data."))
                 }
                 if (tx.type == com.example.data.model.TransactionType.TRANSFER) {
                     if (tx.targetWalletId == null || tx.targetWalletId !in payloadWalletIdSet) {
-                        throw IllegalArgumentException("Transaksi transfer '${tx.title}' tidak memiliki dompet tujuan yang valid dalam cadangan.")
+                        throw IllegalArgumentException(AppStrings.t("Transaksi transfer '${tx.title}' tidak memiliki dompet tujuan yang valid dalam cadangan.", "Transfer transaction '${tx.title}' does not have a valid target wallet in backup."))
                     }
                     if (tx.targetWalletId == tx.walletId) {
-                        throw IllegalArgumentException("Transaksi transfer '${tx.title}' memiliki dompet asal dan tujuan yang sama.")
+                        throw IllegalArgumentException(AppStrings.t("Transaksi transfer '${tx.title}' memiliki dompet asal dan tujuan yang sama.", "Transfer transaction '${tx.title}' has identical source and destination wallets."))
                     }
                 } else if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
                     if (tx.targetWalletId !in payloadWalletIdSet) {
-                        throw IllegalArgumentException("Transaksi '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam cadangan.")
+                        throw IllegalArgumentException(AppStrings.t("Transaksi '${tx.title}' merujuk pada dompet tujuan (ID: ${tx.targetWalletId}) yang tidak ditemukan dalam cadangan.", "Transaction '${tx.title}' references target wallet (ID: ${tx.targetWalletId}) not found in backup."))
                     }
                 }
             }
             for (rs in payload.recurringSchedules) {
                 if (rs.amount.isNaN() || rs.amount.isInfinite() || rs.amount < 0.0) {
-                    throw IllegalArgumentException("Nominal jadwal berulang '${rs.title}' tidak valid.")
+                    throw IllegalArgumentException(AppStrings.t("Nominal jadwal berulang '${rs.title}' tidak valid.", "Invalid amount for recurring schedule '${rs.title}'."))
                 }
                 if (rs.walletId !in payloadWalletIdSet) {
-                    throw IllegalArgumentException("Jadwal berulang '${rs.title}' merujuk dompet (ID: ${rs.walletId}) yang tidak ditemukan dalam cadangan.")
+                    throw IllegalArgumentException(AppStrings.t("Jadwal berulang '${rs.title}' merujuk dompet (ID: ${rs.walletId}) yang tidak ditemukan dalam cadangan.", "Recurring schedule '${rs.title}' references wallet (ID: ${rs.walletId}) not found in backup."))
                 }
             }
 
@@ -1440,7 +1455,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 // D. Insert Transactions dengan Peta Remapping yang Terverifikasi
                 for (tx in payload.transactions) {
                     val mappedWalletId = walletIdMap[tx.walletId]
-                        ?: throw IllegalStateException("Pemetaan dompet gagal untuk ID: ${tx.walletId}")
+                        ?: throw IllegalStateException(AppStrings.t("Pemetaan dompet gagal untuk ID: ${tx.walletId}", "Wallet remapping failed for ID: ${tx.walletId}"))
                     val mappedTargetWalletId = if (tx.targetWalletId != null && tx.targetWalletId > 0L) {
                         walletIdMap[tx.targetWalletId]
                     } else null
@@ -1465,7 +1480,7 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
                 // Insert Recurring Schedules
                 for (rs in payload.recurringSchedules) {
                     val mappedWalletId = walletIdMap[rs.walletId]
-                        ?: throw IllegalStateException("Pemetaan dompet jadwal berulang gagal untuk ID: ${rs.walletId}")
+                        ?: throw IllegalStateException(AppStrings.t("Pemetaan dompet jadwal berulang gagal untuk ID: ${rs.walletId}", "Recurring schedule wallet remapping failed for ID: ${rs.walletId}"))
                     val scheduleId = if (rs.id.isBlank()) java.util.UUID.randomUUID().toString() else rs.id
                     database.recurringScheduleDao().insertSchedule(
                         rs.copy(

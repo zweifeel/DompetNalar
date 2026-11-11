@@ -96,10 +96,16 @@ import com.example.data.model.PayLaterBillScanResult
 import com.example.data.session.SessionManager
 import kotlinx.coroutines.launch
 
-enum class DebtPayoffStrategy(val title: String, val description: String) {
-    DUE_DATE("Tenggat Terdekat ⏰", "Mengurutkan hutang berdasarkan tanggal jatuh tempo paling dekat ke yang paling jauh."),
-    AVALANCHE("Bunga Tertinggi ⚡", "Mengurutkan berdasarkan persentase bunga tertinggi untuk efisiensi finansial."),
-    SNOWBALL("Nominal Terkecil ⛄", "Mengurutkan berdasarkan sisa pokok hutang terkecil untuk motivasi psikologis.")
+enum class DebtPayoffStrategy(val idTitle: String, val enTitle: String, val idDesc: String, val enDesc: String) {
+    DUE_DATE("Tenggat Terdekat ⏰", "Nearest Due Date ⏰", "Mengurutkan hutang berdasarkan tanggal jatuh tempo paling dekat ke yang paling jauh.", "Sort debts by due date from nearest to furthest."),
+    AVALANCHE("Bunga Tertinggi ⚡", "Highest Interest ⚡", "Mengurutkan berdasarkan persentase bunga tertinggi untuk efisiensi finansial.", "Sort by highest interest rate for financial efficiency."),
+    SNOWBALL("Nominal Terkecil ⛄", "Smallest Balance ⛄", "Mengurutkan berdasarkan sisa pokok hutang terkecil untuk motivasi psikologis.", "Sort by smallest remaining balance for psychological motivation.");
+
+    val title: String
+        get() = if (com.example.util.LocaleHelper.isEnglish()) enTitle else idTitle
+
+    val description: String
+        get() = if (com.example.util.LocaleHelper.isEnglish()) enDesc else idDesc
 }
 
 private fun calculateDaysUntilDue(dueDateStr: String): Int {
@@ -162,21 +168,21 @@ fun DebtPlannerModalDialog(
         if (!uris.isNullOrEmpty()) {
             isScanningPayLater = true
             payLaterScanError = null
-            payLaterScanProgress = "Memproses 1 dari ${uris.size} screenshot..."
+            payLaterScanProgress = if (com.example.util.LocaleHelper.isEnglish()) "Processing 1 of ${uris.size} screenshots..." else "Memproses 1 dari ${uris.size} screenshot..."
             scope.launch {
                 try {
                     val batchResult = PayLaterAiOcrScanner.scanMultipleScreenshots(context, uris) { cur, tot ->
-                        payLaterScanProgress = "Memproses $cur dari $tot screenshot..."
+                        payLaterScanProgress = if (com.example.util.LocaleHelper.isEnglish()) "Processing $cur of $tot screenshots..." else "Memproses $cur dari $tot screenshot..."
                     }
                     isScanningPayLater = false
                     if (batchResult.bills.isNotEmpty()) {
                         scannedPayLaterBatch = batchResult.bills
                     } else {
-                        payLaterScanError = "Teks tagihan tidak terdeteksi dari screenshot yang dipilih."
+                        payLaterScanError = if (com.example.util.LocaleHelper.isEnglish()) "Bill text not detected from selected screenshots." else "Teks tagihan tidak terdeteksi dari screenshot yang dipilih."
                     }
                 } catch (e: Exception) {
                     isScanningPayLater = false
-                    payLaterScanError = e.message ?: "Gagal memproses screenshot tagihan."
+                    payLaterScanError = e.message ?: if (com.example.util.LocaleHelper.isEnglish()) "Failed to process bill screenshot." else "Gagal memproses screenshot tagihan."
                 }
             }
         }
@@ -306,7 +312,7 @@ fun DebtPlannerModalDialog(
                         onClick = { isResetConfirmDialogOpen = true },
                         modifier = Modifier.size(34.dp).testTag("btn_reset_all_debts")
                     ) {
-                        Icon(Icons.Default.RestartAlt, contentDescription = "Reset Semua Hutang", tint = ExpenseRed, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.RestartAlt, contentDescription = com.example.util.AppStrings.t("Reset Semua Hutang", "Reset All Debts"), tint = ExpenseRed, modifier = Modifier.size(20.dp))
                     }
 
                     // Hapus Kategori Button
@@ -314,7 +320,7 @@ fun DebtPlannerModalDialog(
                         onClick = { isDeleteCategoryDialogOpen = true },
                         modifier = Modifier.size(34.dp).testTag("btn_delete_debt_category_open")
                     ) {
-                        Icon(Icons.Default.DeleteSweep, contentDescription = "Hapus Kategori Hutang", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.DeleteSweep, contentDescription = com.example.util.AppStrings.t("Hapus Kategori Hutang", "Delete Debt Category"), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     }
 
                     IconButton(onClick = onDismiss) {
@@ -385,7 +391,7 @@ fun DebtPlannerModalDialog(
                             }
                             Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(0.8f)) {
                                 Text(
-                                    text = "Total Sisa Pokok",
+                                    text = com.example.util.AppStrings.t("Total Sisa Pokok", "Total Remaining Principal"),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -507,8 +513,12 @@ fun DebtPlannerModalDialog(
                                 Column {
                                     Text(
                                         text = if (totalKnownRemainingDebt > 0) {
-                                            if (priorityPlan.isDeficit) "Perhatian: Defisit Anggaran Bulanan ⚠️" else "Estimasi Bebas Hutang: $debtFreeDateString"
-                                        } else "Selamat! Anda Bebas Hutang 🎉",
+                                            if (priorityPlan.isDeficit) {
+                                                com.example.util.AppStrings.t("Perhatian: Defisit Anggaran Bulanan ⚠️", "Warning: Monthly Budget Deficit ⚠️")
+                                            } else {
+                                                "${com.example.util.AppStrings.t("Estimasi Bebas Hutang:", "Estimated Debt-Free:")} $debtFreeDateString"
+                                            }
+                                        } else com.example.util.AppStrings.t("Selamat! Anda Bebas Hutang 🎉", "Congratulations! You are Debt-Free 🎉"),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         color = if (priorityPlan.isDeficit) ExpenseRed else FinSmartPrimary
@@ -516,11 +526,17 @@ fun DebtPlannerModalDialog(
                                     Text(
                                         text = if (totalKnownRemainingDebt > 0) {
                                             if (priorityPlan.isDeficit) {
-                                                "Alokasi bulanan (${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}) belum menutup cicilan minimum (Defisit: ${com.example.util.CurrencyFormatter.formatRupiah(priorityPlan.monthlyShortfall)}/bln)."
+                                                com.example.util.AppStrings.t(
+                                                    "Alokasi bulanan (${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}) belum menutup cicilan minimum (Defisit: ${com.example.util.CurrencyFormatter.formatRupiah(priorityPlan.monthlyShortfall)}/bln).",
+                                                    "Monthly allocation (${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}) does not cover minimum installments (Deficit: ${com.example.util.CurrencyFormatter.formatRupiah(priorityPlan.monthlyShortfall)}/mo)."
+                                                )
                                             } else {
-                                                "Dengan simulasi alokasi ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/bulan (Metode Avalanche: $estimatedMonths bulan)."
+                                                com.example.util.AppStrings.t(
+                                                    "Dengan simulasi alokasi ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/bulan (Metode Avalanche: $estimatedMonths bulan).",
+                                                    "With simulated allocation of ${com.example.util.CurrencyFormatter.formatRupiah(budgetDouble)}/month (Avalanche Method: $estimatedMonths months)."
+                                                )
                                             }
-                                        } else "Tidak ada beban hutang aktif.",
+                                        } else com.example.util.AppStrings.t("Tidak ada beban hutang aktif.", "No active debt obligations."),
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -603,8 +619,9 @@ fun DebtPlannerModalDialog(
                         } else {
                             // Active installments
                             activeInstallmentPlans.forEach { plan ->
-                                val isOverdue = !plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate.ifBlank { "Tgl ${plan.anchorDay} tiap bulan" })
-                                val dataSource = if (plan.notes.contains("Shopee", ignoreCase = true) || plan.notes.contains("DANA", ignoreCase = true) || plan.notes.contains("GoPay", ignoreCase = true) || plan.notes.contains("impor", ignoreCase = true)) "Impor Tagihan AI" else "Catatan Manual"
+                                val dueDateFallback = if (com.example.util.LocaleHelper.isEnglish()) "Day ${plan.anchorDay} each month" else "Tgl ${plan.anchorDay} tiap bulan"
+                                val isOverdue = !plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate.ifBlank { dueDateFallback })
+                                val dataSource = if (plan.notes.contains("Shopee", ignoreCase = true) || plan.notes.contains("DANA", ignoreCase = true) || plan.notes.contains("GoPay", ignoreCase = true) || plan.notes.contains("impor", ignoreCase = true)) com.example.util.AppStrings.t("Impor Tagihan AI", "AI Bill Import") else com.example.util.AppStrings.t("Catatan Manual", "Manual Entry")
 
                                 Surface(
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -841,7 +858,11 @@ fun DebtPlannerModalDialog(
                                         Column(modifier = Modifier.weight(1f, fill = false)) {
                                             Text(text = plan.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             Text(
-                                                text = "Estimasi Tgl ${plan.anchorDay} $nextMonthName • Tenor ke-${plan.currentPeriod + 1}/${plan.totalTenor}",
+                                                text = if (com.example.util.LocaleHelper.isEnglish()) {
+                                                    "Est. Day ${plan.anchorDay} $nextMonthName • Period ${plan.currentPeriod + 1}/${plan.totalTenor}"
+                                                } else {
+                                                    "Estimasi Tgl ${plan.anchorDay} $nextMonthName • Tenor ke-${plan.currentPeriod + 1}/${plan.totalTenor}"
+                                                },
                                                 fontSize = 9.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
@@ -876,7 +897,7 @@ fun DebtPlannerModalDialog(
                                         Column(modifier = Modifier.weight(1f, fill = false)) {
                                             Text(text = debt.name, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             Text(
-                                                text = "Estimasi ${debt.dueDate} • Sisa: ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount - estPay)}",
+                                                text = "${com.example.util.AppStrings.t("Estimasi", "Estimated")} ${debt.dueDate} • ${com.example.util.AppStrings.t("Sisa:", "Remaining:")} ${com.example.util.CurrencyFormatter.formatRupiah(debt.amount - estPay)}",
                                                 fontSize = 9.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
@@ -1033,9 +1054,21 @@ fun DebtPlannerModalDialog(
                 sortedDebts.forEachIndexed { index, debt ->
                     val daysUntil = calculateDaysUntilDue(debt.dueDate)
                     val (statusTag, statusColor, isUrgent) = when {
-                        daysUntil <= 3 -> Triple("🚨 Jatuh Tempo: $daysUntil Hari Lagi (Alert)", ExpenseRed, true)
-                        daysUntil in 4..7 -> Triple("⚠️ Warning: $daysUntil Hari Lagi", Color(0xFFF59E0B), false)
-                        else -> Triple("✅ Aman: $daysUntil Hari Lagi", Color(0xFF10B981), false)
+                        daysUntil <= 3 -> Triple(
+                            if (com.example.util.LocaleHelper.isEnglish()) "🚨 Due Date: $daysUntil Day(s) Left (Alert)" else "🚨 Jatuh Tempo: $daysUntil Hari Lagi (Alert)",
+                            ExpenseRed,
+                            true
+                        )
+                        daysUntil in 4..7 -> Triple(
+                            if (com.example.util.LocaleHelper.isEnglish()) "⚠️ Warning: $daysUntil Day(s) Left" else "⚠️ Warning: $daysUntil Hari Lagi",
+                            Color(0xFFF59E0B),
+                            false
+                        )
+                        else -> Triple(
+                            if (com.example.util.LocaleHelper.isEnglish()) "✅ Safe: $daysUntil Day(s) Left" else "✅ Aman: $daysUntil Hari Lagi",
+                            Color(0xFF10B981),
+                            false
+                        )
                     }
 
                     Card(
@@ -1066,7 +1099,7 @@ fun DebtPlannerModalDialog(
                                         Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = statusColor, modifier = Modifier.size(14.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "Priority #1 (Mendesak) 🚨 • Rekomendasi AI: Prioritaskan tagihan ini untuk cegah denda!",
+                                            text = com.example.util.AppStrings.t("Priority #1 (Mendesak) 🚨 • Rekomendasi AI: Prioritaskan tagihan ini untuk cegah denda!", "Priority #1 (Urgent) 🚨 • AI Recommendation: Prioritize this bill to prevent penalties!"),
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = statusColor
@@ -1096,7 +1129,7 @@ fun DebtPlannerModalDialog(
                                     Column {
                                         Text(text = debt.name, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text(
-                                            text = "${debt.category} • Bunga ${debt.interestRatePercent}%/thn",
+                                            text = "${com.example.util.AppStrings.t(debt.category, debt.category)} • ${com.example.util.AppStrings.t("Bunga", "Interest")} ${debt.interestRatePercent}%/${com.example.util.AppStrings.t("thn", "yr")}",
                                             fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
@@ -1155,7 +1188,7 @@ fun DebtPlannerModalDialog(
                                         },
                                         modifier = Modifier.size(28.dp).testTag("btn_edit_debt_${debt.id}")
                                     ) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit Hutang", tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Edit, contentDescription = com.example.util.AppStrings.t("Edit Hutang", "Edit Debt"), tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
                                     }
 
                                     // Delete Button (Sampah)
@@ -1163,7 +1196,7 @@ fun DebtPlannerModalDialog(
                                         onClick = { debtItemToDelete = debt },
                                         modifier = Modifier.size(28.dp).testTag("btn_delete_debt_${debt.id}")
                                     ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Hapus Hutang", tint = ExpenseRed, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Delete, contentDescription = com.example.util.AppStrings.t("Hapus Hutang", "Delete Debt"), tint = ExpenseRed, modifier = Modifier.size(16.dp))
                                     }
                                 }
                             }
@@ -1182,7 +1215,7 @@ fun DebtPlannerModalDialog(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = if (editingDebtId != null) "Edit Data Pinjaman / Hutang" else "Tambah Pinjaman / Hutang Baru:",
+                        text = if (editingDebtId != null) com.example.util.AppStrings.t("Edit Data Pinjaman / Hutang", "Edit Loan / Debt Data") else com.example.util.AppStrings.t("Tambah Pinjaman / Hutang Baru:", "Add New Loan / Debt:"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -1201,7 +1234,7 @@ fun DebtPlannerModalDialog(
                             FilterChip(
                                 selected = inputDebtCategory == cat,
                                 onClick = { inputDebtCategory = cat },
-                                label = { Text(cat, fontSize = 10.sp) },
+                                label = { Text(AppStrings.translatePayLaterCategory(cat), fontSize = 10.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = FinSmartPrimary.copy(alpha = 0.2f),
                                     selectedLabelColor = FinSmartPrimary
@@ -1264,7 +1297,15 @@ fun DebtPlannerModalDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        listOf("Tgl 5", "Tgl 10", "Tgl 15", "Tgl 20", "Akhir Bulan").forEach { datePreset ->
+                        val datePresets = listOf(
+                            "Tgl 5" to "Day 5",
+                            "Tgl 10" to "Day 10",
+                            "Tgl 15" to "Day 15",
+                            "Tgl 20" to "Day 20",
+                            "Akhir Bulan" to "End of Month"
+                        )
+                        datePresets.forEach { (idPreset, enPreset) ->
+                            val label = if (com.example.util.LocaleHelper.isEnglish()) enPreset else idPreset
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.surface,
@@ -1274,10 +1315,12 @@ fun DebtPlannerModalDialog(
                                     .padding(vertical = 2.dp)
                             ) {
                                 TextButton(
-                                    onClick = { inputDebtDueDate = "$datePreset tiap bulan" },
+                                    onClick = {
+                                        inputDebtDueDate = if (com.example.util.LocaleHelper.isEnglish()) "$enPreset each month" else "$idPreset tiap bulan"
+                                    },
                                     modifier = Modifier.padding(0.dp)
                                 ) {
-                                    Text(datePreset, fontSize = 9.sp, maxLines = 1)
+                                    Text(label, fontSize = 9.sp, maxLines = 1)
                                 }
                             }
                         }
@@ -1294,7 +1337,7 @@ fun DebtPlannerModalDialog(
                                     inputDebtAmount = ""
                                     inputDebtInterest = ""
                                     inputDebtCategory = "Kartu Kredit"
-                                    inputDebtDueDate = "Tgl 15 tiap bulan"
+                                    inputDebtDueDate = if (com.example.util.LocaleHelper.isEnglish()) "Day 15 each month" else "Tgl 15 tiap bulan"
                                 },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.weight(1f)
@@ -1308,7 +1351,7 @@ fun DebtPlannerModalDialog(
                                 val amount = inputDebtAmount.toDoubleOrNull()
                                 val interest = inputDebtInterest.toDoubleOrNull() ?: 10.0
                                 if (inputDebtName.isBlank() || amount == null || amount <= 0) {
-                                    Toast.makeText(context, "Isi nama dan nominal hutang yang valid!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, com.example.util.AppStrings.t("Isi nama dan nominal hutang yang valid!", "Please enter a valid loan name and amount!"), Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
 
@@ -1326,7 +1369,7 @@ fun DebtPlannerModalDialog(
                                                 dueDate = inputDebtDueDate
                                             )
                                         )
-                                        Toast.makeText(context, "Data hutang berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, com.example.util.AppStrings.t("Data hutang berhasil diperbarui!", "Debt data updated successfully!"), Toast.LENGTH_SHORT).show()
                                     }
                                     editingDebtId = null
                                 } else {
@@ -1341,7 +1384,7 @@ fun DebtPlannerModalDialog(
                                             dueDate = inputDebtDueDate
                                         )
                                     )
-                                    Toast.makeText(context, "Hutang ditambahkan ke Planner!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, com.example.util.AppStrings.t("Hutang ditambahkan ke Planner!", "Debt added to Planner!"), Toast.LENGTH_SHORT).show()
                                 }
 
                                 inputDebtName = ""
@@ -1355,7 +1398,7 @@ fun DebtPlannerModalDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
                         ) {
                             Text(
-                                text = if (editingDebtId != null) "Perbarui Hutang" else "Simpan ke Planner",
+                                text = if (editingDebtId != null) com.example.util.AppStrings.t("Perbarui Hutang", "Update Debt") else com.example.util.AppStrings.t("Simpan ke Planner", "Save to Planner"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             )
@@ -1401,7 +1444,7 @@ fun DebtPlannerModalDialog(
                         ) {
                             Column(modifier = Modifier.padding(8.dp)) {
                                 Text(com.example.util.AppStrings.t("Cicilan Aktif", "Active Installments"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("${activePlans.size} Kontrak", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
+                                Text("${activePlans.size} ${com.example.util.AppStrings.t("Kontrak", "Contracts")}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = FinSmartPrimary)
                             }
                         }
 
@@ -1412,7 +1455,7 @@ fun DebtPlannerModalDialog(
                         ) {
                             Column(modifier = Modifier.padding(8.dp)) {
                                 Text(com.example.util.AppStrings.t("Sudah Lunas", "Paid Off"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("${completedPlans.size} Kontrak", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF047857))
+                                Text("${completedPlans.size} ${com.example.util.AppStrings.t("Kontrak", "Contracts")}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF047857))
                             }
                         }
                     }
@@ -1502,7 +1545,7 @@ fun DebtPlannerModalDialog(
                                     )
                                     if (!plan.provider.isNullOrBlank()) {
                                         Text(
-                                            text = "Kreditur: ${plan.provider}",
+                                            text = "${com.example.util.AppStrings.t("Kreditur:", "Creditor:")} ${plan.provider}",
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
@@ -1513,9 +1556,9 @@ fun DebtPlannerModalDialog(
 
                                 val isOverdue = !plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate)
                                 val (statusLabel, statusBg, statusColor) = when {
-                                    plan.isCompleted -> Triple("LUNAS", Color(0xFFD1FAE5), Color(0xFF065F46))
-                                    isOverdue -> Triple("TERLAMBAT", ExpenseRed.copy(alpha = 0.15f), ExpenseRed)
-                                    else -> Triple("AKTIF", FinSmartPrimary.copy(alpha = 0.15f), FinSmartPrimary)
+                                    plan.isCompleted -> Triple(com.example.util.AppStrings.t("LUNAS", "PAID"), Color(0xFFD1FAE5), Color(0xFF065F46))
+                                    isOverdue -> Triple(com.example.util.AppStrings.t("TERLAMBAT", "OVERDUE"), ExpenseRed.copy(alpha = 0.15f), ExpenseRed)
+                                    else -> Triple(com.example.util.AppStrings.t("AKTIF", "ACTIVE"), FinSmartPrimary.copy(alpha = 0.15f), FinSmartPrimary)
                                 }
 
                                 Surface(
@@ -1542,13 +1585,13 @@ fun DebtPlannerModalDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Progres: ${plan.paidCount}/${plan.totalTenor} kali",
+                                    text = "${com.example.util.AppStrings.t("Progres:", "Progress:")} ${plan.paidCount}/${plan.totalTenor} ${com.example.util.AppStrings.t("kali", "times")}",
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 12.sp,
                                     modifier = Modifier.weight(1f, fill = false)
                                 )
                                 Text(
-                                    text = if (plan.isCompleted) "Selesai 🎉" else "Sisa: ${plan.remainingTenor} kali lagi",
+                                    text = if (plan.isCompleted) com.example.util.AppStrings.t("Selesai 🎉", "Completed 🎉") else "${com.example.util.AppStrings.t("Sisa:", "Left:")} ${plan.remainingTenor} ${com.example.util.AppStrings.t("kali lagi", "more")}",
                                     fontSize = 11.sp,
                                     color = if (plan.isCompleted) Color(0xFF059669) else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -1575,7 +1618,7 @@ fun DebtPlannerModalDialog(
                                 Column(modifier = Modifier.weight(1f, fill = false)) {
                                     Text(com.example.util.AppStrings.t("Angsuran:", "Installment:"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
-                                        text = "${com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount)} / bln",
+                                        text = "${com.example.util.CurrencyFormatter.formatRupiah(plan.installmentAmount)} / ${com.example.util.AppStrings.t("bln", "mo")}",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurface,
@@ -1586,7 +1629,7 @@ fun DebtPlannerModalDialog(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(com.example.util.AppStrings.t("Jatuh Tempo:", "Due Date:"), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(
-                                        text = if (plan.isCompleted) "Lunas" else plan.nextDueDate,
+                                        text = if (plan.isCompleted) com.example.util.AppStrings.t("Lunas", "Paid Off") else plan.nextDueDate,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 12.sp,
                                         color = if (!plan.isCompleted && InstallmentDateHelper.isOverdue(plan.nextDueDate)) ExpenseRed else MaterialTheme.colorScheme.onSurface,
@@ -1599,14 +1642,14 @@ fun DebtPlannerModalDialog(
                             if (plan.totalRemainingPrincipal != null) {
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "Sisa Pokok: ${com.example.util.CurrencyFormatter.formatRupiah(plan.totalRemainingPrincipal)}",
+                                    text = "${com.example.util.AppStrings.t("Sisa Pokok:", "Remaining Principal:")} ${com.example.util.CurrencyFormatter.formatRupiah(plan.totalRemainingPrincipal)}",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             } else {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Sisa Pokok: Belum ditentukan (tidak diestimasi sembarangan)",
+                                    text = com.example.util.AppStrings.t("Sisa Pokok: Belum ditentukan (tidak diestimasi sembarangan)", "Remaining Principal: Not set (unestimated)"),
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -1677,14 +1720,14 @@ fun DebtPlannerModalDialog(
                                         },
                                         modifier = Modifier.size(32.dp).testTag("btn_edit_installment_${plan.id}")
                                     ) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Icon(Icons.Default.Edit, contentDescription = AppStrings.t("Edit", "Edit"), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
 
                                     IconButton(
                                         onClick = { planToDelete = plan },
                                         modifier = Modifier.size(32.dp).testTag("btn_delete_installment_${plan.id}")
                                     ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Hapus", modifier = Modifier.size(18.dp), tint = ExpenseRed)
+                                        Icon(Icons.Default.Delete, contentDescription = AppStrings.t("Hapus", "Delete"), modifier = Modifier.size(18.dp), tint = ExpenseRed)
                                     }
                                 }
 
@@ -1733,7 +1776,7 @@ fun DebtPlannerModalDialog(
                     onClick = {
                         onClearAllDebts()
                         isResetConfirmDialogOpen = false
-                        Toast.makeText(context, "Seluruh daftar hutang & cicilan ($totalAffectedCount item) telah di-reset! 🧹", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${com.example.util.AppStrings.t("Seluruh daftar hutang & cicilan", "All debts & installments")} ($totalAffectedCount ${com.example.util.AppStrings.t("item", "items")}) ${com.example.util.AppStrings.t("telah di-reset! 🧹", "have been reset! 🧹")}", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                     modifier = Modifier.testTag("btn_confirm_reset_debts")
@@ -1777,12 +1820,12 @@ fun DebtPlannerModalDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("$cat ($count item)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                Text("${com.example.util.AppStrings.t(cat, cat)} ($count ${com.example.util.AppStrings.t("item", "items")})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 Button(
                                     onClick = {
                                         onDeleteCategory(cat)
                                         isDeleteCategoryDialogOpen = false
-                                        Toast.makeText(context, "Seluruh hutang dalam kategori '$cat' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "${com.example.util.AppStrings.t("Seluruh hutang dalam kategori", "All debts in category")} '$cat' ${com.example.util.AppStrings.t("berhasil dihapus!", "deleted successfully!")}", Toast.LENGTH_SHORT).show()
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                                     shape = RoundedCornerShape(8.dp)
@@ -1821,7 +1864,7 @@ fun DebtPlannerModalDialog(
                     onClick = {
                         onDeleteDebt(debt)
                         debtItemToDelete = null
-                        Toast.makeText(context, "Pinjaman '${debt.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${com.example.util.AppStrings.t("Pinjaman", "Loan")} '${debt.name}' ${com.example.util.AppStrings.t("berhasil dihapus!", "deleted successfully!")}", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {
@@ -1951,7 +1994,7 @@ fun DebtPlannerModalDialog(
                         },
                         modifier = Modifier.fillMaxWidth().testTag("btn_sample_dana")
                     ) {
-                        Text("DANA Cicil (Cicilan 4x)")
+                        Text(AppStrings.t("DANA Cicil (Cicilan 4x)", "DANA Installment (4x Installments)"))
                     }
                     OutlinedButton(
                         onClick = {
@@ -1960,7 +2003,7 @@ fun DebtPlannerModalDialog(
                         },
                         modifier = Modifier.fillMaxWidth().testTag("btn_sample_gopay")
                     ) {
-                        Text("GoPayLater (Limit Bulanan)")
+                        Text(AppStrings.t("GoPayLater (Limit Bulanan)", "GoPayLater (Monthly Limit)"))
                     }
                 }
             },
@@ -1981,7 +2024,7 @@ fun DebtPlannerModalDialog(
             },
             title = {
                 Text(
-                    text = if (editingPlan != null) "Edit Rencana Cicilan" else "Tambah Rencana Cicilan",
+                    text = if (editingPlan != null) com.example.util.AppStrings.t("Edit Rencana Cicilan", "Edit Installment Plan") else com.example.util.AppStrings.t("Tambah Rencana Cicilan", "Add Installment Plan"),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -2004,7 +2047,7 @@ fun DebtPlannerModalDialog(
                         value = inputPlanProvider,
                         onValueChange = { inputPlanProvider = it },
                         label = { Text("Kreditur / Penyedia (opsional)") },
-                        placeholder = { Text("Contoh: FIF Group, BCA Finance") },
+                        placeholder = { Text(AppStrings.t("Contoh: FIF Group, BCA Finance", "e.g., FIF Group, BCA Finance")) },
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_provider"),
                         singleLine = true
                     )
@@ -2013,7 +2056,7 @@ fun DebtPlannerModalDialog(
                         OutlinedTextField(
                             value = inputPlanTenor,
                             onValueChange = { inputPlanTenor = it.filter { ch -> ch.isDigit() } },
-                            label = { Text("Total Tenor") },
+                            label = { Text(AppStrings.t("Total Tenor", "Total Installments")) },
                             placeholder = { Text("35") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f).testTag("input_plan_tenor"),
@@ -2035,7 +2078,7 @@ fun DebtPlannerModalDialog(
                         value = inputPlanAmount,
                         onValueChange = { inputPlanAmount = it.filter { ch -> ch.isDigit() } },
                         label = { Text(com.example.util.AppStrings.t("Angsuran per Bulan (Rp)", "Installment per Month (Rp)")) },
-                        placeholder = { Text("Contoh: 850000") },
+                        placeholder = { Text(AppStrings.t("Contoh: 850000", "e.g., 850000")) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_amount"),
                         singleLine = true
@@ -2054,8 +2097,8 @@ fun DebtPlannerModalDialog(
                     OutlinedTextField(
                         value = inputPlanPrincipal,
                         onValueChange = { inputPlanPrincipal = it.filter { ch -> ch.isDigit() } },
-                        label = { Text("Total Sisa Pokok (opsional)") },
-                        placeholder = { Text("Biarkan kosong jika belum pasti") },
+                        label = { Text(AppStrings.t("Total Sisa Pokok (opsional)", "Total Remaining Principal (optional)")) },
+                        placeholder = { Text(AppStrings.t("Biarkan kosong jika belum pasti", "Leave empty if unsure")) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth().testTag("input_plan_principal"),
                         singleLine = true
@@ -2081,15 +2124,15 @@ fun DebtPlannerModalDialog(
                         val principal = inputPlanPrincipal.toDoubleOrNull()
 
                         if (name.isBlank()) {
-                            Toast.makeText(context, "Nama cicilan wajib diisi.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Nama cicilan wajib diisi.", "Installment name is required."), Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         if (tenor <= 0) {
-                            Toast.makeText(context, "Total tenor harus lebih dari 0 kali.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Total tenor harus lebih dari 0 kali.", "Total tenor must be greater than 0."), Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         if (amount <= 0.0) {
-                            Toast.makeText(context, "Nominal angsuran harus lebih dari Rp 0.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Nominal angsuran harus lebih dari Rp 0.", "Installment amount must be greater than 0."), Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
@@ -2105,7 +2148,7 @@ fun DebtPlannerModalDialog(
                             paidCount = paid,
                             anchorDay = anchorDay,
                             startDate = editingPlan?.startDate ?: InstallmentDateHelper.formatIsoDate(Calendar.getInstance()),
-                            nextDueDate = if (isComplete) "Lunas" else "Tgl $anchorDay tiap bulan",
+                            nextDueDate = if (isComplete) com.example.util.AppStrings.t("Lunas", "Paid Off") else if (com.example.util.LocaleHelper.isEnglish()) "Day $anchorDay each month" else "Tgl $anchorDay tiap bulan",
                             totalRemainingPrincipal = principal,
                             status = if (isComplete) "SELESAI" else "AKTIF",
                             notes = inputPlanNotes.trim(),
@@ -2117,12 +2160,12 @@ fun DebtPlannerModalDialog(
                         onSaveInstallmentPlan(planItem)
                         isCreatePlanDialogOpen = false
                         editingPlan = null
-                        Toast.makeText(context, "Rencana cicilan '${planItem.name}' berhasil disimpan!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${com.example.util.AppStrings.t("Rencana cicilan", "Installment plan")} '${planItem.name}' ${com.example.util.AppStrings.t("berhasil disimpan!", "saved successfully!")}", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary),
                     modifier = Modifier.testTag("btn_save_installment_dialog")
                 ) {
-                    Text(if (editingPlan != null) "Perbarui" else "Simpan")
+                    Text(if (editingPlan != null) com.example.util.AppStrings.t("Perbarui", "Update") else com.example.util.AppStrings.t("Simpan", "Save"))
                 }
             },
             dismissButton = {
@@ -2153,7 +2196,7 @@ fun DebtPlannerModalDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Kontrak: ${plan.name}",
+                        text = "${com.example.util.AppStrings.t("Kontrak:", "Contract:")} ${plan.name}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
@@ -2204,11 +2247,11 @@ fun DebtPlannerModalDialog(
                         onConfirmInstallmentPayment(
                             currentPlan,
                             selectedWalletIdForPayment,
-                            "Pembayaran angsuran ke-${currentPlan.currentPeriod} dari ${currentPlan.totalTenor}"
+                            "${com.example.util.AppStrings.t("Pembayaran angsuran ke-", "Payment of installment #")}${currentPlan.currentPeriod} ${com.example.util.AppStrings.t("dari", "of")} ${currentPlan.totalTenor}"
                         )
                         Toast.makeText(
                             context,
-                            "Angsuran ke-${currentPlan.currentPeriod} dari ${currentPlan.totalTenor} berhasil dikonfirmasi lunas!",
+                            "${com.example.util.AppStrings.t("Angsuran ke-", "Installment #")}${currentPlan.currentPeriod} ${com.example.util.AppStrings.t("dari", "of")} ${currentPlan.totalTenor} ${com.example.util.AppStrings.t("berhasil dikonfirmasi lunas!", "confirmed paid successfully!")}",
                             Toast.LENGTH_SHORT
                         ).show()
                         payingPlan = null
@@ -2246,7 +2289,7 @@ fun DebtPlannerModalDialog(
                     onClick = {
                         onDeleteInstallmentPlan(plan)
                         planToDelete = null
-                        Toast.makeText(context, "Rencana cicilan '${plan.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${com.example.util.AppStrings.t("Rencana cicilan", "Installment plan")} '${plan.name}' ${com.example.util.AppStrings.t("berhasil dihapus!", "deleted successfully!")}", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {

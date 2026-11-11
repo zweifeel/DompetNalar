@@ -106,26 +106,48 @@ object DebtFreedomPlanner {
         val recommendations = mutableListOf<String>()
 
         if (sanitizedIncome <= 0.0) {
-            adviceBuilder.append("Masukkan data pendapatan bulanan Anda untuk memulai simulasi bebas utang.")
-            recommendations.add("Isi estimasi penghasilan bulanan bersih pada kalkulator.")
+            adviceBuilder.append(AppStrings.t("Masukkan data pendapatan bulanan Anda untuk memulai simulasi bebas utang.", "Enter your monthly income data to start the debt freedom simulation."))
+            recommendations.add(AppStrings.t("Isi estimasi penghasilan bulanan bersih pada kalkulator.", "Fill in estimated net monthly income in the calculator."))
         } else if (isDeficit) {
-            adviceBuilder.append("Arus kas Anda mengalami defisit sebesar ${CurrencyFormatter.formatRupiah(deficitAmount)}/bulan setelah dikurangi kebutuhan pokok. Pendapatan saat ini belum mencukupi untuk memenuhi seluruh cicilan minimum.")
-            recommendations.add("Segera hubungi kreditur untuk restrukturisasi tenor atau penurunan suku bunga.")
-            recommendations.add("Kurangi pengeluaran sekunder sementara waktu agar kebutuhan pokok tetap terlindungi.")
-            recommendations.add("Fokus bayar tagihan dengan jatuh tempo paling mendesak untuk menghindari penalti/denda.")
+            val defFormatted = CurrencyFormatter.formatRupiah(deficitAmount)
+            adviceBuilder.append(AppStrings.t(
+                "Arus kas Anda mengalami defisit sebesar $defFormatted/bulan setelah dikurangi kebutuhan pokok. Pendapatan saat ini belum mencukupi untuk memenuhi seluruh cicilan minimum.",
+                "Your cashflow has a deficit of $defFormatted/month after basic necessities. Current income is insufficient to cover all minimum installments."
+            ))
+            recommendations.add(AppStrings.t("Segera hubungi kreditur untuk restrukturisasi tenor atau penurunan suku bunga.", "Contact creditors promptly for tenure restructuring or interest rate reduction."))
+            recommendations.add(AppStrings.t("Kurangi pengeluaran sekunder sementara waktu agar kebutuhan pokok tetap terlindungi.", "Cut back on discretionary spending temporarily to protect living essentials."))
+            recommendations.add(AppStrings.t("Fokus bayar tagihan dengan jatuh tempo paling mendesak untuk menghindari penalti/denda.", "Prioritize bills with the most urgent due dates to avoid late fees."))
         } else {
-            adviceBuilder.append("Rencana pelunasan realistis! Anda memiliki dana ekstra sebesar ${CurrencyFormatter.formatRupiah(netExtraForDebt)}/bulan setelah mengamankan kebutuhan pokok.")
+            val netExtraFormatted = CurrencyFormatter.formatRupiah(netExtraForDebt)
+            adviceBuilder.append(AppStrings.t(
+                "Rencana pelunasan realistis! Anda memiliki dana ekstra sebesar $netExtraFormatted/bulan setelah mengamankan kebutuhan pokok.",
+                "Realistic payoff plan! You have an extra $netExtraFormatted/month after securing essential needs."
+            ))
             if (debtFreeDateString != null) {
-                adviceBuilder.append(" Diestimasikan bebas utang pada $debtFreeDateString ($totalMonths bulan).")
+                adviceBuilder.append(AppStrings.t(
+                    " Diestimasikan bebas utang pada $debtFreeDateString ($totalMonths bulan).",
+                    " Estimated debt-free date: $debtFreeDateString ($totalMonths months)."
+                ))
             }
 
-            recommendations.add("Pertahankan alokasi kebutuhan pokok sebesar ${CurrencyFormatter.formatRupiah(sanitizedEssentials)} agar kesehatan finansial stabil.")
+            val essFormatted = CurrencyFormatter.formatRupiah(sanitizedEssentials)
+            recommendations.add(AppStrings.t(
+                "Pertahankan alokasi kebutuhan pokok sebesar $essFormatted agar kesehatan finansial stabil.",
+                "Maintain essential living allocation of $essFormatted for financial stability."
+            ))
             if (sanitizedCushion > 0.0) {
-                recommendations.add("Dana cadangan darurat ${CurrencyFormatter.formatRupiah(sanitizedCushion)}/bulan tetap disisihkan demi perlindungan kejadian darurat.")
+                val cushionFormatted = CurrencyFormatter.formatRupiah(sanitizedCushion)
+                recommendations.add(AppStrings.t(
+                    "Dana cadangan darurat $cushionFormatted/bulan tetap disisihkan demi perlindungan kejadian darurat.",
+                    "Emergency reserve fund of $cushionFormatted/month set aside for unexpected events."
+                ))
             }
             if (priorityPlan.prioritizedItems.isNotEmpty()) {
                 val topTarget = priorityPlan.prioritizedItems.first()
-                recommendations.add("Target #1: Pusatkan dana ekstra ${CurrencyFormatter.formatRupiah(netExtraForDebt)} ke '${topTarget.debt.name}'.")
+                recommendations.add(AppStrings.t(
+                    "Target #1: Pusatkan dana ekstra $netExtraFormatted ke '${topTarget.debt.name}'.",
+                    "Target #1: Direct extra debt funds of $netExtraFormatted to '${topTarget.debt.name}'."
+                ))
             }
         }
 

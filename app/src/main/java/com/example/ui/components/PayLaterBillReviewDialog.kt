@@ -113,11 +113,11 @@ class FormItemState(
 }
 
 private fun formatNominalRupiah(value: Double): String {
-    return NumberFormat.getNumberInstance(Locale("id", "ID")).format(value.toLong())
+    return NumberFormat.getNumberInstance(com.example.util.LocaleHelper.getActiveLocale()).format(value.toLong())
 }
 
 private fun formatNominalRupiah(value: Long): String {
-    return NumberFormat.getNumberInstance(Locale("id", "ID")).format(value)
+    return NumberFormat.getNumberInstance(com.example.util.LocaleHelper.getActiveLocale()).format(value)
 }
 
 private fun formatInputDigits(input: String): String {
@@ -211,12 +211,12 @@ fun PayLaterBillReviewDialog(
 
     val calendarValidationError = remember(parsedDay, parsedMonth, parsedYear, isDateValid) {
         if (isDateValid) null
-        else if (parsedYear < 2000 || parsedYear > 2100) "Tahun harus antara 2000 - 2100"
-        else if (parsedMonth !in 1..12) "Bulan harus antara 1 - 12"
+        else if (parsedYear < 2000 || parsedYear > 2100) com.example.util.AppStrings.t("Tahun harus antara 2000 - 2100", "Year must be between 2000 - 2100")
+        else if (parsedMonth !in 1..12) com.example.util.AppStrings.t("Bulan harus antara 1 - 12", "Month must be between 1 - 12")
         else if (parsedMonth == 2 && parsedDay == 29 && !InstallmentDateHelper.isValidDate(parsedYear, 2, 29)) {
-            "$parsedYear bukan tahun kabisat (Februari hanya sampai tanggal 28)"
-        } else if (parsedDay !in 1..31) "Hari harus antara 1 - 31"
-        else "Tanggal $parsedDay/$parsedMonth/$parsedYear tidak valid dalam kalender"
+            com.example.util.AppStrings.t("$parsedYear bukan tahun kabisat (Februari hanya sampai tanggal 28)", "$parsedYear is not a leap year (February only has 28 days)")
+        } else if (parsedDay !in 1..31) com.example.util.AppStrings.t("Hari harus antara 1 - 31", "Day must be between 1 - 31")
+        else com.example.util.AppStrings.t("Tanggal $parsedDay/$parsedMonth/$parsedYear tidak valid dalam kalender", "Date $parsedDay/$parsedMonth/$parsedYear is not valid in calendar")
     }
 
     val formattedIsoDate = remember(parsedDay, parsedMonth, parsedYear, isDateValid) {
@@ -299,7 +299,11 @@ fun PayLaterBillReviewDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (itemsList.size > 1) "Review Tagihan (${activeIndex + 1} dari ${itemsList.size})" else "Review Hasil Scan Tagihan",
+                            text = if (itemsList.size > 1) {
+                                "${com.example.util.AppStrings.t("Review Tagihan", "Review Bill")} (${activeIndex + 1} ${com.example.util.AppStrings.t("dari", "of")} ${itemsList.size})"
+                            } else {
+                                com.example.util.AppStrings.t("Review Hasil Scan Tagihan", "Review Bill Scan Results")
+                            },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinSmartPrimary
@@ -475,7 +479,7 @@ fun PayLaterBillReviewDialog(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (isDateConfirmed) "Tanggal Terkonfirmasi oleh Anda" else "Konfirmasi Tanggal Wajib Diperlukan",
+                                text = if (isDateConfirmed) com.example.util.AppStrings.t("Tanggal Terkonfirmasi oleh Anda", "Date Confirmed by You") else com.example.util.AppStrings.t("Konfirmasi Tanggal Wajib Diperlukan", "Date Confirmation Required"),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDateConfirmed) IncomeGreen else Color(0xFF92400E)
@@ -483,7 +487,7 @@ fun PayLaterBillReviewDialog(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Komponen bulan atau tahun tidak tertera lengkap pada gambar. Periksa hari, bulan, dan tahun di bawah secara seksama.",
+                            text = com.example.util.AppStrings.t("Komponen bulan atau tahun tidak tertera lengkap pada gambar. Periksa hari, bulan, dan tahun di bawah secara seksama.", "Month or year components were not fully visible on image. Please check day, month, and year below carefully."),
                             fontSize = 11.sp,
                             color = Color(0xFF92400E)
                         )
@@ -532,7 +536,7 @@ fun PayLaterBillReviewDialog(
                         Icon(Icons.Default.Warning, contentDescription = null, tint = ExpenseRed, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = duplicateCheck.reason ?: "Peringatan: Tagihan serupa sudah tersimpan.",
+                            text = duplicateCheck.reason ?: com.example.util.AppStrings.t("Peringatan: Tagihan serupa sudah tersimpan.", "Warning: A similar bill is already saved."),
                             fontSize = 11.sp,
                             color = ExpenseRed,
                             fontWeight = FontWeight.SemiBold
@@ -788,9 +792,9 @@ fun PayLaterBillReviewDialog(
                     onClick = {
                         if (!canSave) {
                             if (!isDateValid) {
-                                Toast.makeText(context, "Periksa kembali tanggal jatuh tempo yang valid.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, com.example.util.AppStrings.t("Periksa kembali tanggal jatuh tempo yang valid.", "Please verify a valid due date."), Toast.LENGTH_SHORT).show()
                             } else if (!isDateConfirmed) {
-                                Toast.makeText(context, "Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, com.example.util.AppStrings.t("Harap centang konfirmasi tanggal jatuh tempo sebelum menyimpan.", "Please check the due date confirmation before saving."), Toast.LENGTH_SHORT).show()
                             }
                             return@Button
                         }

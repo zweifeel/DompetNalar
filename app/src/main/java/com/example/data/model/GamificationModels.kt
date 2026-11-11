@@ -4,7 +4,23 @@ enum class FinancialPersonality(val title: String, val description: String, val 
     SAVER("The Saver (Penyimpan Hemat)", "Fokus pada keamanan finansial & menekan pengeluaran.", "Berikan saran yang mengapresiasi penghematan dan sarankan instrumen investasi berisiko rendah."),
     INVESTOR("The Investor (Pengembang Aset)", "Fokus pada akumulasi kekayaan & pertumbuhan aset.", "Berikan wawasan seputar alokasi portofolio, diversifikasi, dan imbal hasil jangka panjang."),
     IMPULSE_SHOPPER("Impulse Guard (Pembeli Impulsif)", "Rentan terhadap belanja emosional/hobi.", "Gunakan gaya bicara yang tegas, ramah, serta ingatkan Cooldown Buying Guard."),
-    BALANCED("Balanced Planner (Perencana Seimbang)", "Keseimbangan yang baik antara konsumsi & tabungan.", "Berikan saran finansial yang seimbang dan fleksibel.")
+    BALANCED("Balanced Planner (Perencana Seimbang)", "Keseimbangan yang baik antara konsumsi & tabungan.", "Berikan saran finansial yang seimbang dan fleksibel.");
+
+    val localizedTitle: String
+        get() = when (this) {
+            SAVER -> com.example.util.AppStrings.t("The Saver (Penyimpan Hemat)", "The Saver")
+            INVESTOR -> com.example.util.AppStrings.t("The Investor (Pengembang Aset)", "The Investor")
+            IMPULSE_SHOPPER -> com.example.util.AppStrings.t("Impulse Guard (Pembeli Impulsif)", "Impulse Guard")
+            BALANCED -> com.example.util.AppStrings.t("Balanced Planner (Perencana Seimbang)", "Balanced Planner")
+        }
+
+    val localizedDescription: String
+        get() = when (this) {
+            SAVER -> com.example.util.AppStrings.t("Fokus pada keamanan finansial & menekan pengeluaran.", "Focuses on financial security and reducing expenses.")
+            INVESTOR -> com.example.util.AppStrings.t("Fokus pada akumulasi kekayaan & pertumbuhan aset.", "Focuses on wealth accumulation and asset growth.")
+            IMPULSE_SHOPPER -> com.example.util.AppStrings.t("Rentan terhadap belanja emosional/hobi.", "Prone to emotional and hobby spending.")
+            BALANCED -> com.example.util.AppStrings.t("Keseimbangan yang baik antara konsumsi & tabungan.", "Good balance between consumption and savings.")
+        }
 }
 
 data class PersonalityQuestion(

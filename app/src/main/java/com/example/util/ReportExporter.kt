@@ -105,9 +105,9 @@ object ReportExporter {
 
         // 1. Header Band
         canvas.drawRoundRect(RectF(20f, 20f, 575f, 110f), 12f, 12f, primaryPaint)
-        canvas.drawText("Laporan Keuangan DompetNalar", 40f, 55f, textWhiteBold)
-        canvas.drawText("Konsultan Finansial & Manajemen Mutasi Mandiri", 40f, 75f, textWhiteSmall)
-        canvas.drawText("Periode: $periodTitle  |  Pengguna: $username", 40f, 92f, textWhiteSmall)
+        canvas.drawText(AppStrings.t("Laporan Keuangan DompetNalar", "DompetNalar Financial Report"), 40f, 55f, textWhiteBold)
+        canvas.drawText(AppStrings.t("Konsultan Finansial & Manajemen Mutasi Mandiri", "Personal Financial Advisor & Mutation Management"), 40f, 75f, textWhiteSmall)
+        canvas.drawText("${AppStrings.t("Periode", "Period")}: $periodTitle  |  ${AppStrings.t("Pengguna", "User")}: $username", 40f, 92f, textWhiteSmall)
 
         // 2. Calculations
         val totalIncome = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
@@ -118,19 +118,19 @@ object ReportExporter {
         // Income Box (Light Green)
         val bgIncome = Paint().apply { color = 0xFFE8F5E9.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
         canvas.drawRoundRect(RectF(20f, 125f, 195f, 180f), 8f, 8f, bgIncome)
-        canvas.drawText("TOTAL PEMASUKAN", 30f, 143f, Paint(textGray).apply { textSize = 8f; isFakeBoldText = true })
+        canvas.drawText(AppStrings.t("TOTAL PEMASUKAN", "TOTAL INCOME"), 30f, 143f, Paint(textGray).apply { textSize = 8f; isFakeBoldText = true })
         canvas.drawText(CurrencyFormatter.formatRupiah(totalIncome), 30f, 168f, Paint(incomePaint).apply { textSize = 12f })
 
         // Expense Box (Light Red)
         val bgExpense = Paint().apply { color = 0xFFFFEBEE.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
         canvas.drawRoundRect(RectF(210f, 125f, 385f, 180f), 8f, 8f, bgExpense)
-        canvas.drawText("TOTAL PENGELUARAN", 220f, 143f, Paint(textGray).apply { textSize = 8f; isFakeBoldText = true })
+        canvas.drawText(AppStrings.t("TOTAL PENGELUARAN", "TOTAL EXPENSE"), 220f, 143f, Paint(textGray).apply { textSize = 8f; isFakeBoldText = true })
         canvas.drawText(CurrencyFormatter.formatRupiah(totalExpense), 220f, 168f, Paint(expensePaint).apply { textSize = 12f })
 
         // Net Box (Light Teal/Blue)
         val bgNet = Paint().apply { color = if (netBalance >= 0) 0xFFE0F2F1.toInt() else 0xFFFCE4EC.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
         canvas.drawRoundRect(RectF(400f, 125f, 575f, 180f), 8f, 8f, bgNet)
-        canvas.drawText("SELISIH (NET WORTH)", 410f, 143f, Paint(textGray).apply { textSize = 8f; isFakeBoldText = true })
+        canvas.drawText(AppStrings.t("SELISIH (NET WORTH)", "NET BALANCE"), 410f, 143f, Paint(textGray).apply { textSize = 8f; isFakeBoldText = true })
         canvas.drawText(
             CurrencyFormatter.formatRupiah(netBalance),
             410f,
@@ -140,11 +140,11 @@ object ReportExporter {
 
         // 4. Table Header
         val tableHeaderY = 205f
-        canvas.drawText("TANGGAL", 30f, tableHeaderY, textBlackBold)
-        canvas.drawText("JUDUL / DESKRIPSI", 115f, tableHeaderY, textBlackBold)
-        canvas.drawText("KATEGORI", 270f, tableHeaderY, textBlackBold)
-        canvas.drawText("DOMPET", 390f, tableHeaderY, textBlackBold)
-        canvas.drawText("NOMINAL", 490f, tableHeaderY, textBlackBold)
+        canvas.drawText(AppStrings.t("TANGGAL", "DATE"), 30f, tableHeaderY, textBlackBold)
+        canvas.drawText(AppStrings.t("JUDUL / DESKRIPSI", "TITLE / DESCRIPTION"), 115f, tableHeaderY, textBlackBold)
+        canvas.drawText(AppStrings.t("KATEGORI", "CATEGORY"), 270f, tableHeaderY, textBlackBold)
+        canvas.drawText(AppStrings.t("DOMPET", "WALLET"), 390f, tableHeaderY, textBlackBold)
+        canvas.drawText(AppStrings.t("NOMINAL", "AMOUNT"), 490f, tableHeaderY, textBlackBold)
         canvas.drawLine(20f, tableHeaderY + 8f, 575f, tableHeaderY + 8f, dividerPaint)
 
         // 5. Table Rows
@@ -177,8 +177,9 @@ object ReportExporter {
             val titleText = if (tx.title.length > 22) tx.title.take(20) + ".." else tx.title
             canvas.drawText(titleText, 115f, textY, textBlackNormal)
 
-            // Category
-            val catText = if (tx.category.length > 18) tx.category.take(16) + ".." else tx.category
+            // Category (Bilingual)
+            val localizedCategory = AppStrings.translateCategory(tx.category)
+            val catText = if (localizedCategory.length > 18) localizedCategory.take(16) + ".." else localizedCategory
             canvas.drawText(catText, 270f, textY, textBlackNormal)
 
             // Wallet name
@@ -245,14 +246,19 @@ object ReportExporter {
         val writer = csvFile.bufferedWriter()
         
         // Write header
-        writer.write("ID,Tanggal,Tipe,Judul,Kategori,Sumber Dompet,Tujuan Dompet,Nominal,Catatan,Tag,Mode\n")
+        val csvHeader = if (LocaleHelper.isEnglish()) {
+            "ID,Date,Type,Title,Category,Source Wallet,Target Wallet,Amount,Notes,Tags,Mode\n"
+        } else {
+            "ID,Tanggal,Tipe,Judul,Kategori,Sumber Dompet,Tujuan Dompet,Nominal,Catatan,Tag,Mode\n"
+        }
+        writer.write(csvHeader)
 
         transactions.forEach { tx ->
             val dateStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(tx.timestamp))
             
             // Escape CSV values
             val titleEscaped = escapeCsvField(tx.title)
-            val categoryEscaped = escapeCsvField(tx.category)
+            val categoryEscaped = escapeCsvField(AppStrings.translateCategory(tx.category))
             val walletEscaped = escapeCsvField(tx.walletName)
             val targetWalletEscaped = escapeCsvField(tx.targetWalletName ?: "")
             val noteEscaped = escapeCsvField(tx.note)

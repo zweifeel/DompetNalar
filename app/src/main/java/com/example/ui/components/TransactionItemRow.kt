@@ -186,7 +186,7 @@ fun TransactionItemRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Hapus Transaksi",
+                        contentDescription = com.example.util.AppStrings.t("Hapus Transaksi", "Delete Transaction"),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(16.dp)
                     )

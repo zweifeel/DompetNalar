@@ -137,10 +137,13 @@ fun DevFeedbackViewerScreen(
                     ) {
                         Icon(Icons.Default.Lock, contentDescription = null, tint = ExpenseRed, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text("Akses Terbatas: Master Developer", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(com.example.util.AppStrings.t("Akses Terbatas: Master Developer", "Restricted Access: Master Developer"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Layar ini adalah alat internal pengembang. Anda harus masuk dengan kredensial Master Developer yang terotorisasi untuk melihat umpan balik pengguna.",
+                            text = com.example.util.AppStrings.t(
+                                "Layar ini adalah alat internal pengembang. Anda harus masuk dengan kredensial Master Developer yang terotorisasi untuk melihat umpan balik pengguna.",
+                                "This screen is an internal developer tool. You must sign in with authorized Master Developer credentials to view user feedback."
+                            ),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -179,7 +182,7 @@ fun DevFeedbackViewerScreen(
                     val devUsername = currentUser?.username?.takeIf { it.isNotBlank() }
                         ?: if (currentUser != null && !currentUser.isGuest && (currentUser.role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(currentUser.email))) com.example.util.AppStrings.t("Pengembang DompetNalar", "DompetNalar Developer")
                         else com.example.util.AppStrings.t("Pengguna DompetNalar", "DompetNalar User")
-                    val devEmail = currentUser?.email?.takeIf { it.isNotBlank() } ?: "Tidak Ada Email"
+                    val devEmail = currentUser?.email?.takeIf { it.isNotBlank() } ?: com.example.util.AppStrings.t("Tidak Ada Email", "No Email")
 
                     Column {
                         Text(
@@ -234,7 +237,7 @@ fun DevFeedbackViewerScreen(
             val devUsername = currentUser?.username?.takeIf { it.isNotBlank() }
                 ?: if (currentUser != null && !currentUser.isGuest && (currentUser.role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(currentUser.email))) com.example.util.AppStrings.t("Pengembang DompetNalar", "DompetNalar Developer")
                 else com.example.util.AppStrings.t("Pengguna DompetNalar", "DompetNalar User")
-            val devEmail = currentUser?.email?.takeIf { it.isNotBlank() } ?: "Tidak Ada Email"
+            val devEmail = currentUser?.email?.takeIf { it.isNotBlank() } ?: com.example.util.AppStrings.t("Tidak Ada Email", "No Email")
 
             // Prominent Developer Credentials Card (Local vs Cloud Differentiation)
             Surface(
@@ -271,9 +274,9 @@ fun DevFeedbackViewerScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (isFirebaseAuthActive) {
-                                "Sesi Cloud: Terautentikasi via Firebase Auth ($currentFirebaseAuthEmail)"
+                                com.example.util.AppStrings.t("Sesi Cloud: Terautentikasi via Firebase Auth ($currentFirebaseAuthEmail)", "Cloud Session: Authenticated via Firebase Auth ($currentFirebaseAuthEmail)")
                             } else {
-                                "Sesi Cloud: Belum Terautentikasi (Offline / Hanya Cache Lokal Room)"
+                                com.example.util.AppStrings.t("Sesi Cloud: Belum Terautentikasi (Offline / Hanya Cache Lokal Room)", "Cloud Session: Unauthenticated (Offline / Room Local Cache Only)")
                             },
                             fontSize = 11.sp,
                             color = if (isFirebaseAuthActive) Color(0xFF047857) else MaterialTheme.colorScheme.onSurfaceVariant
@@ -422,13 +425,13 @@ fun DevFeedbackViewerScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Menunggu Sinkronisasi Cloud (${unsyncedFeedbacks.size} Masukan)",
+                                text = com.example.util.AppStrings.t("Menunggu Sinkronisasi Cloud (${unsyncedFeedbacks.size} Masukan)", "Pending Cloud Sync (${unsyncedFeedbacks.size} Feedbacks)"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Tersimpan di Room SQLite lokal perangkat.",
+                                text = com.example.util.AppStrings.t("Tersimpan di Room SQLite lokal perangkat.", "Stored in local device Room SQLite."),
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -436,7 +439,7 @@ fun DevFeedbackViewerScreen(
                         Button(
                             onClick = {
                                 feedbackViewModel.retrySyncPendingFeedbacks { synced, failed ->
-                                    val msg = "Sinkronisasi: $synced berhasil dikirim, $failed gagal."
+                                    val msg = com.example.util.AppStrings.t("Sinkronisasi: $synced berhasil dikirim, $failed gagal.", "Sync: $synced sent successfully, $failed failed.")
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }
                             },
@@ -448,7 +451,7 @@ fun DevFeedbackViewerScreen(
                             if (isRetryingSync) {
                                 CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
                             } else {
-                                Text("Sinkronkan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(com.example.util.AppStrings.t("Sinkronkan", "Sync"), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -456,6 +459,11 @@ fun DevFeedbackViewerScreen(
             }
 
             // Category Filter Chips
+            val catLabels = mapOf(
+                "Bug / Kendala" to com.example.util.AppStrings.t("Bug / Kendala", "Bug / Issue"),
+                "Saran Fitur" to com.example.util.AppStrings.t("Saran Fitur", "Feature Suggestion"),
+                "Desain / UI" to com.example.util.AppStrings.t("Desain / UI", "Design / UI")
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -465,14 +473,15 @@ fun DevFeedbackViewerScreen(
                 FilterChip(
                     selected = selectedCategoryFilter == null,
                     onClick = { selectedCategoryFilter = null },
-                    label = { Text("Semua (${combinedFeedbacks.size})", fontSize = 11.sp) }
+                    label = { Text("${com.example.util.AppStrings.t("Semua", "All")} (${combinedFeedbacks.size})", fontSize = 11.sp) }
                 )
                 listOf("Bug / Kendala", "Saran Fitur", "Desain / UI").forEach { cat ->
                     val count = combinedFeedbacks.count { it.category.equals(cat, ignoreCase = true) }
+                    val displayCat = catLabels[cat] ?: cat
                     FilterChip(
                         selected = selectedCategoryFilter == cat,
                         onClick = { selectedCategoryFilter = if (selectedCategoryFilter == cat) null else cat },
-                        label = { Text("$cat ($count)", fontSize = 11.sp) }
+                        label = { Text("$displayCat ($count)", fontSize = 11.sp) }
                     )
                 }
             }
@@ -495,7 +504,7 @@ fun DevFeedbackViewerScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = if (selectedCategoryFilter == null) "Belum ada masukan dari pengguna." else "Tidak ada masukan pada kategori \"$selectedCategoryFilter\".",
+                            text = if (selectedCategoryFilter == null) com.example.util.AppStrings.t("Belum ada masukan dari pengguna.", "No user feedback yet.") else "${com.example.util.AppStrings.t("Tidak ada masukan pada kategori", "No feedback in category")} \"${catLabels[selectedCategoryFilter] ?: selectedCategoryFilter}\".",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
@@ -585,14 +594,14 @@ fun DevFeedbackViewerScreen(
                                                 onCopy = {
                                                     clipboardManager.setText(
                                                         AnnotatedString(
-                                                            "[DompetNalar Feedback]\nDari: ${feedback.userName} (${feedback.userEmail})\nKategori: ${feedback.category}\nRating: ${feedback.rating}/5\nPesan: ${feedback.message}"
+                                                            "[DompetNalar Feedback]\n${com.example.util.AppStrings.t("Dari", "From")}: ${feedback.userName} (${feedback.userEmail})\n${com.example.util.AppStrings.t("Kategori", "Category")}: ${feedback.category}\nRating: ${feedback.rating}/5\n${com.example.util.AppStrings.t("Pesan", "Message")}: ${feedback.message}"
                                                         )
                                                     )
-                                                    Toast.makeText(context, "Masukan disalin ke papan klip!", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, com.example.util.AppStrings.t("Masukan disalin ke papan klip!", "Feedback copied to clipboard!"), Toast.LENGTH_SHORT).show()
                                                 },
                                                 onDelete = {
                                                     feedbackViewModel.deleteFeedback(feedback.id)
-                                                    Toast.makeText(context, "Masukan berhasil dihapus.", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, com.example.util.AppStrings.t("Masukan berhasil dihapus.", "Feedback deleted successfully."), Toast.LENGTH_SHORT).show()
                                                 }
                                             )
                                         }
@@ -614,7 +623,7 @@ fun FeedbackItemRow(
     onCopy: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID")) }
+    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy • HH:mm", com.example.util.LocaleHelper.getActiveLocale()) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -634,6 +643,12 @@ fun FeedbackItemRow(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    val catDisplay = when (feedback.category) {
+                        "Bug / Kendala" -> com.example.util.AppStrings.t("Bug / Kendala", "Bug / Issue")
+                        "Saran Fitur" -> com.example.util.AppStrings.t("Saran Fitur", "Feature Suggestion")
+                        "Desain / UI" -> com.example.util.AppStrings.t("Desain / UI", "Design / UI")
+                        else -> feedback.category
+                    }
                     Surface(
                         color = when (feedback.category) {
                             "Bug / Kendala" -> ExpenseRed.copy(alpha = 0.15f)
@@ -644,7 +659,7 @@ fun FeedbackItemRow(
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = feedback.category,
+                            text = catDisplay,
                             color = when (feedback.category) {
                                 "Bug / Kendala" -> ExpenseRed
                                 "Saran Fitur" -> FinSmartPrimary
@@ -659,9 +674,9 @@ fun FeedbackItemRow(
 
                     // Truthful Storage Status Badge
                     val (storageText, storageColor, storageBg) = when {
-                        isCloudSynced -> Triple("Tersimpan di Cloud", FinSmartPrimary, FinSmartPrimary.copy(alpha = 0.15f))
-                        feedback.userName in listOf("Siti Rahma") -> Triple("Tersimpan Lokal", MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-                        else -> Triple("Menunggu Sinkronisasi", Color(0xFFD97706), Color(0xFFD97706).copy(alpha = 0.15f))
+                        isCloudSynced -> Triple(com.example.util.AppStrings.t("Tersimpan di Cloud", "Stored in Cloud"), FinSmartPrimary, FinSmartPrimary.copy(alpha = 0.15f))
+                        feedback.userName in listOf("Siti Rahma") -> Triple(com.example.util.AppStrings.t("Tersimpan Lokal", "Stored Locally"), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                        else -> Triple(com.example.util.AppStrings.t("Menunggu Sinkronisasi", "Pending Sync"), Color(0xFFD97706), Color(0xFFD97706).copy(alpha = 0.15f))
                     }
                     Surface(
                         color = storageBg,
@@ -742,7 +757,7 @@ fun FeedbackItemRow(
                     ) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Hapus",
+                            contentDescription = com.example.util.AppStrings.t("Hapus", "Delete"),
                             tint = ExpenseRed.copy(alpha = 0.8f),
                             modifier = Modifier.size(13.dp)
                         )

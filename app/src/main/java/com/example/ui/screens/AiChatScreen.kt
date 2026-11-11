@@ -1055,12 +1055,16 @@ fun WalletDraftCard(
             Text(text = parsed.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
 
             Spacer(modifier = Modifier.height(4.dp))
+            val isEn = LocaleHelper.isEnglish()
             val balanceLabel = if (parsed.incomeAmount != null && parsed.incomeAmount > 0.0) {
-                "Pemasukan Baru: ${CurrencyFormatter.formatCurrency(parsed.incomeAmount)}"
+                if (isEn) "New Income: ${CurrencyFormatter.formatCurrency(parsed.incomeAmount)}"
+                else "Pemasukan Baru: ${CurrencyFormatter.formatCurrency(parsed.incomeAmount)}"
             } else if (parsed.openingBalance > 0.0) {
-                "Saldo Awal Murni: ${CurrencyFormatter.formatCurrency(parsed.openingBalance)}"
+                if (isEn) "Opening Balance: ${CurrencyFormatter.formatCurrency(parsed.openingBalance)}"
+                else "Saldo Awal Murni: ${CurrencyFormatter.formatCurrency(parsed.openingBalance)}"
             } else {
-                "Saldo Awal: ${CurrencyFormatter.formatCurrency(0.0)}"
+                if (isEn) "Opening Balance: ${CurrencyFormatter.formatCurrency(0.0)}"
+                else "Saldo Awal: ${CurrencyFormatter.formatCurrency(0.0)}"
             }
 
             Text(
@@ -1160,7 +1164,7 @@ fun TransactionActionCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = parsed.category, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = AppStrings.translateCategory(parsed.category), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 

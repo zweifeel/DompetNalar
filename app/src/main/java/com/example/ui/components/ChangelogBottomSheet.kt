@@ -143,7 +143,7 @@ fun ChangelogBottomSheet(
 
             // Changelog Items
             Text(
-                text = "Daftar Pembaruan & Fitur Baru:",
+                text = AppStrings.t("Daftar Pembaruan & Fitur Baru:", "Updates & New Features:"),
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 modifier = Modifier.align(Alignment.Start)
@@ -153,44 +153,65 @@ fun ChangelogBottomSheet(
 
             ChangelogItemRow(
                 icon = Icons.Default.AutoAwesome,
-                title = "AI Chat Natural Language Backdate Input",
-                description = "Chatbot kini mampu mengenali konteks tanggal relatif ('kemarin', 'lusa', '3 hari lalu', 'tadi pagi', 'minggu lalu') dan tanggal spesifik ('tanggal 15 September', '12/09/2026') lalu otomatis menetapkan tanggal transaksi secara akurat."
+                title = AppStrings.t("Input Transaksi Bahasa Alami AI & Backdate", "AI Natural Language & Backdate Input"),
+                description = AppStrings.t(
+                    "Chatbot kini mampu mengenali konteks tanggal relatif ('kemarin', 'lusa', '3 hari lalu', 'tadi pagi', 'minggu lalu') dan tanggal spesifik ('tanggal 15 September', '12/09/2026') lalu otomatis menetapkan tanggal transaksi secara akurat.",
+                    "Chatbot can now recognize relative dates ('yesterday', 'tomorrow', '3 days ago', 'this morning', 'last week') and specific dates ('September 15', '12/09/2026') and accurately set transaction dates automatically."
+                )
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.Language,
                 title = AppStrings.t("Otomatisasi Bahasa & Multi-Currency Selector", "Language Automation & Multi-Currency Selector"),
-                description = "Dukungan bahasa aplikasi mengikuti sistem HP (Locale default), serta pemilih mata uang global (IDR Rp, USD $, EUR €, SGD S$, MYR RM) yang memperbarui format angka secara real-time di seluruh layar."
+                description = AppStrings.t(
+                    "Dukungan bahasa aplikasi mengikuti sistem HP (Locale default), serta pemilih mata uang global (IDR Rp, USD $, EUR €, SGD S$, MYR RM) yang memperbarui format angka secara real-time di seluruh layar.",
+                    "App language follows device system locale, plus a global currency selector (IDR Rp, USD $, EUR €, SGD S$, MYR RM) updating numeric formatting in real-time across all screens."
+                )
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.CreditCard,
                 title = AppStrings.t("Manajemen Hutang & Tanggal Jatuh Tempo", "Debt Management & Due Dates"),
-                description = "Tambah ikon edit & hapus per-item hutang, opsi hapus seluruh kategori hutang, pemilihan tanggal jatuh tempo (due date), serta tombol Reset Semua Hutang (Fresh Start)."
+                description = AppStrings.t(
+                    "Tambah ikon edit & hapus per-item hutang, opsi hapus seluruh kategori hutang, pemilihan tanggal jatuh tempo (due date), serta tombol Reset Semua Hutang (Fresh Start).",
+                    "Added edit & delete icons per debt item, option to delete entire debt categories, due date picker, and Reset All Debts (Fresh Start) button."
+                )
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.CorporateFare,
                 title = AppStrings.t("Asset & Depreciating Asset Tracker Fleksibel", "Flexible Asset & Depreciation Tracker"),
-                description = "Kontrol edit & hapus item aset fisik, hapus kategori aset sekaligus, kalkulasi depresiasi nilai otomatis, dan tombol Reset Semua Aset."
+                description = AppStrings.t(
+                    "Kontrol edit & hapus item aset fisik, hapus kategori aset sekaligus, kalkulasi depresiasi nilai otomatis, dan tombol Reset Semua Aset.",
+                    "Edit & delete controls for physical assets, category-wide asset deletion, automatic value depreciation, and Reset All Assets button."
+                )
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.Calculate,
                 title = AppStrings.t("Split Bill Ringkas & Cepat", "Quick & Compact Split Bill"),
-                description = "Daftar item pada kalkulator utama dibatasi 2-3 item dengan tombol 'Lihat Selengkapnya / Riwayat' agar tombol 'Kirim WA' terlihat langsung tanpa perlu scroll panjang."
+                description = AppStrings.t(
+                    "Daftar item pada kalkulator utama dibatasi 2-3 item dengan tombol 'Lihat Selengkapnya / Riwayat' agar tombol 'Kirim WA' terlihat langsung tanpa perlu scroll panjang.",
+                    "Item list on main calculator limited to 2-3 items with 'View All / History' button so 'Send WA' button is immediately visible without scrolling."
+                )
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.PieChart,
                 title = AppStrings.t("Visualisasi Pie / Donut Chart di Analisis", "Pie / Donut Chart Visualization in Analysis"),
-                description = "Tambahan mode grafik lingkaran (Donut/Pie Chart) pada Analisis Arus Kas untuk memvisualisasikan proporsi pengeluaran per kategori secara interaktif."
+                description = AppStrings.t(
+                    "Tambahan mode grafik lingkaran (Donut/Pie Chart) pada Analisis Arus Kas untuk memvisualisasikan proporsi pengeluaran per kategori secara interaktif.",
+                    "Added donut/pie chart visualization to Cashflow Analysis to view interactive category expense proportions."
+                )
             )
 
             ChangelogItemRow(
                 icon = Icons.Default.Security,
                 title = AppStrings.t("Pembersihan Pengaturan & Cloud Sync", "Settings Cleanup & Cloud Sync"),
-                description = "Menu preferensi lebih bersih, integrasi sinkronisasi Google Drive Folder 'DompetNalar/App Updates', dan menu Cek Pembaruan Versi otomatis."
+                description = AppStrings.t(
+                    "Menu preferensi lebih bersih, integrasi sinkronisasi Google Drive Folder 'DompetNalar/App Updates', dan menu Cek Pembaruan Versi otomatis.",
+                    "Cleaner preferences menu, Google Drive integration ('DompetNalar/App Updates'), and automated Version Update Check."
+                )
             )
 
             Spacer(modifier = Modifier.height(20.dp))

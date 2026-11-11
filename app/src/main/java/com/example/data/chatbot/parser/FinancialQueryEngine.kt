@@ -286,7 +286,7 @@ object FinancialQueryEngine {
                 if (isEn) "No income recorded this month. Keep spending strictly to essentials."
                 else "Belum ada pemasukan bulan ini. Pertahankan pengeluaran hanya untuk kebutuhan esensial."
             savingsRatio >= 20.0 ->
-                if (isEn) "Kesehatan Keuangan Prima! Rasio Tabungan: ${String.format(Locale.ROOT, "%.1f", savingsRatio)}% (above the 20% benchmark)."
+                if (isEn) "Excellent Financial Health! Savings Ratio: ${String.format(Locale.ROOT, "%.1f", savingsRatio)}% (above the 20% benchmark)."
                 else "Kesehatan Keuangan Prima! Rasio Tabungan: ${String.format(Locale.ROOT, "%.1f", savingsRatio)}% (di atas target ideal 20%)."
             savingsRatio in 0.0..19.9 ->
                 if (isEn) "Savings ratio is ${String.format(Locale.ROOT, "%.1f", savingsRatio)}% (below recommended 20%). Consider trimming spending on $topCategoryStr."

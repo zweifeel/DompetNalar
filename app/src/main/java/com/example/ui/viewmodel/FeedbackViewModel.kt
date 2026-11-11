@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import com.example.util.AppStrings
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -139,13 +140,19 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
             false
         }
         if (!isFirebaseReady) {
-            _cloudFetchStatus.value = "FirebaseApp belum terkonfigurasi (google-services.json belum dimuat)."
+            _cloudFetchStatus.value = AppStrings.t(
+                "FirebaseApp belum terkonfigurasi (google-services.json belum dimuat).",
+                "FirebaseApp not configured (google-services.json not loaded)."
+            )
             return
         }
 
         val fbAuthUser = _firebaseUser.value ?: try { FirebaseAuth.getInstance().currentUser } catch (_: Exception) { null }
         if (fbAuthUser == null) {
-            _cloudFetchStatus.value = "Sesi Lokal Aktif (Belum Ada Token Firebase Auth). Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")}) untuk mengakses Firestore Cloud."
+            _cloudFetchStatus.value = AppStrings.t(
+                "Sesi Lokal Aktif (Belum Ada Token Firebase Auth). Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")}) untuk mengakses Firestore Cloud.",
+                "Active Local Session (No Firebase Auth Token). Sign in with Google Developer Account (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")}) to access Firestore Cloud."
+            )
             return
         }
 
@@ -179,10 +186,10 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
                     val items = snapshot.documents.mapNotNull { doc ->
                         try {
                             val feedbackId = doc.getString("feedbackId") ?: doc.id
-                            val userName = doc.getString("userName") ?: "Pengguna DompetNalar"
+                            val userName = doc.getString("userName") ?: AppStrings.t("Pengguna DompetNalar", "DompetNalar User")
                             val userEmail = doc.getString("userEmail") ?: ""
                             val rating = doc.getLong("rating")?.toInt() ?: 5
-                            val category = doc.getString("category") ?: "Lainnya"
+                            val category = doc.getString("category") ?: AppStrings.t("Lainnya", "Others")
                             val message = doc.getString("message") ?: ""
                             val createdAtTs = doc.getTimestamp("createdAt")?.toDate()?.time ?: System.currentTimeMillis()
                             val userId = doc.getLong("userId")
@@ -205,9 +212,15 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
                     _cloudFeedbacks.value = sortedItems
                     _syncedCloudIds.value = _syncedCloudIds.value + sortedItems.map { it.id }.toSet()
                     if (sortedItems.isEmpty()) {
-                        _cloudFetchStatus.value = "Cloud Firestore terhubung (Akun: ${fbAuthUser.email}). Belum ada feedback dari pengguna di cloud."
+                        _cloudFetchStatus.value = AppStrings.t(
+                            "Cloud Firestore terhubung (Akun: ${fbAuthUser.email}). Belum ada feedback dari pengguna di cloud.",
+                            "Cloud Firestore connected (Account: ${fbAuthUser.email}). No user feedback in cloud yet."
+                        )
                     } else {
-                        _cloudFetchStatus.value = "Berhasil memuat ${sortedItems.size} feedback dari Cloud Firestore (Akun: ${fbAuthUser.email})."
+                        _cloudFetchStatus.value = AppStrings.t(
+                            "Berhasil memuat ${sortedItems.size} feedback dari Cloud Firestore (Akun: ${fbAuthUser.email}).",
+                            "Successfully loaded ${sortedItems.size} feedback from Cloud Firestore (Account: ${fbAuthUser.email})."
+                        )
                     }
                     Log.i(TAG, "Berhasil memuat ${items.size} feedback dari Firestore.")
                 }
@@ -226,16 +239,29 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
                     if (authEmail.isNullOrBlank()) {
                         _cloudFetchStatus.value = "Akses Cloud Ditolak (PERMISSION_DENIED): Belum ada sesi Firebase Auth aktif. Masuk dengan Akun Google Developer (${DeveloperAccountConfig.TRUSTED_DEVELOPER_EMAILS.joinToString(", ")})."
                     } else if (DeveloperAccountConfig.isTrustedDeveloperEmail(authEmail)) {
-                        _cloudFetchStatus.value = "Akses Cloud Ditolak (PERMISSION_DENIED): Akun terverifikasi '$authEmail' ditolak oleh aturan Firestore di Cloud. Pastikan file firestore.rules lokal sudah dipublikasikan ke Firebase Console (Project: finsmart-47fdd) dengan menambahkan '$authEmail' ke fungsi isAdmin()."
+                        _cloudFetchStatus.value = AppStrings.t(
+                            "Akses Cloud Ditolak (PERMISSION_DENIED): Akun terverifikasi '$authEmail' ditolak oleh aturan Firestore di Cloud. Pastikan file firestore.rules lokal sudah dipublikasikan ke Firebase Console (Project: finsmart-47fdd) dengan menambahkan '$authEmail' ke fungsi isAdmin().",
+                            "Cloud Access Denied (PERMISSION_DENIED): Verified account '$authEmail' rejected by Cloud Firestore rules. Ensure local firestore.rules is deployed to Firebase Console with '$authEmail' in isAdmin()."
+                        )
                     } else {
-                        _cloudFetchStatus.value = "Akses Cloud Ditolak: Akun '$authEmail' bukan administrator yang berwenang."
+                        _cloudFetchStatus.value = AppStrings.t(
+                            "Akses Cloud Ditolak: Akun '$authEmail' bukan administrator yang berwenang.",
+                            "Cloud Access Denied: Account '$authEmail' is not an authorized administrator."
+                        )
                     }
                 } else if (isUnauthenticated) {
-                    _cloudFetchStatus.value = "Sesi Tidak Terotentikasi (UNAUTHENTICATED): Sesi Firebase Auth tidak valid atau telah berakhir. Silakan hubungkan ulang akun Google."
+                    _cloudFetchStatus.value = AppStrings.t(
+                        "Sesi Tidak Terotentikasi (UNAUTHENTICATED): Sesi Firebase Auth tidak valid atau telah berakhir. Silakan hubungkan ulang akun Google.",
+                        "Unauthenticated Session (UNAUTHENTICATED): Firebase Auth session invalid or expired. Please reconnect Google account."
+                    )
                 } else if (isNetwork) {
-                    _cloudFetchStatus.value = "Gagal terhubung ke Cloud Firestore: Periksa koneksi internet perangkat Anda."
+                    _cloudFetchStatus.value = AppStrings.t(
+                        "Gagal terhubung ke Cloud Firestore: Periksa koneksi internet perangkat Anda.",
+                        "Failed to connect to Cloud Firestore: Check your internet connection."
+                    )
                 } else {
-                    _cloudFetchStatus.value = "Gagal memuat feedback cloud: $msg"
+                    val prefix = AppStrings.t("Gagal memuat feedback cloud: ", "Failed to load cloud feedback: ")
+                    _cloudFetchStatus.value = "$prefix$msg"
                 }
             } finally {
                 _isCloudLoading.value = false
@@ -321,24 +347,33 @@ class FeedbackViewModel(application: Application) : AndroidViewModel(application
                             Log.i(TAG, "Feedback ${item.id} successfully written to Firestore.")
                             database.writeCoordinator.withWritePermit { feedbackDao.markFeedbackAsSynced(item.id) }
                             _syncedCloudIds.value = _syncedCloudIds.value + item.id
-                            _submissionSuccess.value = "Feedback berhasil dikirim dan tersinkronisasi."
+                            _submissionSuccess.value = AppStrings.t(
+                                "Feedback berhasil dikirim dan tersinkronisasi.",
+                                "Feedback sent and synchronized successfully."
+                            )
                             isCloudSynced = true
                         } catch (e: Exception) {
                             Log.w(TAG, "Gagal sinkronisasi ke Firestore: ${e.message}", e)
-                            _submissionSuccess.value = "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+                            _submissionSuccess.value = AppStrings.t(
+                                "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali.",
+                                "Feedback saved on device, but could not be sent to server. Please try syncing again."
+                            )
                             isCloudSynced = false
                         }
                     }
                 } else {
                     Log.i(TAG, "FirebaseApp belum terkonfigurasi. Masukan tersimpan di lokal.")
-                    _submissionSuccess.value = "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali."
+                    _submissionSuccess.value = AppStrings.t(
+                        "Feedback tersimpan di perangkat, tetapi belum berhasil dikirim ke server. Silakan coba sinkronisasi kembali.",
+                        "Feedback saved on device, but could not be sent to server. Please try syncing again."
+                    )
                     isCloudSynced = false
                 }
 
                 onResult(isCloudSynced)
             } catch (e: Exception) {
                 Log.e(TAG, "Gagal memproses feedback", e)
-                val errMsg = "Feedback gagal disimpan. Silakan coba lagi."
+                val errMsg = AppStrings.t("Feedback gagal disimpan. Silakan coba lagi.", "Failed to save feedback. Please try again.")
                 _submissionSuccess.value = errMsg
                 onError?.invoke(errMsg)
             } finally {

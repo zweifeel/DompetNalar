@@ -248,7 +248,7 @@ fun ReceiptScanScreen(
                 }
             } catch (e: Exception) {
                 if (activeScanToken == token) {
-                    scanErrorMessage = e.message ?: "Gagal mentranskripsi nota. Pastikan gambar nota jelas dan pencahayaan cukup."
+                    scanErrorMessage = e.message ?: com.example.util.AppStrings.t("Gagal mentranskripsi nota. Pastikan gambar nota jelas dan pencahayaan cukup.", "Failed to transcribe receipt. Please ensure the receipt is clearly visible with good lighting.")
                 }
             } finally {
                 if (activeScanToken == token) {
@@ -717,13 +717,13 @@ fun ReceiptScanScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = editMerchantName.ifBlank { "Struk Belanja" },
+                                            text = editMerchantName.ifBlank { com.example.util.AppStrings.t("Struk Belanja", "Shopping Receipt") },
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = "Tanggal: $editDate • $editCategory",
+                                            text = "${com.example.util.AppStrings.t("Tanggal", "Date")}: $editDate • ${com.example.util.AppStrings.translateCategory(editCategory)}",
                                             fontSize = 12.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -808,16 +808,16 @@ fun ReceiptScanScreen(
                                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                                 val clip = android.content.ClipData.newPlainText(AppStrings.t("Transkripsi Nota DompetNalar", "DompetNalar Receipt Transcription"), editRawText)
                                                 clipboard.setPrimaryClip(clip)
-                                                Toast.makeText(context, "Teks nota berhasil disalin ke clipboard!", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, com.example.util.AppStrings.t("Teks nota berhasil disalin ke clipboard!", "Receipt text copied to clipboard!"), Toast.LENGTH_SHORT).show()
                                             }
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.ContentCopy,
-                                                contentDescription = "Salin",
+                                                contentDescription = com.example.util.AppStrings.t("Salin", "Copy"),
                                                 modifier = Modifier.size(14.dp)
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Salin Teks", fontSize = 11.sp)
+                                            Text(com.example.util.AppStrings.t("Salin Teks", "Copy Text"), fontSize = 11.sp)
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -955,7 +955,7 @@ fun ReceiptScanScreen(
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Default.Delete, contentDescription = com.example.util.AppStrings.t("Hapus", "Delete"), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                         }
                                     }
                                 }
@@ -982,9 +982,9 @@ fun ReceiptScanScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     val taxLabel = when (editTaxTreatment) {
-                                        TaxTreatment.INCLUSIVE -> "Pajak / PPN (Sudah Termasuk):"
-                                        TaxTreatment.EXCLUSIVE -> "Pajak / PB1 (Biaya Tambahan):"
-                                        TaxTreatment.UNKNOWN -> "Pajak (Perlu Diperiksa):"
+                                        TaxTreatment.INCLUSIVE -> com.example.util.AppStrings.t("Pajak / PPN (Sudah Termasuk):", "Tax / VAT (Inclusive):")
+                                        TaxTreatment.EXCLUSIVE -> com.example.util.AppStrings.t("Pajak / PB1 (Biaya Tambahan):", "Tax / Service Tax (Exclusive):")
+                                        TaxTreatment.UNKNOWN -> com.example.util.AppStrings.t("Pajak (Perlu Diperiksa):", "Tax (To Verify):")
                                     }
                                     Text(taxLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(CurrencyFormatter.formatRupiah(editTax), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -1073,7 +1073,7 @@ fun ReceiptScanScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Total Terhitung:",
+                                        text = AppStrings.t("Total Terhitung:", "Calculated Total:"),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         color = FinSmartPrimary
@@ -1152,11 +1152,11 @@ fun ReceiptScanScreen(
                                         }
 
                                         val itemNotes = editItems.joinToString("\n") { "• ${it.qty}x ${it.name} (${CurrencyFormatter.formatRupiah(it.total)})" }
-                                        val discountNote = if (editDiscount > 0) ", Diskon: ${CurrencyFormatter.formatRupiah(editDiscount)}" else ""
-                                        val fullNote = "Nota: $editMerchantName\n$itemNotes\nSubtotal: ${CurrencyFormatter.formatRupiah(editSubtotal)}, Pajak: ${CurrencyFormatter.formatRupiah(editTax)}$discountNote"
+                                        val discountNote = if (editDiscount > 0) ", ${com.example.util.AppStrings.t("Diskon", "Discount")}: ${CurrencyFormatter.formatRupiah(editDiscount)}" else ""
+                                        val fullNote = "${com.example.util.AppStrings.t("Nota", "Receipt")}: $editMerchantName\n$itemNotes\n${com.example.util.AppStrings.t("Subtotal", "Subtotal")}: ${CurrencyFormatter.formatRupiah(editSubtotal)}, ${com.example.util.AppStrings.t("Pajak", "Tax")}: ${CurrencyFormatter.formatRupiah(editTax)}$discountNote"
 
                                         onSaveTransaction(
-                                            editMerchantName.ifBlank { "Belanja Struk" },
+                                            editMerchantName.ifBlank { com.example.util.AppStrings.t("Belanja Struk", "Receipt Expense") },
                                             editTotalAmount,
                                             TransactionType.EXPENSE,
                                             editCategory,
@@ -1229,7 +1229,7 @@ fun ReceiptScanScreen(
     if (isItemDialogOpen) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { isItemDialogOpen = false },
-            title = { Text(if (editingItemIndex >= 0) "Edit Item" else "Tambah Item Baru", fontWeight = FontWeight.Bold) },
+            title = { Text(if (editingItemIndex >= 0) com.example.util.AppStrings.t("Edit Item", "Edit Item") else com.example.util.AppStrings.t("Tambah Item Baru", "Add New Item"), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(

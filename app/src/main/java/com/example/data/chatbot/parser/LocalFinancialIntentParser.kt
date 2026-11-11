@@ -4,6 +4,7 @@ import com.example.data.model.CategoryItem
 import com.example.data.model.TransactionType
 import com.example.data.model.Wallet
 import com.example.data.model.WalletType
+import com.example.util.AppStrings
 import com.example.util.CurrencyFormatter
 import com.example.util.LocaleHelper
 import com.example.util.TransactionDateParser
@@ -341,13 +342,21 @@ object LocalFinancialIntentParser {
         val responseMsg = when (parseStatus) {
             ParseStatus.READY_FOR_DRAFT -> {
                 val formattedAmt = formatCurrencyStr(amount ?: 0.0)
-                val typeName = if (transactionType == TransactionType.INCOME) "Pemasukan" else "Pengeluaran"
-                "Draft $typeName siap: $finalTitle sebesar $formattedAmt menggunakan dompet ${sourceWallet?.name}."
+                val typeName = if (transactionType == TransactionType.INCOME) {
+                    AppStrings.t("Pemasukan", "Income")
+                } else {
+                    AppStrings.t("Pengeluaran", "Expense")
+                }
+                if (isEn) {
+                    "Draft $typeName ready: $finalTitle of $formattedAmt using wallet ${sourceWallet?.name}."
+                } else {
+                    "Draft $typeName siap: $finalTitle sebesar $formattedAmt menggunakan dompet ${sourceWallet?.name}."
+                }
             }
-            ParseStatus.MISSING_AMOUNT -> "Nominal uang belum terdeteksi. Silakan sertakan nominalnya."
-            ParseStatus.MISSING_WALLET -> "Anda belum memiliki dompet. Buat dompet dengan perintah seperti: 'Buat dompet Dana'."
-            ParseStatus.AMBIGUOUS_WALLET -> "Ditemukan beberapa dompet yang cocok. Silakan pilih dompet yang sesuai."
-            else -> "Draft transaksi siap dikonfirmasi."
+            ParseStatus.MISSING_AMOUNT -> if (isEn) "Amount not detected. Please include the transaction amount." else "Nominal uang belum terdeteksi. Silakan sertakan nominalnya."
+            ParseStatus.MISSING_WALLET -> if (isEn) "You don't have a wallet yet. Create one with: 'Create wallet Cash'." else "Anda belum memiliki dompet. Buat dompet dengan perintah seperti: 'Buat dompet Dana'."
+            ParseStatus.AMBIGUOUS_WALLET -> if (isEn) "Multiple matching wallets found. Please select the intended wallet." else "Ditemukan beberapa dompet yang cocok. Silakan pilih dompet yang sesuai."
+            else -> if (isEn) "Transaction draft ready for confirmation." else "Draft transaksi siap dikonfirmasi."
         }
 
         return ParsedFinancialCommand(
@@ -661,6 +670,7 @@ object LocalFinancialIntentParser {
         availableWallets: List<Wallet>,
         dateResult: com.example.util.ParsedDateResult
     ): ParsedFinancialCommand {
+        val isEn = LocaleHelper.isEnglish()
         val lower = cleanedText.lowercase(Locale.ROOT)
         var sourceWallet: Wallet? = null
         var targetWallet: Wallet? = null
@@ -704,19 +714,19 @@ object LocalFinancialIntentParser {
 
         if (amount == null || amount <= 0.0) {
             status = ParseStatus.MISSING_AMOUNT
-            msg = "Nominal transfer belum disebutkan. Berapa yang ingin Anda transfer?"
+            msg = if (isEn) "Transfer amount not specified. How much would you like to transfer?" else "Nominal transfer belum disebutkan. Berapa yang ingin Anda transfer?"
         } else if (sourceWallet == null) {
             status = ParseStatus.MISSING_WALLET
-            msg = "Dompet sumber transfer belum tersedia. Silakan tambahkan dompet terlebih dahulu."
+            msg = if (isEn) "Source wallet not available. Please add a wallet first." else "Dompet sumber transfer belum tersedia. Silakan tambahkan dompet terlebih dahulu."
         } else if (targetWallet == null) {
             status = ParseStatus.INVALID_TRANSFER_MISSING_TARGET
-            msg = "Dompet tujuan transfer belum ditentukan. Ingin dipindahkan ke dompet apa?"
+            msg = if (isEn) "Target wallet not specified. Which wallet do you want to transfer to?" else "Dompet tujuan transfer belum ditentukan. Ingin dipindahkan ke dompet apa?"
         } else if (sourceWallet.id == targetWallet.id) {
             status = ParseStatus.INVALID_TRANSFER_SAME_WALLET
-            msg = "Dompet sumber dan dompet tujuan tidak boleh sama (${sourceWallet.name})."
+            msg = if (isEn) "Source and target wallets cannot be the same (${sourceWallet.name})." else "Dompet sumber dan dompet tujuan tidak boleh sama (${sourceWallet.name})."
         } else {
             status = ParseStatus.READY_FOR_DRAFT
-            msg = "Draft Transfer siap: Pindahkan ${formatCurrencyStr(amount)} dari ${sourceWallet.name} ke ${targetWallet.name}."
+            msg = if (isEn) "Draft Transfer ready: Move ${formatCurrencyStr(amount)} from ${sourceWallet.name} to ${targetWallet.name}." else "Draft Transfer siap: Pindahkan ${formatCurrencyStr(amount)} dari ${sourceWallet.name} ke ${targetWallet.name}."
         }
 
         return ParsedFinancialCommand(

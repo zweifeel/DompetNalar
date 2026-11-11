@@ -202,7 +202,7 @@ fun ReceiptGeneratorModalDialog(
                         color = Color.DarkGray
                     )
                     Text(
-                        text = "Manajemen Keuangan Pribadi Cerdas",
+                        text = AppStrings.t("Manajemen Keuangan Pribadi Cerdas", "Smart Personal Finance Management"),
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         color = Color.Gray
@@ -220,7 +220,7 @@ fun ReceiptGeneratorModalDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "No. Bukti:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                        Text(text = AppStrings.t("No. Bukti:", "Ref No:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                         Text(text = reference, fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = Color.Black)
                     }
 
@@ -228,7 +228,7 @@ fun ReceiptGeneratorModalDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Tanggal:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                        Text(text = AppStrings.t("Tanggal:", "Date:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                         Text(text = dateString, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                     }
 
@@ -236,7 +236,7 @@ fun ReceiptGeneratorModalDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "Jenis:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                        Text(text = AppStrings.t("Jenis:", "Type:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                         Text(text = typeLabel, fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = Color.Black)
                     }
 
@@ -260,7 +260,7 @@ fun ReceiptGeneratorModalDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = AppStrings.t("Kategori:", "Category:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
-                        Text(text = transaction.category, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
+                        Text(text = AppStrings.translateCategory(transaction.category), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                     }
 
                     if (transaction.type == TransactionType.TRANSFER) {
@@ -268,22 +268,22 @@ fun ReceiptGeneratorModalDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Dari:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                            Text(text = AppStrings.t("Dari:", "From:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                             Text(text = transaction.walletName, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Ke:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
-                            Text(text = transaction.targetWalletName ?: "Dompet Tujuan", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
+                            Text(text = AppStrings.t("Ke:", "To:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                            Text(text = transaction.targetWalletName ?: AppStrings.t("Dompet Tujuan", "Target Wallet"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                         }
                     } else {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Sumber Dana:", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
+                            Text(text = AppStrings.t("Sumber Dana:", "Source:"), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.DarkGray)
                             Text(text = transaction.walletName, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color.Black)
                         }
                     }
@@ -307,9 +307,9 @@ fun ReceiptGeneratorModalDialog(
 
                     // Total Row with Type Distinction
                     val totalLabel = when (transaction.type) {
-                        TransactionType.EXPENSE -> "TOTAL PENGELUARAN:"
-                        TransactionType.INCOME -> "TOTAL PEMASUKAN:"
-                        TransactionType.TRANSFER -> "TOTAL TRANSFER:"
+                        TransactionType.EXPENSE -> AppStrings.t("TOTAL PENGELUARAN:", "TOTAL EXPENSE:")
+                        TransactionType.INCOME -> AppStrings.t("TOTAL PEMASUKAN:", "TOTAL INCOME:")
+                        TransactionType.TRANSFER -> AppStrings.t("TOTAL TRANSFER:", "TOTAL TRANSFER:")
                     }
                     val amountColor = when (transaction.type) {
                         TransactionType.EXPENSE -> ExpenseRed

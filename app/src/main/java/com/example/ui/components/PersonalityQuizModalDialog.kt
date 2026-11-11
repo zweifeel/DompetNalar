@@ -138,7 +138,7 @@ fun PersonalityQuizModalDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Pertanyaan ${currentQuestionIndex + 1} dari ${questions.size}",
+                    text = AppStrings.t("Pertanyaan ${currentQuestionIndex + 1} dari ${questions.size}", "Question ${currentQuestionIndex + 1} of ${questions.size}"),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.Start)
@@ -224,7 +224,11 @@ fun PersonalityQuizModalDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
                 ) {
                     Text(
-                        text = if (currentQuestionIndex + 1 == questions.size) "Lihat Hasil Tipe Finansial" else "Pertanyaan Selanjutnya",
+                        text = if (currentQuestionIndex + 1 == questions.size) {
+                            AppStrings.t("Lihat Hasil Tipe Finansial", "View Financial Type Result")
+                        } else {
+                            AppStrings.t("Pertanyaan Selanjutnya", "Next Question")
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
@@ -244,7 +248,7 @@ fun PersonalityQuizModalDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Tipe Finansial Anda:",
+                    text = AppStrings.t("Tipe Finansial Anda:", "Your Financial Personality Type:"),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -305,7 +309,7 @@ fun PersonalityQuizModalDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
                 ) {
                     Text(
-                        text = "Terapkan Profil Finansial Ini",
+                        text = AppStrings.t("Terapkan Profil Finansial Ini", "Apply This Financial Profile"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )

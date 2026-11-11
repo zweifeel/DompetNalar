@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.util.AppStrings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -212,7 +213,7 @@ fun FinSmartApp(
     ) { uri ->
         uri?.let {
             authViewModel.updateProfilePhotoUri(it.toString())
-            Toast.makeText(context, "Foto profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, com.example.util.AppStrings.t("Foto profil berhasil diperbarui!", "Profile photo updated successfully!"), Toast.LENGTH_SHORT).show()
         }
     }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -367,7 +368,7 @@ fun FinSmartApp(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Catat Transaksi Cepat",
+                        contentDescription = AppStrings.t("Catat Transaksi Cepat", "Quick Record Transaction"),
                         modifier = Modifier.size(26.dp)
                     )
                 }

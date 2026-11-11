@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import com.example.util.AppStrings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,7 +74,7 @@ fun InitialMasterSetupDialog(
                     tint = FinSmartPrimary
                 )
                 Text(
-                    text = "Buat Kata Sandi Master Dev",
+                    text = AppStrings.t("Buat Kata Sandi Master Dev", "Create Master Dev Password"),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -96,14 +97,20 @@ fun InitialMasterSetupDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "👑 Pengaturan Awal Master Developer (${com.example.config.AppConfig.APP_AUTHOR}):",
+                            text = AppStrings.t(
+                                "👑 Pengaturan Awal Master Developer (${com.example.config.AppConfig.APP_AUTHOR}):",
+                                "👑 Initial Master Developer Setup (${com.example.config.AppConfig.APP_AUTHOR}):"
+                            ),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = FinSmartPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Aplikasi mendeteksi instalasi baru. Demi keamanan, silakan buat kata sandi utama untuk akun Master Developer Anda. Kata sandi ini akan di-hash secara aman menggunakan PBKDF2.",
+                            text = AppStrings.t(
+                                "Aplikasi mendeteksi instalasi baru. Demi keamanan, silakan buat kata sandi utama untuk akun Master Developer Anda. Kata sandi ini akan di-hash secara aman menggunakan PBKDF2.",
+                                "The app detected a fresh installation. For security, please set a master password for your Master Developer account. This password will be hashed securely using PBKDF2."
+                            ),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -118,14 +125,14 @@ fun InitialMasterSetupDialog(
                         newPassword = it
                         localError = null
                     },
-                    label = { Text("Kata Sandi Baru") },
-                    placeholder = { Text("Minimal 6 karakter") },
+                    label = { Text(AppStrings.t("Kata Sandi Baru", "New Password")) },
+                    placeholder = { Text(AppStrings.t("Minimal 6 karakter", "Minimum 6 characters")) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
                             Icon(
                                 imageVector = if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (newPasswordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                                contentDescription = if (newPasswordVisible) AppStrings.t("Sembunyikan kata sandi", "Hide password") else AppStrings.t("Tampilkan kata sandi", "Show password")
                             )
                         }
                     },
@@ -147,13 +154,13 @@ fun InitialMasterSetupDialog(
                         localError = null
                     },
                     label = { Text(com.example.util.AppStrings.t("Konfirmasi Kata Sandi", "Confirm Password")) },
-                    placeholder = { Text("Ulangi kata sandi baru") },
+                    placeholder = { Text(AppStrings.t("Ulangi kata sandi baru", "Repeat new password")) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
                                 imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (confirmPasswordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                                contentDescription = if (confirmPasswordVisible) AppStrings.t("Sembunyikan kata sandi", "Hide password") else AppStrings.t("Tampilkan kata sandi", "Show password")
                             )
                         }
                     },
@@ -183,15 +190,15 @@ fun InitialMasterSetupDialog(
                     val trimmedNew = newPassword.trim()
                     val trimmedConfirm = confirmPassword.trim()
                     if (trimmedNew.isEmpty()) {
-                        localError = "Kata sandi tidak boleh kosong."
+                        localError = AppStrings.t("Kata sandi tidak boleh kosong.", "Password cannot be empty.")
                         return@Button
                     }
                     if (trimmedNew.length < 6) {
-                        localError = "Kata sandi minimal 6 karakter."
+                        localError = AppStrings.t("Kata sandi minimal 6 karakter.", "Password must be at least 6 characters.")
                         return@Button
                     }
                     if (trimmedNew != trimmedConfirm) {
-                        localError = "Konfirmasi kata sandi tidak cocok."
+                        localError = AppStrings.t("Konfirmasi kata sandi tidak cocok.", "Password confirmation does not match.")
                         return@Button
                     }
                     localError = null

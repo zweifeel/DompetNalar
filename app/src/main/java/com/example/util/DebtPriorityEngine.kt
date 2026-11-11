@@ -236,7 +236,7 @@ object DebtPriorityEngine {
 
         return UnifiedDebt(
             id = item.id,
-            name = item.name.ifBlank { "Tagihan Utang" },
+            name = item.name.ifBlank { AppStrings.t("Tagihan Utang", "Debt Liability") },
             sourceType = DebtSourceType.STANDARD_DEBT,
             remainingBalance = item.amount,
             interestRatePercent = if (item.interestRatePercent.isFinite() && item.interestRatePercent >= 0.0) item.interestRatePercent else 0.0,
@@ -267,12 +267,12 @@ object DebtPriorityEngine {
 
         return UnifiedDebt(
             id = plan.id,
-            name = plan.name.ifBlank { "Cicilan ${plan.provider}" },
+            name = plan.name.ifBlank { "${AppStrings.t("Cicilan", "Installment")} ${plan.provider}" },
             sourceType = DebtSourceType.INSTALLMENT_PLAN,
             remainingBalance = remainingPrincipal,
             interestRatePercent = 0.0, // PayLater contracts typically bake fees into fixed installments
             minMonthlyPayment = plan.installmentAmount.coerceAtMost(remainingPrincipal),
-            dueDateString = plan.nextDueDate.ifBlank { "Tgl ${plan.anchorDay} tiap bulan" },
+            dueDateString = plan.nextDueDate.ifBlank { AppStrings.t("Tgl ${plan.anchorDay} tiap bulan", "Day ${plan.anchorDay} each month") },
             daysUntilDue = days,
             isUrgent = days <= 5,
             hasVerifiedInterest = false,
@@ -314,7 +314,10 @@ object DebtPriorityEngine {
                 estimatedMonthsToDebtFree = 0,
                 milestones = emptyList(),
                 unverifiedInterestCount = 0,
-                summaryExplanation = "Selamat! Anda tidak memiliki kewajiban utang atau cicilan aktif saat ini."
+                summaryExplanation = AppStrings.t(
+                    "Selamat! Anda tidak memiliki kewajiban utang atau cicilan aktif saat ini.",
+                    "Congratulations! You have no active debts or installment liabilities at this time."
+                )
             )
         }
 
@@ -357,17 +360,17 @@ object DebtPriorityEngine {
             val reason = buildString {
                 if (rank == 1) {
                     if (debt.hasVerifiedInterest) {
-                        append("Target Utama (Bunga Tertinggi ${debt.interestRatePercent}%)")
+                        append(AppStrings.t("Target Utama (Bunga Tertinggi ${debt.interestRatePercent}%)", "Primary Target (Highest Interest ${debt.interestRatePercent}%)"))
                     } else if (debt.isUrgent) {
-                        append("Target Utama (Jatuh Tempo Mendekat dalam ${debt.daysUntilDue} hari)")
+                        append(AppStrings.t("Target Utama (Jatuh Tempo Mendekat dalam ${debt.daysUntilDue} hari)", "Primary Target (Due in ${debt.daysUntilDue} days)"))
                     } else {
-                        append("Target Pelunasan Utama")
+                        append(AppStrings.t("Target Pelunasan Utama", "Primary Payoff Target"))
                     }
                     if (extraAlloc > 0.0) {
-                        append(" — Menerima seluruh alokasi dana ekstra")
+                        append(AppStrings.t(" — Menerima seluruh alokasi dana ekstra", " — Receives all extra debt budget allocation"))
                     }
                 } else {
-                    append("Prioritas #$rank (Bayar cicilan minimum bulanan)")
+                    append(AppStrings.t("Prioritas #$rank (Bayar cicilan minimum bulanan)", "Priority #$rank (Pay minimum monthly installment)"))
                 }
             }
 

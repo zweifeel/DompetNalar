@@ -79,7 +79,11 @@ object TransactionDraftManager {
             targetWallet = command.targetWallet,
             timestamp = command.timestamp,
             detectedDateText = command.detectedDateText,
-            note = if (command.detectedDateText != null) "Dicatat via Chatbot Lokal • Tanggal: ${command.detectedDateText}" else "Dicatat otomatis via Chatbot DompetNalar",
+            note = if (command.detectedDateText != null) {
+                com.example.util.AppStrings.t("Dicatat via Chatbot Lokal • Tanggal: ${command.detectedDateText}", "Recorded via Local Chatbot • Date: ${command.detectedDateText}")
+            } else {
+                com.example.util.AppStrings.t("Dicatat otomatis via Chatbot DompetNalar", "Automatically recorded via DompetNalar Chatbot")
+            },
             tags = "#" + command.categoryName.split(" ").firstOrNull()?.lowercase().orEmpty(),
             ownerUserId = ownerUserId
         )
@@ -142,31 +146,31 @@ object TransactionDraftManager {
             false
         }
         if (!isUnlocked) {
-            return Result.failure(SecurityException("Akses ditolak: Fitur SmartMaster diperlukan untuk menyimpan transaksi melalui AI."))
+            return Result.failure(SecurityException(com.example.util.AppStrings.t("Akses ditolak: Fitur SmartMaster diperlukan untuk menyimpan transaksi melalui AI.", "Access denied: SmartMaster feature required to save transactions via AI.")))
         }
 
         if (userId <= 0L) {
-            return Result.failure(SecurityException("Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI."))
+            return Result.failure(SecurityException(com.example.util.AppStrings.t("Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI.", "Access denied: Invalid user identity for AI execution.")))
         }
 
         val draft = synchronized(activeDrafts) { activeDrafts[draftId] }
-            ?: return Result.failure(IllegalStateException("Draft transaksi tidak ditemukan."))
+            ?: return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Draft transaksi tidak ditemukan.", "Transaction draft not found.")))
 
         // Strict ownership invariant: userId > 0L && draft.ownerUserId > 0L && draft.ownerUserId == userId
         if (draft.ownerUserId <= 0L || draft.ownerUserId != userId) {
-            return Result.failure(SecurityException("Akses ditolak: Draft transaksi tidak memiliki pemilik sah atau bukan milik pengguna aktif."))
+            return Result.failure(SecurityException(com.example.util.AppStrings.t("Akses ditolak: Draft transaksi tidak memiliki pemilik sah atau bukan milik pengguna aktif.", "Access denied: Transaction draft has no valid owner or does not belong to active user.")))
         }
 
         if (draft.status == DraftStatus.CONFIRMED) {
-            return Result.failure(IllegalStateException("Transaksi ini sudah berhasil disimpan sebelumnya."))
+            return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Transaksi ini sudah berhasil disimpan sebelumnya.", "This transaction has already been saved.")))
         }
 
         if (draft.status == DraftStatus.CANCELLED) {
-            return Result.failure(IllegalStateException("Draft transaksi ini telah dibatalkan."))
+            return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Draft transaksi ini telah dibatalkan.", "This transaction draft was cancelled.")))
         }
 
         if (System.currentTimeMillis() - draft.createdAt > DRAFT_MAX_AGE_MS) {
-            return Result.failure(IllegalStateException("Draft transaksi telah kedaluwarsa. Silakan masukkan kembali transaksi Anda."))
+            return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Draft transaksi telah kedaluwarsa. Silakan masukkan kembali transaksi Anda.", "Transaction draft has expired. Please enter your transaction again.")))
         }
 
         val item = TransactionItem(

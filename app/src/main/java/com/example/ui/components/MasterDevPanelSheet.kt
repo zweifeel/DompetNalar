@@ -143,7 +143,7 @@ fun MasterDevPanelSheet(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Panel Master Dev",
+                                text = com.example.util.AppStrings.t("Panel Master Dev", "Master Dev Panel"),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -163,7 +163,7 @@ fun MasterDevPanelSheet(
                             }
                         }
                         Text(
-                            text = "Kelola ${users.size} akun, durasi membership & approval Smart Master 👑",
+                            text = com.example.util.AppStrings.t("Kelola ${users.size} akun, durasi membership & approval Smart Master 👑", "Manage ${users.size} accounts, membership duration & Smart Master approval 👑"),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -181,12 +181,12 @@ fun MasterDevPanelSheet(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Cari User ID, nama, atau email pengguna...") },
+                placeholder = { Text(com.example.util.AppStrings.t("Cari User ID, nama, atau email pengguna...", "Search User ID, name, or user email...")) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Hapus pencarian")
+                            Icon(Icons.Default.Close, contentDescription = com.example.util.AppStrings.t("Hapus pencarian", "Clear search"))
                         }
                     }
                 },
@@ -209,7 +209,7 @@ fun MasterDevPanelSheet(
                     FilterChip(
                         selected = selectedRoleFilter == null,
                         onClick = { selectedRoleFilter = null },
-                        label = { Text("Semua", fontSize = 11.sp) }
+                        label = { Text(com.example.util.AppStrings.t("Semua", "All"), fontSize = 11.sp) }
                     )
                     FilterChip(
                         selected = selectedRoleFilter == UserRole.FREE_MEMBER,
@@ -223,7 +223,7 @@ fun MasterDevPanelSheet(
                     )
                 }
                 Text(
-                    text = "${filteredUsers.size} dari ${users.size}",
+                    text = "${filteredUsers.size} ${com.example.util.AppStrings.t("dari", "of")} ${users.size}",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -248,7 +248,7 @@ fun MasterDevPanelSheet(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (searchQuery.isNotBlank()) "Tidak ada pengguna yang cocok dengan \"$searchQuery\"" else "Tidak ada pengguna pada kategori ini",
+                            text = if (searchQuery.isNotBlank()) com.example.util.AppStrings.t("Tidak ada pengguna yang cocok dengan \"$searchQuery\"", "No users matching \"$searchQuery\"") else com.example.util.AppStrings.t("Tidak ada pengguna pada kategori ini", "No users in this category"),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -287,7 +287,7 @@ fun MasterDevPanelSheet(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Stars, contentDescription = null, tint = GoldAccent)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pilih Durasi Smart Master", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(com.example.util.AppStrings.t("Pilih Durasi Smart Master", "Select Smart Master Duration"), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             },
             text = {
@@ -301,7 +301,7 @@ fun MasterDevPanelSheet(
 
                     HorizontalDivider()
 
-                    Text("Preset Durasi:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(com.example.util.AppStrings.t("Preset Durasi:", "Duration Presets:"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     val presets = listOf(7L, 14L, 30L, 90L, 180L, 365L)
                     Row(
@@ -316,7 +316,7 @@ fun MasterDevPanelSheet(
                                     selectedDurationDays = days
                                     customDurationError = null
                                 },
-                                label = { Text("$days H", fontSize = 11.sp) },
+                                label = { Text("$days ${com.example.util.AppStrings.t("H", "D")}", fontSize = 11.sp) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -333,7 +333,7 @@ fun MasterDevPanelSheet(
                                     selectedDurationDays = days
                                     customDurationError = null
                                 },
-                                label = { Text("$days H", fontSize = 11.sp) },
+                                label = { Text("$days ${com.example.util.AppStrings.t("H", "D")}", fontSize = 11.sp) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -342,7 +342,7 @@ fun MasterDevPanelSheet(
                     FilterChip(
                         selected = isCustomDurationSelected,
                         onClick = { isCustomDurationSelected = true },
-                        label = { Text("Durasi Khusus (Kustom)", fontSize = 11.sp) },
+                        label = { Text(com.example.util.AppStrings.t("Durasi Khusus (Kustom)", "Custom Duration"), fontSize = 11.sp) },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -353,8 +353,8 @@ fun MasterDevPanelSheet(
                                 customDurationInput = it.filter { char -> char.isDigit() }
                                 customDurationError = null
                             },
-                            label = { Text("Jumlah Hari (1 - 3650)") },
-                            placeholder = { Text("Contoh: 45") },
+                            label = { Text(com.example.util.AppStrings.t("Jumlah Hari (1 - 3650)", "Number of Days (1 - 3650)")) },
+                            placeholder = { Text(com.example.util.AppStrings.t("Contoh: 45", "e.g. 45")) },
                             isError = customDurationError != null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
@@ -400,7 +400,7 @@ fun MasterDevPanelSheet(
         val (targetUser, days) = userPendingConfirmation!!
         val now = System.currentTimeMillis()
         val newExpiry = now + (days * 86400000L)
-        val sdf = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("id", "ID"))
+        val sdf = SimpleDateFormat("dd MMMM yyyy, HH:mm", com.example.util.LocaleHelper.getActiveLocale())
 
         AlertDialog(
             onDismissRequest = { userPendingConfirmation = null },
@@ -408,13 +408,13 @@ fun MasterDevPanelSheet(
             title = { Text(com.example.util.AppStrings.t("Konfirmasi Pemberian Membership", "Confirm Membership Grant"), fontWeight = FontWeight.Bold, fontSize = 16.sp) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Harap tinjau detail perubahan sebelum menyimpan:", fontSize = 12.sp)
+                    Text(com.example.util.AppStrings.t("Harap tinjau detail perubahan sebelum menyimpan:", "Please review change details before saving:"), fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("• Target Pengguna: [ID #${targetUser.id}] ${targetUser.username}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    Text("• ${com.example.util.AppStrings.t("Target Pengguna:", "Target User:")} [ID #${targetUser.id}] ${targetUser.username}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     Text("• Email: ${targetUser.email}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("• Status Sebelumnya: ${targetUser.role.displayName}", fontSize = 11.sp)
-                    Text("• Durasi Tambahan: $days Hari", fontWeight = FontWeight.Bold, color = IncomeGreenDark, fontSize = 12.sp)
-                    Text("• Masa Berlaku Baru: ${sdf.format(Date(newExpiry))}", fontSize = 11.sp)
+                    Text("• ${com.example.util.AppStrings.t("Status Sebelumnya:", "Previous Status:")} ${targetUser.role.displayName}", fontSize = 11.sp)
+                    Text("• ${com.example.util.AppStrings.t("Durasi Tambahan:", "Additional Duration:")} $days ${com.example.util.AppStrings.t("Hari", "Days")}", fontWeight = FontWeight.Bold, color = IncomeGreenDark, fontSize = 12.sp)
+                    Text("• ${com.example.util.AppStrings.t("Masa Berlaku Baru:", "New Expiry Date:")} ${sdf.format(Date(newExpiry))}", fontSize = 11.sp)
                 }
             },
             confirmButton = {
@@ -445,7 +445,10 @@ fun MasterDevPanelSheet(
             title = { Text(com.example.util.AppStrings.t("Konfirmasi Cabut Membership", "Confirm Membership Revocation"), fontWeight = FontWeight.Bold, fontSize = 16.sp) },
             text = {
                 Text(
-                    text = "Apakah Anda yakin ingin mencabut status Smart Master dari pengguna [ID #${targetUser.id}] ${targetUser.username} (${targetUser.email})? Akun ini akan dikembalikan ke status Free Member.",
+                    text = com.example.util.AppStrings.t(
+                        "Apakah Anda yakin ingin mencabut status Smart Master dari pengguna [ID #${targetUser.id}] ${targetUser.username} (${targetUser.email})? Akun ini akan dikembalikan ke status Free Member.",
+                        "Are you sure you want to revoke Smart Master status from user [ID #${targetUser.id}] ${targetUser.username} (${targetUser.email})? This account will be reverted to Free Member."
+                    ),
                     fontSize = 12.sp
                 )
             },
@@ -457,7 +460,7 @@ fun MasterDevPanelSheet(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {
-                    Text("Ya, Cabut Membership")
+                    Text(com.example.util.AppStrings.t("Ya, Cabut Membership", "Yes, Revoke Membership"))
                 }
             },
             dismissButton = {
@@ -579,7 +582,7 @@ fun UserManagementCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Masa Aktif: ${entitlementStatus.getFormattedExpiry()}",
+                    text = "${com.example.util.AppStrings.t("Masa Aktif:", "Active Period:")} ${entitlementStatus.getFormattedExpiry()}",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -590,7 +593,7 @@ fun UserManagementCard(
             // Action Buttons
             if (user.role == UserRole.MASTER_DEV) {
                 Text(
-                    text = "👑 Akun Master Developer (Akses Penuh Tanpa Batas)",
+                    text = com.example.util.AppStrings.t("👑 Akun Master Developer (Akses Penuh Tanpa Batas)", "👑 Master Developer Account (Unlimited Full Access)"),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFD97706)
@@ -612,7 +615,7 @@ fun UserManagementCard(
                         Icon(Icons.Default.Stars, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (user.role == UserRole.SMART_MASTER) "Perpanjang / Edit 👑" else "Beri Smart Master 👑",
+                            text = if (user.role == UserRole.SMART_MASTER) com.example.util.AppStrings.t("Perpanjang / Edit 👑", "Extend / Edit 👑") else com.example.util.AppStrings.t("Beri Smart Master 👑", "Grant Smart Master 👑"),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -627,7 +630,7 @@ fun UserManagementCard(
                                 .height(36.dp)
                                 .testTag("btn_downgrade_member_${user.id}")
                         ) {
-                            Text("Cabut", fontSize = 11.sp, color = ExpenseRed)
+                            Text(com.example.util.AppStrings.t("Cabut", "Revoke"), fontSize = 11.sp, color = ExpenseRed)
                         }
                     }
                 }

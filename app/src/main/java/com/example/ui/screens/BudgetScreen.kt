@@ -133,23 +133,39 @@ fun BudgetScreen(
     if (totalLimitAmount > 0.0) {
         val pct = totalExpenseAmount / totalLimitAmount
         if (pct >= 0.85) {
-            alertsList.add("🔴 Anggaran bulanan gabungan telah melampaui 85%! Pengeluaran saat ini: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}.")
+            alertsList.add(com.example.util.AppStrings.t(
+                "🔴 Anggaran bulanan gabungan telah melampaui 85%! Pengeluaran saat ini: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}.",
+                "🔴 Combined monthly budget exceeded 85%! Current spending: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} of limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}."
+            ))
         } else if (pct >= 0.70) {
-            alertsList.add("⚠️ Waspada! Pengeluaran bulanan gabungan telah melampaui 70%: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}.")
+            alertsList.add(com.example.util.AppStrings.t(
+                "⚠️ Waspada! Pengeluaran bulanan gabungan telah melampaui 70%: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} dari limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}.",
+                "⚠️ Warning! Combined monthly spending exceeded 70%: ${CurrencyFormatter.formatRupiah(totalExpenseAmount)} of limit ${CurrencyFormatter.formatRupiah(totalLimitAmount)}."
+            ))
         }
     }
 
     // Category limits check
     categoryLimitsMap.forEach { (catName, limit) ->
         val spent = categoryExpensesMap[catName] ?: 0.0
+        val translatedCat = com.example.util.AppStrings.translateCategory(catName)
         if (limit > 0.0) {
             val pct = spent / limit
             if (pct >= 1.0) {
-                alertsList.add("🔴 Overbudget di Kategori [$catName]! Anda telah menghabiskan ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.")
+                alertsList.add(com.example.util.AppStrings.t(
+                    "🔴 Overbudget di Kategori [$catName]! Anda telah menghabiskan ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.",
+                    "🔴 Over budget in Category [$translatedCat]! You spent ${CurrencyFormatter.formatRupiah(spent)} of limit ${CurrencyFormatter.formatRupiah(limit)}."
+                ))
             } else if (pct >= 0.85) {
-                alertsList.add("🔴 Limit Kategori [$catName] kritis (melampaui 85%)! Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.")
+                alertsList.add(com.example.util.AppStrings.t(
+                    "🔴 Limit Kategori [$catName] kritis (melampaui 85%)! Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.",
+                    "🔴 Critical Category [$translatedCat] limit (exceeded 85%)! Used ${CurrencyFormatter.formatRupiah(spent)} of limit ${CurrencyFormatter.formatRupiah(limit)}."
+                ))
             } else if (pct >= 0.70) {
-                alertsList.add("⚠️ Waspada! Kategori [$catName] telah melampaui 70%: Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.")
+                alertsList.add(com.example.util.AppStrings.t(
+                    "⚠️ Waspada! Kategori [$catName] telah melampaui 70%: Terpakai ${CurrencyFormatter.formatRupiah(spent)} dari limit ${CurrencyFormatter.formatRupiah(limit)}.",
+                    "⚠️ Warning! Category [$translatedCat] exceeded 70%: Used ${CurrencyFormatter.formatRupiah(spent)} of limit ${CurrencyFormatter.formatRupiah(limit)}."
+                ))
             }
         }
     }

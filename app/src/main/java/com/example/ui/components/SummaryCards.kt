@@ -126,7 +126,7 @@ fun MainBalanceCard(
                         ) {
                             Icon(
                                 imageVector = if (accountMode == AccountMode.PERSONAL) Icons.Default.Person else Icons.Default.BusinessCenter,
-                                contentDescription = "Mode Akun",
+                                contentDescription = AppStrings.t("Mode Akun", "Account Mode"),
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )

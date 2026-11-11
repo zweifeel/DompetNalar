@@ -418,34 +418,34 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _authError.value = null
             if (!BuildConfig.DEBUG) {
-                _authError.value = "Pengaturan awal kata sandi developer hanya diizinkan pada build Debug."
+                _authError.value = AppStrings.t("Pengaturan awal kata sandi developer hanya diizinkan pada build Debug.", "Developer initial password setup is only allowed on Debug builds.")
                 return@launch
             }
             val trimmedNew = newPassword.trim()
             val trimmedConfirm = confirmPassword.trim()
 
             if (trimmedNew.isEmpty()) {
-                _authError.value = "Kata sandi tidak boleh kosong."
+                _authError.value = AppStrings.t("Kata sandi tidak boleh kosong.", "Password cannot be empty.")
                 return@launch
             }
             if (trimmedNew.length < 6) {
-                _authError.value = "Kata sandi minimal 6 karakter."
+                _authError.value = AppStrings.t("Kata sandi minimal 6 karakter.", "Password must be at least 6 characters.")
                 return@launch
             }
             if (trimmedNew != trimmedConfirm) {
-                _authError.value = "Konfirmasi kata sandi tidak cocok."
+                _authError.value = AppStrings.t("Konfirmasi kata sandi tidak cocok.", "Password confirmation does not match.")
                 return@launch
             }
 
             if (!BuildConfig.DEBUG) {
-                _authError.value = "Pengaturan awal kata sandi tidak diizinkan pada build release."
+                _authError.value = AppStrings.t("Pengaturan awal kata sandi tidak diizinkan pada build release.", "Initial password setup not allowed on release builds.")
                 return@launch
             }
 
             var masterDev = userRepository.getUserByEmail(com.example.config.DeveloperAccountConfig.CONTACT_DEV_EMAIL)
                 ?: userRepository.getUserByEmail(com.example.config.DeveloperAccountConfig.OWNER_PROJECT_EMAIL)
             if (masterDev == null || masterDev.role != UserRole.MASTER_DEV || masterDev.passwordHash.isNotEmpty()) {
-                _authError.value = "Pengaturan awal kata sandi tidak diizinkan."
+                _authError.value = AppStrings.t("Pengaturan awal kata sandi tidak diizinkan.", "Initial password setup is not allowed.")
                 return@launch
             }
 
@@ -456,7 +456,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             SessionManager.login(updated)
             _isInitialMasterSetupOpen.value = false
             _isAuthModalOpen.value = false
-            _isSuccessToast.value = "Kata sandi Master Developer berhasil dibuat! 👑"
+            _isSuccessToast.value = AppStrings.t("Kata sandi Master Developer berhasil dibuat! 👑", "Master Developer password created! 👑")
         }
     }
 
@@ -465,27 +465,27 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _changePasswordError.value = null
             val user = currentUser.value
             if (user == null || user.isGuest) {
-                _changePasswordError.value = "Pengguna tamu tidak dapat mengubah kata sandi."
+                _changePasswordError.value = AppStrings.t("Pengguna tamu tidak dapat mengubah kata sandi.", "Guest users cannot change password.")
                 return@launch
             }
             if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-                _changePasswordError.value = "Semua bidang kata sandi wajib diisi."
+                _changePasswordError.value = AppStrings.t("Semua bidang kata sandi wajib diisi.", "All password fields are required.")
                 return@launch
             }
             if (!PasswordHasher.verifyPassword(currentPass, user.passwordHash)) {
-                _changePasswordError.value = "Kata sandi saat ini salah."
+                _changePasswordError.value = AppStrings.t("Kata sandi saat ini salah.", "Current password is incorrect.")
                 return@launch
             }
             if (newPass.length < 6) {
-                _changePasswordError.value = "Kata sandi baru minimal 6 karakter."
+                _changePasswordError.value = AppStrings.t("Kata sandi baru minimal 6 karakter.", "New password must be at least 6 characters.")
                 return@launch
             }
             if (newPass != confirmPass) {
-                _changePasswordError.value = "Konfirmasi kata sandi baru tidak cocok."
+                _changePasswordError.value = AppStrings.t("Konfirmasi kata sandi baru tidak cocok.", "New password confirmation does not match.")
                 return@launch
             }
             if (newPass == currentPass) {
-                _changePasswordError.value = "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+                _changePasswordError.value = AppStrings.t("Kata sandi baru tidak boleh sama dengan kata sandi saat ini.", "New password cannot be the same as current password.")
                 return@launch
             }
 
@@ -495,7 +495,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
             SessionManager.login(updatedUser)
             _isChangePasswordOpen.value = false
-            _isSuccessToast.value = "Kata sandi berhasil diperbarui! 🔒"
+            _isSuccessToast.value = AppStrings.t("Kata sandi berhasil diperbarui! 🔒", "Password updated successfully! 🔒")
         }
     }
 
@@ -506,7 +506,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val trimmedPass = password.trim()
 
             if (trimmedId.isEmpty()) {
-                _authError.value = "Nama pengguna atau email tidak boleh kosong."
+                _authError.value = AppStrings.t("Nama pengguna atau email tidak boleh kosong.", "Username or email cannot be empty.")
                 return@launch
             }
 
@@ -514,7 +514,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             var user = userRepository.getUserByIdentifier(trimmedId)
             if (user == null && com.example.config.DeveloperAccountConfig.isMasterDevIdentifier(trimmedId)) {
                 if (!isDebug) {
-                    _authError.value = "Akses developer pada rilis publik memerlukan autentikasi resmi Google Sign-In."
+                    _authError.value = AppStrings.t("Akses developer pada rilis publik memerlukan autentikasi resmi Google Sign-In.", "Developer access on public release requires official Google Sign-In authentication.")
                     return@launch
                 }
             }
@@ -532,12 +532,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 // Fresh install Master Dev initial password setup check
                 if (user.role == UserRole.MASTER_DEV && user.passwordHash.isEmpty()) {
                     if (isDebug) {
-                        _authError.value = "Akun Master Developer belum memiliki kata sandi. Silakan buat kata sandi utama."
+                        _authError.value = AppStrings.t(
+                            "Akun Master Developer belum memiliki kata sandi. Silakan buat kata sandi utama.",
+                            "Master Developer account has no password yet. Please set a master password."
+                        )
                         _isInitialMasterSetupOpen.value = true
                         return@launch
                     } else {
                         // Pada build Release, akun tanpa password tidak boleh diklaim secara lokal
-                        _authError.value = "Akses developer pada rilis publik memerlukan autentikasi resmi Google Sign-In."
+                        _authError.value = AppStrings.t(
+                            "Akses developer pada rilis publik memerlukan autentikasi resmi Google Sign-In.",
+                            "Developer access in public release requires official Google Sign-In authentication."
+                        )
                         return@launch
                     }
                 }
@@ -545,13 +551,16 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 // Pada build Release, login akun Master Dev dengan kredensial lokal ditolak;
                 // Wajib menggunakan autentikasi resmi Google Sign-In.
                 if (!isDebug && user.role == UserRole.MASTER_DEV) {
-                    _authError.value = "Akses developer pada rilis publik memerlukan autentikasi resmi Google Sign-In."
+                    _authError.value = AppStrings.t(
+                        "Akses developer pada rilis publik memerlukan autentikasi resmi Google Sign-In.",
+                        "Developer access in public release requires official Google Sign-In authentication."
+                    )
                     return@launch
                 }
 
                 // Strict check: reject blank passwords
                 if (trimmedPass.isEmpty()) {
-                    _authError.value = "Kata sandi tidak boleh kosong."
+                    _authError.value = AppStrings.t("Kata sandi tidak boleh kosong.", "Password cannot be empty.")
                     return@launch
                 }
 
@@ -559,15 +568,21 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     SessionManager.login(user)
                     _isAuthModalOpen.value = false
                     if (user.role == UserRole.MASTER_DEV) {
-                        _isSuccessToast.value = "Selamat Datang Master Developer ${com.example.config.AppConfig.APP_AUTHOR}! 👑"
+                        _isSuccessToast.value = AppStrings.t(
+                            "Selamat Datang Master Developer ${com.example.config.AppConfig.APP_AUTHOR}! 👑",
+                            "Welcome Master Developer ${com.example.config.AppConfig.APP_AUTHOR}! 👑"
+                        )
                     } else {
-                        _isSuccessToast.value = "Berhasil masuk sebagai ${user.username}"
+                        _isSuccessToast.value = AppStrings.t(
+                            "Berhasil masuk sebagai ${user.username}",
+                            "Successfully signed in as ${user.username}"
+                        )
                     }
                 } else {
-                    _authError.value = "Kata sandi salah. Silakan coba lagi."
+                    _authError.value = AppStrings.t("Kata sandi salah. Silakan coba lagi.", "Incorrect password. Please try again.")
                 }
             } else {
-                _authError.value = "Akun tidak ditemukan. Silakan lakukan registrasi."
+                _authError.value = AppStrings.t("Akun tidak ditemukan. Silakan lakukan registrasi.", "Account not found. Please register.")
             }
         }
     }
@@ -581,7 +596,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _authError.value = null
             if (enteredOtp != _pendingOtpCode.value) {
-                _authError.value = "Kode OTP tidak valid atau salah."
+                _authError.value = AppStrings.t("Kode OTP tidak valid atau salah.", "Invalid or incorrect OTP code.")
                 return@launch
             }
 
@@ -592,20 +607,26 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 com.example.config.DeveloperAccountConfig.isMasterDevIdentifier(trimmedEmail) ||
                 com.example.config.DeveloperAccountConfig.isMasterDevIdentifier(trimmedUsername)
             ) {
-                _authError.value = "Identitas akun ini telah dicadangkan untuk peninjauan atau administrasi sistem."
+                _authError.value = AppStrings.t(
+                    "Identitas akun ini telah dicadangkan untuk peninjauan atau administrasi sistem.",
+                    "This account identifier is reserved for review or system administration."
+                )
                 return@launch
             }
 
             val existingEmail = userRepository.getUserByIdentifier(trimmedEmail)
             if (existingEmail != null) {
-                _authError.value = "Email sudah terdaftar. Silakan login."
+                _authError.value = AppStrings.t("Email sudah terdaftar. Silakan login.", "Email is already registered. Please log in.")
                 return@launch
             }
 
             if (trimmedUsername.isNotBlank()) {
                 val existingUsername = userRepository.getUserByIdentifier(trimmedUsername)
                 if (existingUsername != null) {
-                    _authError.value = "Nama pengguna '$trimmedUsername' sudah terdaftar. Silakan gunakan nama pengguna lain."
+                    _authError.value = AppStrings.t(
+                        "Nama pengguna '$trimmedUsername' sudah terdaftar. Silakan gunakan nama pengguna lain.",
+                        "Username '$trimmedUsername' is already taken. Please choose another username."
+                    )
                     return@launch
                 }
             }
@@ -725,7 +746,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 if (googleIdTokenCredential == null) {
-                    val err = "Gagal memproses kredensial ID Token dari respon akun Google."
+                    val err = AppStrings.t(
+                        "Gagal memproses kredensial ID Token dari respon akun Google.",
+                        "Failed to process ID Token credential from Google account response."
+                    )
                     _authError.value = err
                     if (openModalOnError) _isAuthModalOpen.value = true
                     onError?.invoke(err)
@@ -733,7 +757,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 val email = googleIdTokenCredential.id
-                val displayName = googleIdTokenCredential.displayName ?: "Pengguna Google"
+                val displayName = googleIdTokenCredential.displayName ?: AppStrings.t("Pengguna Google", "Google User")
                 val photoUri = googleIdTokenCredential.profilePictureUri?.toString()
 
                 if (email.isBlank()) {
@@ -832,7 +856,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     } catch (e: Exception) {
                         Log.w("AuthViewModel", "Firebase Auth credential exchange failed: ${e.message}", e)
-                        firebaseAuthErrorMessage = e.localizedMessage ?: e.message ?: "Pertukaran kredensial Firebase Auth gagal"
+                        firebaseAuthErrorMessage = e.localizedMessage ?: e.message ?: AppStrings.t("Pertukaran kredensial Firebase Auth gagal", "Firebase Auth credential exchange failed")
                     }
                 }
 
@@ -849,19 +873,21 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 syncTesterGrant(email, force = true)
 
                 if (isFirebaseReady && !idToken.isNullOrBlank() && !isFirebaseAuthSuccessful) {
-                    val safeErrorMsg = "Sesi lokal aktif, namun autentikasi Firebase Cloud gagal: ${firebaseAuthErrorMessage ?: "Layanan Firebase tidak dapat memvalidasi token"}"
+                    val prefix = AppStrings.t("Sesi lokal aktif, namun autentikasi Firebase Cloud gagal: ", "Local session active, but Firebase Cloud authentication failed: ")
+                    val fallback = AppStrings.t("Layanan Firebase tidak dapat memvalidasi token", "Firebase service could not validate token")
+                    val safeErrorMsg = "$prefix${firebaseAuthErrorMessage ?: fallback}"
                     _authError.value = safeErrorMsg
-                    _isSuccessToast.value = "Masuk lokal berhasil (Cloud belum terhubung)"
+                    _isSuccessToast.value = AppStrings.t("Masuk lokal berhasil (Cloud belum terhubung)", "Local sign-in successful (Cloud not connected yet)")
                     onError?.invoke(safeErrorMsg)
                 } else {
                     _isSuccessToast.value = if (isTrustedDev) {
                         if (isFirebaseAuthSuccessful) {
-                            "Selamat Datang Master Developer 👑 ($email - Cloud Aktif)"
+                            AppStrings.t("Selamat Datang Master Developer 👑 ($email - Cloud Aktif)", "Welcome Master Developer 👑 ($email - Cloud Active)")
                         } else {
-                            "Selamat Datang Master Developer 👑 ($email)"
+                            AppStrings.t("Selamat Datang Master Developer 👑 ($email)", "Welcome Master Developer 👑 ($email)")
                         }
                     } else {
-                        "Berhasil masuk sebagai $displayName ($email)"
+                        AppStrings.t("Berhasil masuk sebagai $displayName ($email)", "Successfully signed in as $displayName ($email)")
                     }
                     onSuccess?.invoke()
                 }
@@ -871,7 +897,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _isAuthModalOpen.value = true
                 onCancel?.invoke()
             } catch (e: NoCredentialException) {
-                val msg = "Tidak ada akun Google yang dipilih atau aktif di perangkat ini. Silakan pastikan akun Google sudah login di pengaturan HP Anda."
+                val msg = AppStrings.t(
+                    "Tidak ada akun Google yang dipilih atau aktif di perangkat ini. Silakan pastikan akun Google sudah login di pengaturan HP Anda.",
+                    "No Google account selected or active on this device. Please ensure a Google account is logged in via device settings."
+                )
                 _authError.value = msg
                 if (openModalOnError) _isAuthModalOpen.value = true
                 onError?.invoke(msg)
@@ -893,21 +922,27 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
                 val msg = when {
                     isConfigConflict -> {
-                        "Konfigurasi opsi Google Sign-In tidak valid. Silakan hubungi pengembang aplikasi.\n" +
-                        "[Detail Teknis: ${rawMsg.ifBlank { e.type }}]"
+                        AppStrings.t(
+                            "Konfigurasi opsi Google Sign-In tidak valid. Silakan hubungi pengembang aplikasi.\n[Detail Teknis: ${rawMsg.ifBlank { e.type }}]",
+                            "Invalid Google Sign-In configuration. Please contact the app developer.\n[Technical Details: ${rawMsg.ifBlank { e.type }}]"
+                        )
                     }
                     is16OrMismatch -> {
-                        "Google Sign-In belum terhubung di Google Cloud Console.\n" +
-                        "Penyebab utama: Sidik jari sertifikat APK (SHA-1) atau Nama Paket (com.aistudio.finsmart.kptxvw) belum didaftarkan pada Android OAuth Client di Google Cloud Console, atau akun penguji belum ditambahkan ke Test Users.\n" +
-                        "[Detail Teknis: ${rawMsg.ifBlank { e.type }}]"
+                        AppStrings.t(
+                            "Google Sign-In belum terhubung di Google Cloud Console.\nPenyebab utama: Sidik jari sertifikat APK (SHA-1) atau Nama Paket (com.aistudio.finsmart.kptxvw) belum didaftarkan pada Android OAuth Client di Google Cloud Console, atau akun penguji belum ditambahkan ke Test Users.\n[Detail Teknis: ${rawMsg.ifBlank { e.type }}]",
+                            "Google Sign-In is not configured in Google Cloud Console.\nMain cause: APK certificate fingerprint (SHA-1) or Package Name (com.aistudio.finsmart.kptxvw) not registered in Android OAuth Client, or test account not in Test Users.\n[Technical Details: ${rawMsg.ifBlank { e.type }}]"
+                        )
                     }
                     isNetwork -> {
-                        "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda.\n" +
-                        "[Detail Teknis: ${rawMsg.ifBlank { e.type }}]"
+                        AppStrings.t(
+                            "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda.\n[Detail Teknis: ${rawMsg.ifBlank { e.type }}]",
+                            "Network connection dropped while reaching Google servers. Check your device's internet connection.\n[Technical Details: ${rawMsg.ifBlank { e.type }}]"
+                        )
                     }
                     else -> {
-                        "Gagal autentikasi Google: ${rawMsg.ifBlank { "Layanan Google Play Services menolak otorisasi." }}\n" +
-                        "[Detail Teknis: ${e.type}]"
+                        val authFail = AppStrings.t("Gagal autentikasi Google: ", "Google authentication failed: ")
+                        val authFallback = AppStrings.t("Layanan Google Play Services menolak otorisasi.", "Google Play Services denied authorization.")
+                        "$authFail${rawMsg.ifBlank { authFallback }}\n[Detail Teknis: ${e.type}]"
                     }
                 }
                 _authError.value = msg
@@ -918,16 +953,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val rawMsg = e.message ?: ""
                 val msg = when {
                     rawMsg.contains("Cannot be combined", ignoreCase = true) -> {
-                        "Konfigurasi opsi Google Sign-In tidak valid. Silakan hubungi pengembang aplikasi."
+                        AppStrings.t("Konfigurasi opsi Google Sign-In tidak valid. Silakan hubungi pengembang aplikasi.", "Invalid Google Sign-In configuration. Please contact app developer.")
                     }
                     rawMsg.contains("network", ignoreCase = true) ||
                     rawMsg.contains("timeout", ignoreCase = true) ||
                     rawMsg.contains("connect", ignoreCase = true) ||
                     rawMsg.contains("offline", ignoreCase = true) -> {
-                        "Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda."
+                        AppStrings.t("Koneksi jaringan terputus saat menghubungi server Google. Periksa koneksi internet perangkat Anda.", "Network connection dropped while reaching Google servers. Check your internet connection.")
                     }
                     else -> {
-                        "Gagal masuk dengan Google: ${rawMsg.ifBlank { "Otorisasi akun ditolak atau tidak tersedia" }}"
+                        val prefix = AppStrings.t("Gagal masuk dengan Google: ", "Failed to sign in with Google: ")
+                        val fallback = AppStrings.t("Otorisasi akun ditolak atau tidak tersedia", "Account authorization denied or unavailable")
+                        "$prefix${rawMsg.ifBlank { fallback }}"
                     }
                 }
                 _authError.value = msg
@@ -981,7 +1018,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
             SessionManager.login(user)
             _isAuthModalOpen.value = false
-            _isSuccessToast.value = "Berhasil masuk via Akun Google (Mock)"
+            _isSuccessToast.value = AppStrings.t("Berhasil masuk via Akun Google (Mock)", "Successfully signed in via Google Account (Mock)")
         }
     }
 
@@ -995,7 +1032,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             SessionManager.startGuestSession(database.userDao())
             _singleFeaturePassCredits.value = 0
             _isAuthModalOpen.value = false
-            _isSuccessToast.value = "Mode Tamu aktif"
+            _isSuccessToast.value = AppStrings.t("Mode Tamu aktif", "Guest Mode active")
         }
     }
 
@@ -1047,7 +1084,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _adRewardRemainingSeconds.value = 0L
             SessionManager.logout()
             _isAuthModalOpen.value = true
-            _isSuccessToast.value = "Anda berhasil keluar dari akun."
+            _isSuccessToast.value = AppStrings.t("Anda berhasil keluar dari akun.", "You have successfully logged out.")
             onComplete?.invoke()
         }
     }
@@ -1316,7 +1353,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun grantStreakMilestoneReward(durationHours: Int = 5, actionPassCredits: Int = 3) {
         val user = currentUser.value
         if (user == null) {
-            _authError.value = "Sesi pengguna tidak aktif."
+            _authError.value = AppStrings.t("Sesi pengguna tidak aktif.", "User session inactive.")
             return
         }
 
@@ -1325,9 +1362,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val remainingHours = getStreakRewardRemainingHours(user)
             val streak = _gamificationState.value.dailyStreak
             val msg = if (streak < 7) {
-                "Streak harian Anda belum mencapai 7 hari (saat ini: $streak hari)."
+                AppStrings.t("Streak harian Anda belum mencapai 7 hari (saat ini: $streak hari).", "Your daily streak has not reached 7 days yet (current: $streak day(s)).")
             } else {
-                "Reward streak 7 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam."
+                AppStrings.t("Reward streak 7 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam.", "7-day streak reward has already been claimed. Available again in ~$remainingHours hour(s).")
             }
             _authError.value = msg
             return
@@ -1344,7 +1381,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
             if (user.role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(user.email)) {
                 addSingleFeaturePassCredit(actionPassCredits)
-                _isSuccessToast.value = "Hak Master Dev dipertahankan! Ditambahkan $actionPassCredits Action Pass Credits 👑"
+                _isSuccessToast.value = AppStrings.t(
+                    "Hak Master Dev dipertahankan! Ditambahkan $actionPassCredits Action Pass Credits 👑",
+                    "Master Dev privileges preserved! Added $actionPassCredits Action Pass Credits 👑"
+                )
                 return
             }
 
@@ -1364,7 +1404,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     userRepository.updateUserRole(user.id, UserRole.SMART_MASTER, rewardExpiry)
                 }
             }
-            _isSuccessToast.value = "🎉 Reward Streak 7 Hari Aktif: $durationHours Jam Smart Master Pass + ${actionPassCredits}x Action Pass Credits!"
+            _isSuccessToast.value = AppStrings.t(
+                "🎉 Reward Streak 7 Hari Aktif: $durationHours Jam Smart Master Pass + ${actionPassCredits}x Action Pass Credits!",
+                "🎉 7-Day Streak Reward Active: $durationHours Hours Smart Master Pass + ${actionPassCredits}x Action Pass Credits!"
+            )
         } finally {
             isClaimingStreakReward = false
         }
@@ -1407,7 +1450,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun grant30DayStreakMilestoneReward(durationHours: Int = 24) {
         val user = currentUser.value
         if (user == null || user.isGuest) {
-            _authError.value = "Mode Tamu tidak berhak mengklaim reward Smart Member. Silakan masuk dengan Akun Google."
+            _authError.value = AppStrings.t(
+                "Mode Tamu tidak berhak mengklaim reward Smart Member. Silakan masuk dengan Akun Google.",
+                "Guest mode cannot claim Smart Member rewards. Please sign in with Google."
+            )
             return
         }
 
@@ -1415,9 +1461,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val remainingHours = get30DayStreakRewardRemainingHours(user)
             val streak = _gamificationState.value.dailyStreak
             val msg = if (streak < 30) {
-                "Streak harian Anda belum mencapai 30 hari (saat ini: $streak hari)."
+                AppStrings.t("Streak harian Anda belum mencapai 30 hari (saat ini: $streak hari).", "Your daily streak has not reached 30 days yet (current: $streak day(s)).")
             } else {
-                "Reward streak 30 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam."
+                AppStrings.t("Reward streak 30 hari sudah diklaim. Tersedia kembali dalam ~$remainingHours jam.", "30-day streak reward has already been claimed. Available again in ~$remainingHours hour(s).")
             }
             _authError.value = msg
             return
@@ -1432,7 +1478,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             prefs.edit().putLong(key, now).apply()
 
             if (user.role == UserRole.MASTER_DEV || com.example.config.DeveloperAccountConfig.isTrustedDeveloperEmail(user.email)) {
-                _isSuccessToast.value = "Hak Master Dev dipertahankan seumur hidup! 👑"
+                _isSuccessToast.value = AppStrings.t("Hak Master Dev dipertahankan seumur hidup! 👑", "Master Dev privileges preserved for lifetime! 👑")
                 return
             }
 
@@ -1450,7 +1496,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     userRepository.updateUserRole(user.id, UserRole.SMART_MASTER, rewardExpiry)
                 }
             }
-            _isSuccessToast.value = "🎉 Selamat! Reward Streak 30 Hari Aktif: Akses Smart Member Gratis Selama $durationHours Jam!"
+            _isSuccessToast.value = AppStrings.t(
+                "🎉 Selamat! Reward Streak 30 Hari Aktif: Akses Smart Member Gratis Selama $durationHours Jam!",
+                "🎉 Congratulations! 30-Day Streak Reward Active: Free Smart Member Access for $durationHours Hours!"
+            )
         } finally {
             isClaimingStreakReward = false
         }
@@ -1526,7 +1575,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
             // Hanya tampilkan toast sukses untuk pembelian baru secara eksplisit, bukan pada startup/silent sync/duplicate callback
             if (isExplicitPurchase && isNewTransaction) {
-                _isSuccessToast.value = "Pembelian Google Play Berhasil! Status Smart Master 👑 Aktif."
+                _isSuccessToast.value = AppStrings.t(
+                    "Pembelian Google Play Berhasil! Status Smart Master 👑 Aktif.",
+                    "Google Play Purchase Successful! Smart Master 👑 Status Active."
+                )
             }
             Log.i("AuthViewModel", "Google Play purchase applied for user ${user.id}, product $productId, order $orderId, isExplicit=$isExplicitPurchase, isNew=$isNewTransaction")
         }
@@ -1830,7 +1882,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 SessionManager.login(current.copy(role = UserRole.SMART_MASTER, subscriptionExpiresAt = expiry))
             }
             logMasterDevAction(actor = current?.email ?: "MasterDev", targetId = userId, action = "UPGRADE", days = durationDays, expiry = expiry)
-            _isSuccessToast.value = "Berhasil: User #$userId di-upgrade ke Smart Master 👑 ($durationDays hari)"
+            _isSuccessToast.value = AppStrings.t(
+                "Berhasil: User #$userId di-upgrade ke Smart Master 👑 ($durationDays hari)",
+                "Success: User #$userId upgraded to Smart Master 👑 ($durationDays days)"
+            )
         }
     }
 
@@ -1841,7 +1896,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun downgradeUserToMember(userId: Long) {
         if (!isDeveloperAuthorized()) {
-            _authError.value = "Akses ditolak: Operasi ini membutuhkan hak istimewa Master Developer."
+            _authError.value = AppStrings.t(
+                "Akses ditolak: Operasi ini membutuhkan hak istimewa Master Developer.",
+                "Access denied: This operation requires Master Developer privileges."
+            )
             return
         }
         viewModelScope.launch {
@@ -1851,7 +1909,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 SessionManager.login(current.copy(role = UserRole.FREE_MEMBER, subscriptionExpiresAt = null))
             }
             logMasterDevAction(actor = current?.email ?: "MasterDev", targetId = userId, action = "DOWNGRADE", days = 0, expiry = null)
-            _isSuccessToast.value = "Status akun #$userId dikembalikan ke DompetNalar Member"
+            _isSuccessToast.value = AppStrings.t(
+                "Status akun #$userId dikembalikan ke DompetNalar Member",
+                "Account #$userId status restored to DompetNalar Member"
+            )
         }
     }
 
@@ -1862,7 +1923,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         onDeleted: () -> Unit
     ): Boolean {
         val user = currentUser.value ?: run {
-            val msg = "Tidak ada sesi pengguna aktif."
+            val msg = AppStrings.t("Tidak ada sesi pengguna aktif.", "No active user session.")
             _authError.value = msg
             onError?.invoke(msg)
             return false
@@ -1873,14 +1934,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         // Check password matching for password-based non-guest accounts
         if (requiresPassword) {
             if (trimmedPass.isEmpty()) {
-                val msg = "Kata sandi wajib diisi untuk konfirmasi keamanan."
+                val msg = AppStrings.t("Kata sandi wajib diisi untuk konfirmasi keamanan.", "Password is required for security confirmation.")
                 _authError.value = msg
                 onError?.invoke(msg)
                 return false
             }
             val isPasswordValid = PasswordHasher.verifyPassword(trimmedPass, user.passwordHash)
             if (!isPasswordValid) {
-                val msg = "Kata sandi salah. Penghapusan akun dibatalkan."
+                val msg = AppStrings.t("Kata sandi salah. Penghapusan akun dibatalkan.", "Incorrect password. Account deletion canceled.")
                 _authError.value = msg
                 onError?.invoke(msg)
                 return false
@@ -1905,7 +1966,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         Log.i("AuthViewModel", "Firebase Auth account successfully deleted from cloud.")
                     } catch (e: com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
-                        val errMsg = "Demi keamanan, penghapusan akun cloud memerlukan login terbaru. Silakan keluar dan login kembali sebelum menghapus akun."
+                        val errMsg = AppStrings.t(
+                            "Demi keamanan, penghapusan akun cloud memerlukan login terbaru. Silakan keluar dan login kembali sebelum menghapus akun.",
+                            "For security, cloud account deletion requires recent login. Please log out and log in again before deleting your account."
+                        )
                         Log.w("AuthViewModel", errMsg, e)
                         withContext(Dispatchers.Main) {
                             _authError.value = errMsg
@@ -1913,7 +1977,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         return@launch
                     } catch (e: Exception) {
-                        val errMsg = "Gagal menghapus akun di server cloud: ${e.localizedMessage ?: "Kesalahan jaringan"}. Penghapusan data lokal dibatalkan demi keamanan."
+                        val prefix = AppStrings.t("Gagal menghapus akun di server cloud: ", "Failed to delete account on cloud server: ")
+                        val fallback = AppStrings.t("Kesalahan jaringan", "Network error")
+                        val suffix = AppStrings.t(". Penghapusan data lokal dibatalkan demi keamanan.", ". Local data deletion canceled for security.")
+                        val errMsg = "$prefix${e.localizedMessage ?: fallback}$suffix"
                         Log.e("AuthViewModel", errMsg, e)
                         withContext(Dispatchers.Main) {
                             _authError.value = errMsg
@@ -1983,7 +2050,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     unlockedBadgeIds = setOf("rookie_planner")
                 )
                 _isDeleteAccountOpen.value = false
-                _isSuccessToast.value = "Akun dan seluruh data lokal berhasil dihapus secara permanen."
+                _isSuccessToast.value = AppStrings.t(
+                    "Akun dan seluruh data lokal berhasil dihapus secara permanen.",
+                    "Account and all local data permanently deleted."
+                )
                 onDeleted()
                 _isAuthModalOpen.value = true
             }
@@ -2131,7 +2201,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _authError.value = null
             val targetEmail = email.trim().ifBlank { currentUser.value?.email ?: "" }
             if (targetEmail.isBlank() || targetEmail.endsWith("@finsmart.local")) {
-                _authError.value = "Alamat email Google tidak valid. Masuk dengan akun Google terlebih dahulu."
+                _authError.value = AppStrings.t(
+                    "Alamat email Google tidak valid. Masuk dengan akun Google terlebih dahulu.",
+                    "Invalid Google email address. Please sign in with Google account first."
+                )
                 return@launch
             }
 
@@ -2143,19 +2216,23 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     GoogleDriveService.connect(getApplication(), targetEmail)
                     _isDriveConnected.value = true
                     _driveEmail.value = targetEmail
-                    _isSuccessToast.value = "Google Drive terhubung ke $targetEmail"
+                    _isSuccessToast.value = AppStrings.t("Google Drive terhubung ke $targetEmail", "Google Drive connected to $targetEmail")
                 }
                 is DriveAuthResult.NeedsUserRecoverableAuth -> {
                     _driveRecoveryIntent.value = authResult.recoveryIntent
                     // DO NOT mark connected until the user actually consents via recovery activity
                     _isDriveConnected.value = false
                     _driveEmail.value = ""
-                    _isSuccessToast.value = "Izin Google Drive memerlukan persetujuan akun Google. Silakan berikan izin pada dialog."
+                    _isSuccessToast.value = AppStrings.t(
+                        "Izin Google Drive memerlukan persetujuan akun Google. Silakan berikan izin pada dialog.",
+                        "Google Drive permission requires Google account approval. Please grant permission in the dialog."
+                    )
                 }
                 is DriveAuthResult.Error -> {
                     _isDriveConnected.value = false
                     _driveEmail.value = ""
-                    _authError.value = "Gagal menghubungkan Google Drive: ${authResult.message}"
+                    val prefix = AppStrings.t("Gagal menghubungkan Google Drive: ", "Failed to connect Google Drive: ")
+                    _authError.value = "$prefix${authResult.message}"
                 }
             }
             _isDriveSyncing.value = false
@@ -2194,15 +2271,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 true
             }
             if (isStealth) {
-                _isSuccessToast.value = "Pencadangan ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+                _isSuccessToast.value = AppStrings.t(
+                    "Pencadangan ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.",
+                    "Backup rejected: Stealth Mode is active to protect data privacy."
+                )
                 _isDriveSyncing.value = false
                 return@launch
             }
             _isDriveSyncing.value = true
-            _isSuccessToast.value = "Memulai pencadangan data..."
+            _isSuccessToast.value = AppStrings.t("Memulai pencadangan data...", "Starting data backup...")
             val userId = SessionManager.getActiveUserId()
             if (userId == null || userId <= 0L) {
-                _isSuccessToast.value = "Gagal mencadangkan: Sesi pengguna tidak aktif."
+                _isSuccessToast.value = AppStrings.t("Gagal mencadangkan: Sesi pengguna tidak aktif.", "Backup failed: User session inactive.")
                 _isDriveSyncing.value = false
                 return@launch
             }
@@ -2221,17 +2301,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 true
             }
             if (isStealth) {
-                _isSuccessToast.value = "Pemulihan data ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+                _isSuccessToast.value = AppStrings.t(
+                    "Pemulihan data ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.",
+                    "Data restore rejected: Stealth Mode is active to protect data privacy."
+                )
                 _isDriveSyncing.value = false
                 return@launch
             }
             val userId = SessionManager.getActiveUserId()
             if (userId == null || userId <= 0L) {
-                _isSuccessToast.value = "Gagal memulihkan: Sesi pengguna tidak aktif."
+                _isSuccessToast.value = AppStrings.t("Gagal memulihkan: Sesi pengguna tidak aktif.", "Restore failed: User session inactive.")
                 return@launch
             }
             _isDriveSyncing.value = true
-            _isSuccessToast.value = "Memulai pemulihan data..."
+            _isSuccessToast.value = AppStrings.t("Memulai pemulihan data...", "Starting data restore...")
             val result = GoogleDriveService.restoreNow(getApplication(), database, userId)
             _isSuccessToast.value = result.second
             _isDriveSyncing.value = false
@@ -2246,16 +2329,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 true
             }
             if (isStealth) {
-                val msg = "Pencadangan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+                val msg = AppStrings.t(
+                    "Pencadangan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.",
+                    "Portable backup rejected: Stealth Mode is active to protect data privacy."
+                )
                 _isSuccessToast.value = msg
                 onComplete?.invoke(false, msg, null)
                 return@launch
             }
-            _isSuccessToast.value = "Membuat cadangan portabel..."
+            _isSuccessToast.value = AppStrings.t("Membuat cadangan portabel...", "Creating portable backup...")
             val userId = SessionManager.getActiveUserId()
             if (userId == null || userId <= 0L) {
-                _isSuccessToast.value = "Gagal mencadangkan: Sesi pengguna tidak aktif."
-                onComplete?.invoke(false, "Sesi pengguna tidak aktif.", null)
+                val msg = AppStrings.t("Gagal mencadangkan: Sesi pengguna tidak aktif.", "Backup failed: User session inactive.")
+                _isSuccessToast.value = msg
+                onComplete?.invoke(false, msg, null)
                 return@launch
             }
             val result = com.example.util.GoogleDriveService.backupPortableNow(getApplication(), database, password, userId)
@@ -2272,18 +2359,22 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 true
             }
             if (isStealth) {
-                val msg = "Pemulihan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data."
+                val msg = AppStrings.t(
+                    "Pemulihan portabel ditolak: Mode Stealth sedang aktif untuk melindungi privasi data.",
+                    "Portable restore rejected: Stealth Mode is active to protect data privacy."
+                )
                 _isSuccessToast.value = msg
                 onComplete?.invoke(false, msg)
                 return@launch
             }
             val userId = SessionManager.getActiveUserId()
             if (userId == null || userId <= 0L) {
-                _isSuccessToast.value = "Gagal memulihkan: Sesi pengguna tidak aktif."
-                onComplete?.invoke(false, "Sesi pengguna tidak aktif.")
+                val msg = AppStrings.t("Gagal memulihkan: Sesi pengguna tidak aktif.", "Restore failed: User session inactive.")
+                _isSuccessToast.value = msg
+                onComplete?.invoke(false, msg)
                 return@launch
             }
-            _isSuccessToast.value = "Mendekripsi dan memulihkan cadangan portabel..."
+            _isSuccessToast.value = AppStrings.t("Mendekripsi dan memulihkan cadangan portabel...", "Decrypting and restoring portable backup...")
             val result = com.example.util.GoogleDriveService.restorePortableNow(getApplication(), database, backupJson, password, userId)
             _isSuccessToast.value = result.second
             onComplete?.invoke(result.first, result.second)
@@ -2345,12 +2436,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleNoSpendChallenge(enabled: Boolean) {
         _gamificationState.value = _gamificationState.value.copy(isNoSpendChallengeActive = enabled)
         prefs.edit().putBoolean("gamify_nospend", enabled).apply()
-        _isSuccessToast.value = if (enabled) "No-Spend Challenge Aktif! Pertahankan 24 jam untuk Multiplier 2x!" else "No-Spend Challenge Dinonaktifkan"
+        _isSuccessToast.value = if (enabled) {
+            AppStrings.t("No-Spend Challenge Aktif! Pertahankan 24 jam untuk Multiplier 2x!", "No-Spend Challenge Active! Hold for 24 hours for 2x Multiplier!")
+        } else {
+            AppStrings.t("No-Spend Challenge Dinonaktifkan", "No-Spend Challenge Disabled")
+        }
     }
 
     fun saveSecurityPins(mainPin: String, duressPin: String, biometricEnabled: Boolean) {
         if (mainPin == duressPin || mainPin.length < 4 || duressPin.length < 4) {
-            _isSuccessToast.value = "PIN Utama dan Duress PIN harus berbeda dan valid (minimal 4 digit)."
+            _isSuccessToast.value = AppStrings.t(
+                "PIN Utama dan Duress PIN harus berbeda dan valid (minimal 4 digit).",
+                "Main PIN and Duress PIN must be distinct and valid (at least 4 digits)."
+            )
             return
         }
         val mainHash = PasswordHasher.hashPassword(mainPin)
@@ -2381,13 +2479,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         if (PasswordHasher.verifyPassword(inputPin, duressHash)) {
             SessionManager.setStealthMode(true)
             _gamificationState.value = state.copy(isStealthMode = true)
-            _isSuccessToast.value = "⚠️ DompetNalar Masuk Mode Stealth (Duress PIN Mode)"
+            _isSuccessToast.value = AppStrings.t(
+                "⚠️ DompetNalar Masuk Mode Stealth (Duress PIN Mode)",
+                "⚠️ DompetNalar Entered Stealth Mode (Duress PIN Mode)"
+            )
         } else if (PasswordHasher.verifyPassword(inputPin, mainHash)) {
             SessionManager.setStealthMode(false)
             _gamificationState.value = state.copy(isStealthMode = false)
-            _isSuccessToast.value = "✓ Keamanan Diverifikasi! Mode Asli Aktif"
+            _isSuccessToast.value = AppStrings.t(
+                "✓ Keamanan Diverifikasi! Mode Asli Aktif",
+                "✓ Security Verified! Authentic Mode Active"
+            )
         } else {
-            _isSuccessToast.value = "❌ PIN Salah!"
+            _isSuccessToast.value = AppStrings.t("❌ PIN Salah!", "❌ Incorrect PIN!")
         }
     }
 
@@ -2399,7 +2503,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val state = _gamificationState.value
         if (!state.isStealthMode) {
             _gamificationState.value = state.copy(isStealthMode = true)
-            _isSuccessToast.value = "⚠️ DompetNalar Masuk Mode Stealth"
+            _isSuccessToast.value = AppStrings.t("⚠️ DompetNalar Masuk Mode Stealth", "⚠️ DompetNalar Entered Stealth Mode")
         }
     }
 

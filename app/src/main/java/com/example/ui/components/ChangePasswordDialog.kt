@@ -129,7 +129,7 @@ fun ChangePasswordDialog(
                         IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
                             Icon(
                                 imageVector = if (currentPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (currentPasswordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                                contentDescription = if (currentPasswordVisible) AppStrings.t("Sembunyikan kata sandi", "Hide password") else AppStrings.t("Tampilkan kata sandi", "Show password")
                             )
                         }
                     },
@@ -158,7 +158,7 @@ fun ChangePasswordDialog(
                         IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
                             Icon(
                                 imageVector = if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (newPasswordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                                contentDescription = if (newPasswordVisible) AppStrings.t("Sembunyikan kata sandi", "Hide password") else AppStrings.t("Tampilkan kata sandi", "Show password")
                             )
                         }
                     },
@@ -187,7 +187,7 @@ fun ChangePasswordDialog(
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
                                 imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (confirmPasswordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                                contentDescription = if (confirmPasswordVisible) AppStrings.t("Sembunyikan kata sandi", "Hide password") else AppStrings.t("Tampilkan kata sandi", "Show password")
                             )
                         }
                     },
@@ -215,19 +215,19 @@ fun ChangePasswordDialog(
             Button(
                 onClick = {
                     if (currentPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-                        localError = "Semua bidang kata sandi wajib diisi."
+                        localError = AppStrings.t("Semua bidang kata sandi wajib diisi.", "All password fields are required.")
                         return@Button
                     }
                     if (newPassword.length < 6) {
-                        localError = "Kata sandi baru minimal 6 karakter."
+                        localError = AppStrings.t("Kata sandi baru minimal 6 karakter.", "New password must be at least 6 characters.")
                         return@Button
                     }
                     if (newPassword != confirmPassword) {
-                        localError = "Konfirmasi kata sandi baru tidak cocok."
+                        localError = AppStrings.t("Konfirmasi kata sandi baru tidak cocok.", "New password confirmation does not match.")
                         return@Button
                     }
                     if (newPassword == currentPassword) {
-                        localError = "Kata sandi baru tidak boleh sama dengan kata sandi saat ini."
+                        localError = AppStrings.t("Kata sandi baru tidak boleh sama dengan kata sandi saat ini.", "New password cannot be the same as current password.")
                         return@Button
                     }
                     localError = null

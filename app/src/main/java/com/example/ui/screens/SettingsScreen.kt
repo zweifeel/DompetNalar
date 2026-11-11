@@ -253,7 +253,7 @@ fun SettingsScreen(
                     selectedRestoreFileContent = content
                     portableRestoreError = null
                 } catch (e: Exception) {
-                    portableRestoreError = "Gagal membaca file: ${e.message}"
+                    portableRestoreError = com.example.util.AppStrings.t("Gagal membaca file: ${e.message}", "Failed to read file: ${e.message}")
                 }
             }
         }
@@ -2145,9 +2145,9 @@ fun SettingsScreen(
                                                     putExtra(Intent.EXTRA_STREAM, uri)
                                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                     putExtra(Intent.EXTRA_SUBJECT, "DompetNalar Portable Backup")
-                                                    putExtra(Intent.EXTRA_TEXT, "File cadangan portabel DompetNalar terenkripsi.")
+                                                    putExtra(Intent.EXTRA_TEXT, com.example.util.AppStrings.t("File cadangan portabel DompetNalar terenkripsi.", "Encrypted DompetNalar portable backup file."))
                                                 }
-                                                context.startActivity(Intent.createChooser(shareIntent, "Bagikan / Simpan File Cadangan Portabel"))
+                                                context.startActivity(Intent.createChooser(shareIntent, com.example.util.AppStrings.t("Bagikan / Simpan File Cadangan Portabel", "Share / Save Portable Backup File")))
                                             } catch (e: Exception) {
                                                 Log.w("SettingsScreen", "Gagal memanggil share chooser: ${e.message}")
                                             }

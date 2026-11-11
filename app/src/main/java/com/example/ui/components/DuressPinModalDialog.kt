@@ -134,14 +134,17 @@ fun DuressPinModalDialog(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = "🔒 Proteksi Keamanan Ganda",
+                        text = com.example.util.AppStrings.t("🔒 Proteksi Keamanan Ganda", "🔒 Dual Security Protection"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• PIN Utama (6-Digit): Membuka data keuangan asli Anda.\n• Duress PIN (PIN Penyamaran): Membuka aplikasi dalam 'Mode Stealth' (Data Palsu) untuk perlindungan dari paksaan.",
+                        text = com.example.util.AppStrings.t(
+                            "• PIN Utama (6-Digit): Membuka data keuangan asli Anda.\n• Duress PIN (PIN Penyamaran): Membuka aplikasi dalam 'Mode Stealth' (Data Palsu) untuk perlindungan dari paksaan.",
+                            "• Main PIN (6-Digit): Unlocks your real financial data.\n• Duress PIN (Coercion PIN): Opens the app in 'Stealth Mode' (Decoy Data) for protection under duress."
+                        ),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -169,7 +172,7 @@ fun DuressPinModalDialog(
             OutlinedTextField(
                 value = duressPinInput,
                 onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) duressPinInput = it },
-                label = { Text("Duress PIN (Mode Stealth / Kamuflase)") },
+                label = { Text(com.example.util.AppStrings.t("Duress PIN (Mode Stealth / Kamuflase)", "Duress PIN (Stealth / Decoy Mode)")) },
                 visualTransformation = if (showPins) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 singleLine = true,
@@ -188,7 +191,7 @@ fun DuressPinModalDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Fingerprint, contentDescription = null, tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Aktifkan Biometric (Fingerprint)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = com.example.util.AppStrings.t("Aktifkan Biometric (Fingerprint)", "Enable Biometrics (Fingerprint)"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Switch(
@@ -202,15 +205,15 @@ fun DuressPinModalDialog(
             Button(
                 onClick = {
                     if (mainPinInput.length < 6 || duressPinInput.length < 6) {
-                        Toast.makeText(context, "PIN wajib 6-digit angka!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, com.example.util.AppStrings.t("PIN wajib 6-digit angka!", "PIN must be a 6-digit number!"), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (mainPinInput == duressPinInput) {
-                        Toast.makeText(context, "PIN Utama & Duress PIN tidak boleh sama!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, com.example.util.AppStrings.t("PIN Utama & Duress PIN tidak boleh sama!", "Main PIN and Duress PIN cannot be the same!"), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     onSavePins(mainPinInput, duressPinInput, biometricEnabled)
-                    Toast.makeText(context, "Pengaturan Keamanan & Duress PIN Disimpan!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, com.example.util.AppStrings.t("Pengaturan Keamanan & Duress PIN Disimpan!", "Security & Duress PIN Settings Saved!"), Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
                 modifier = Modifier

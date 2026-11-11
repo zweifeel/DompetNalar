@@ -137,8 +137,12 @@ class FinanceRepository(
                 if (disabledCount > 0 && context != null) {
                     RecurringTransactionWorker.sendLocalNotification(
                         context = context,
-                        title = "Jadwal Berulang Dinonaktifkan",
-                        message = "$disabledCount transaksi rutin dinonaktifkan otomatis karena dompet '${currentWallet.name}' telah diarsipkan."
+                        title = com.example.util.AppStrings.t("Jadwal Berulang Dinonaktifkan", "Recurring Schedules Disabled"),
+                        message = if (com.example.util.LocaleHelper.isEnglish()) {
+                            "$disabledCount recurring transactions were automatically disabled because wallet '${currentWallet.name}' was archived."
+                        } else {
+                            "$disabledCount transaksi rutin dinonaktifkan otomatis karena dompet '${currentWallet.name}' telah diarsipkan."
+                        }
                     )
                 }
                 disabledCount

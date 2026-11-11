@@ -59,10 +59,16 @@ class RecurringTransactionWorker(
                         val isStealth = try { SessionManager.isStealthModeActive() } catch (e: Exception) { true }
                         if (!isStealth) {
                             try {
+                                val notifTitle = AppStrings.t("DompetNalar Transaksi Berulang 💰", "DompetNalar Recurring Transaction 💰")
+                                val notifMessage = if (LocaleHelper.isEnglish()) {
+                                    "Recurring transaction ${result.title} of ${CurrencyFormatter.formatRupiah(result.amount)} recorded to ${result.walletName}!"
+                                } else {
+                                    "Transaksi rutin ${result.title} sebesar ${CurrencyFormatter.formatRupiah(result.amount)} berhasil dicatat ke ${result.walletName}!"
+                                }
                                 sendLocalNotification(
                                     context = applicationContext,
-                                    title = "DompetNalar Transaksi Berulang 💰",
-                                    message = "Transaksi rutin ${result.title} sebesar ${CurrencyFormatter.formatRupiah(result.amount)} berhasil dicatat ke ${result.walletName}!"
+                                    title = notifTitle,
+                                    message = notifMessage
                                 )
                             } catch (e: Exception) {
                                 // Silently isolate notification posting failure so it never fails the worker
@@ -141,10 +147,13 @@ class RecurringTransactionWorker(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     channelId,
-                    "DompetNalar Transaksi Berulang",
+                    AppStrings.t("DompetNalar Transaksi Berulang", "DompetNalar Recurring Transactions"),
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-                    description = "Notifikasi transaksi berulang otomatis (Gaji / Rutin)"
+                    description = AppStrings.t(
+                        "Notifikasi transaksi berulang otomatis (Gaji / Rutin)",
+                        "Automatic recurring transaction notifications (Salary / Routine)"
+                    )
                 }
                 notificationManager.createNotificationChannel(channel)
             }

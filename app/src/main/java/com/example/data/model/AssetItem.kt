@@ -8,11 +8,18 @@ import androidx.room.PrimaryKey
 import com.squareup.moshi.JsonClass
 import java.util.UUID
 
-enum class AssetCategory(val displayName: String, val annualDepreciationPercent: Double) {
-    ELECTRONICS("Elektronik / Gadget", 20.0),
-    VEHICLE("Kendaraan Motor/Mobil", 15.0),
-    PROPERTY("Properti / Rumah", -3.0),
-    GOLD_INVESTMENT("Emas & Tabungan", -5.0)
+enum class AssetCategory(
+    val idDisplayName: String,
+    val enDisplayName: String,
+    val annualDepreciationPercent: Double
+) {
+    ELECTRONICS("Elektronik / Gadget", "Electronics / Gadgets", 20.0),
+    VEHICLE("Kendaraan Motor/Mobil", "Vehicles (Car/Motorcycle)", 15.0),
+    PROPERTY("Properti / Rumah", "Property / Real Estate", -3.0),
+    GOLD_INVESTMENT("Emas & Tabungan", "Gold & Savings", -5.0);
+
+    val displayName: String
+        get() = if (com.example.util.LocaleHelper.isEnglish()) enDisplayName else idDisplayName
 }
 
 /**

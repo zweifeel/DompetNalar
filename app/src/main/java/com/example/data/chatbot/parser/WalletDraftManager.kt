@@ -100,25 +100,25 @@ object WalletDraftManager {
             false
         }
         if (!isUnlocked) {
-            return Result.failure(SecurityException("Akses ditolak: Fitur SmartMaster diperlukan untuk membuat dompet melalui AI."))
+            return Result.failure(SecurityException(com.example.util.AppStrings.t("Akses ditolak: Fitur SmartMaster diperlukan untuk membuat dompet melalui AI.", "Access denied: SmartMaster feature required to create wallet via AI.")))
         }
         if (userId <= 0L) {
-            return Result.failure(SecurityException("Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI."))
+            return Result.failure(SecurityException(com.example.util.AppStrings.t("Akses ditolak: Identitas pengguna tidak valid untuk eksekusi AI.", "Access denied: Invalid user identity for AI execution.")))
         }
         val draft = synchronized(activeDrafts) { activeDrafts[draftId] }
-            ?: return Result.failure(IllegalStateException("Draft dompet tidak ditemukan."))
+            ?: return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Draft dompet tidak ditemukan.", "Wallet draft not found.")))
 
         // Strict ownership invariant: userId > 0L && draft.ownerUserId > 0L && draft.ownerUserId == userId
         if (draft.ownerUserId <= 0L || draft.ownerUserId != userId) {
-            return Result.failure(SecurityException("Akses ditolak: Draft dompet tidak memiliki pemilik sah atau bukan milik pengguna aktif."))
+            return Result.failure(SecurityException(com.example.util.AppStrings.t("Akses ditolak: Draft dompet tidak memiliki pemilik sah atau bukan milik pengguna aktif.", "Access denied: Wallet draft has no valid owner or does not belong to active user.")))
         }
 
         if (draft.status == DraftStatus.CONFIRMED) {
-            return Result.failure(IllegalStateException("Dompet ini sudah berhasil dibuat sebelumnya."))
+            return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Dompet ini sudah berhasil dibuat sebelumnya.", "This wallet has already been created.")))
         }
 
         if (draft.status == DraftStatus.CANCELLED) {
-            return Result.failure(IllegalStateException("Draft dompet ini telah dibatalkan."))
+            return Result.failure(IllegalStateException(com.example.util.AppStrings.t("Draft dompet ini telah dibatalkan.", "This wallet draft was cancelled.")))
         }
 
         val hasIncome = draft.incomeAmount != null && draft.incomeAmount > 0.0
@@ -152,7 +152,7 @@ object WalletDraftManager {
 
             if (hasIncome) {
                 val incomeTx = TransactionItem(
-                    title = "Pemasukan Awal ${draft.name}",
+                    title = com.example.util.AppStrings.t("Pemasukan Awal ${draft.name}", "Initial Income ${draft.name}"),
                     amount = draft.incomeAmount ?: 0.0,
                     type = TransactionType.INCOME,
                     category = "Gaji Pokok",
@@ -160,7 +160,7 @@ object WalletDraftManager {
                     walletId = insertedWalletId,
                     walletName = draft.name,
                     timestamp = System.currentTimeMillis(),
-                    note = "Dicatat otomatis saat pembuatan dompet via Chatbot",
+                    note = com.example.util.AppStrings.t("Dicatat otomatis saat pembuatan dompet via Chatbot", "Automatically recorded during wallet creation via Chatbot"),
                     tags = "#pemasukan",
                     accountMode = accountMode,
                     userId = userId

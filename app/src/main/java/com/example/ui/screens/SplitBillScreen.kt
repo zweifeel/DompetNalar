@@ -638,7 +638,7 @@ fun SplitBillScreen(
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
-                                                text = "${breakdown.assignedItems.size} Item pesanan",
+                                                text = "${breakdown.assignedItems.size} ${com.example.util.AppStrings.t("Item pesanan", "Order items")}",
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
@@ -920,7 +920,7 @@ fun SplitBillScreen(
                                             currentReceiptState.totalAmount,
                                             whatsappSummaryText
                                         )
-                                        Toast.makeText(context, "Kalkulasi patungan berhasil disimpan ke riwayat!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, com.example.util.AppStrings.t("Kalkulasi patungan berhasil disimpan ke riwayat!", "Split bill calculation saved to history!"), Toast.LENGTH_SHORT).show()
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1000,7 +1000,7 @@ fun SplitBillScreen(
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
-                                                    text = item.date.ifBlank { "Tanpa Tanggal" },
+                                                    text = item.date.ifBlank { com.example.util.AppStrings.t("Tanpa Tanggal", "No Date") },
                                                     fontSize = 11.sp,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     maxLines = 1,
@@ -1059,7 +1059,7 @@ fun SplitBillScreen(
                                             ) {
                                                 Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Bagikan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                                Text(com.example.util.AppStrings.t("Bagikan", "Share"), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                             }
 
                                             OutlinedButton(
@@ -1071,7 +1071,7 @@ fun SplitBillScreen(
                                             ) {
                                                 Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Salin", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                Text(com.example.util.AppStrings.t("Salin", "Copy"), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             }
 
                                             IconButton(
@@ -1080,7 +1080,7 @@ fun SplitBillScreen(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Hapus Riwayat",
+                                                    contentDescription = com.example.util.AppStrings.t("Hapus Riwayat", "Delete History"),
                                                     tint = MaterialTheme.colorScheme.error
                                                 )
                                             }

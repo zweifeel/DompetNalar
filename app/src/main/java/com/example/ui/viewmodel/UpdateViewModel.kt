@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import com.example.util.AppStrings
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
@@ -55,7 +56,10 @@ class UpdateViewModel : ViewModel() {
                     if (showFeedbackIfLatest) {
                         Toast.makeText(
                             context,
-                            "DompetNalar sudah versi terbaru (v${status.metadata.version_name})",
+                            AppStrings.t(
+                                "DompetNalar sudah versi terbaru (v${status.metadata.version_name})",
+                                "DompetNalar is already on the latest version (v${status.metadata.version_name})"
+                            ),
                             Toast.LENGTH_SHORT
                         ).show()
                     }

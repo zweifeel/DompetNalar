@@ -149,7 +149,7 @@ fun AssetTrackerModalDialog(
                         onClick = { isResetConfirmDialogOpen = true },
                         modifier = Modifier.size(34.dp).testTag("btn_reset_all_assets")
                     ) {
-                        Icon(Icons.Default.RestartAlt, contentDescription = "Reset Semua Aset", tint = ExpenseRed, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.RestartAlt, contentDescription = com.example.util.AppStrings.t("Reset Semua Aset", "Reset All Assets"), tint = ExpenseRed, modifier = Modifier.size(20.dp))
                     }
 
                     // Hapus Kategori Button
@@ -157,7 +157,7 @@ fun AssetTrackerModalDialog(
                         onClick = { isDeleteCategoryDialogOpen = true },
                         modifier = Modifier.size(34.dp).testTag("btn_delete_asset_category_open")
                     ) {
-                        Icon(Icons.Default.DeleteSweep, contentDescription = "Hapus Kategori Aset", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.DeleteSweep, contentDescription = com.example.util.AppStrings.t("Hapus Kategori Aset", "Delete Asset Category"), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                     }
 
                     IconButton(onClick = onDismiss) {
@@ -175,7 +175,7 @@ fun AssetTrackerModalDialog(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Estimasi Total Kekayaan Bersih (Net Worth)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = AppStrings.t("Estimasi Total Kekayaan Bersih (Net Worth)", "Estimated Total Net Worth"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = CurrencyFormatter.formatRupiah(netWorth),
                         fontSize = 22.sp,
@@ -337,7 +337,7 @@ fun AssetTrackerModalDialog(
                                     },
                                     modifier = Modifier.size(28.dp).testTag("btn_edit_asset_${asset.id}")
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit Aset", tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Edit, contentDescription = com.example.util.AppStrings.t("Edit Aset", "Edit Asset"), tint = FinSmartPrimary, modifier = Modifier.size(16.dp))
                                 }
 
                                 // Delete Button (Sampah)
@@ -345,7 +345,7 @@ fun AssetTrackerModalDialog(
                                     onClick = { assetItemToDelete = asset },
                                     modifier = Modifier.size(28.dp).testTag("btn_delete_asset_${asset.id}")
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Hapus Aset", tint = ExpenseRed, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = com.example.util.AppStrings.t("Hapus Aset", "Delete Asset"), tint = ExpenseRed, modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -363,7 +363,7 @@ fun AssetTrackerModalDialog(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = if (editingAssetId != null) "Edit Data Aset Fisik" else "Tambah Aset Fisik Baru:",
+                        text = if (editingAssetId != null) com.example.util.AppStrings.t("Edit Data Aset Fisik", "Edit Physical Asset Data") else com.example.util.AppStrings.t("Tambah Aset Fisik Baru:", "Add New Physical Asset:"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -440,7 +440,7 @@ fun AssetTrackerModalDialog(
                                 val value = inputAssetValue.toDoubleOrNull()
                                 val year = inputAssetYear.toIntOrNull() ?: 2025
                                 if (inputAssetName.isBlank() || value == null || value <= 0) {
-                                    Toast.makeText(context, "Isi nama aset dan harga beli yang valid!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, com.example.util.AppStrings.t("Isi nama aset dan harga beli yang valid!", "Please enter a valid asset name and purchase price!"), Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
 
@@ -455,7 +455,7 @@ fun AssetTrackerModalDialog(
                                                 category = selectedCategory
                                             )
                                         )
-                                        Toast.makeText(context, "Data aset berhasil diperbarui!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, com.example.util.AppStrings.t("Data aset berhasil diperbarui!", "Asset data updated successfully!"), Toast.LENGTH_SHORT).show()
                                     }
                                     editingAssetId = null
                                 } else {
@@ -467,7 +467,7 @@ fun AssetTrackerModalDialog(
                                             category = selectedCategory
                                         )
                                     )
-                                    Toast.makeText(context, "Aset berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, com.example.util.AppStrings.t("Aset berhasil ditambahkan!", "Asset added successfully!"), Toast.LENGTH_SHORT).show()
                                 }
 
                                 inputAssetName = ""
@@ -481,7 +481,7 @@ fun AssetTrackerModalDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = FinSmartPrimary)
                         ) {
                             Text(
-                                text = if (editingAssetId != null) "Perbarui Aset" else "Simpan Aset",
+                                text = if (editingAssetId != null) com.example.util.AppStrings.t("Perbarui Aset", "Update Asset") else com.example.util.AppStrings.t("Simpan Aset", "Save Asset"),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             )
@@ -511,12 +511,12 @@ fun AssetTrackerModalDialog(
                     onClick = {
                         onClearAllAssets()
                         isResetConfirmDialogOpen = false
-                        Toast.makeText(context, "Seluruh daftar aset telah di-reset (Fresh Start)! 🧹", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, com.example.util.AppStrings.t("Seluruh daftar aset telah di-reset (Fresh Start)! 🧹", "All assets have been reset (Fresh Start)! 🧹"), Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                     modifier = Modifier.testTag("btn_confirm_reset_assets")
                 ) {
-                    Text("Reset Semua", color = Color.White)
+                    Text(com.example.util.AppStrings.t("Reset Semua", "Reset All"), color = Color.White)
                 }
             },
             dismissButton = {
@@ -555,12 +555,12 @@ fun AssetTrackerModalDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("${cat.displayName} ($count item)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                Text("${cat.displayName} ($count ${com.example.util.AppStrings.t("item", "items")})", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 Button(
                                     onClick = {
                                         onDeleteCategory(cat)
                                         isDeleteCategoryDialogOpen = false
-                                        Toast.makeText(context, "Seluruh aset kategori '${cat.displayName}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "${com.example.util.AppStrings.t("Seluruh aset kategori", "All assets in category")} '${cat.displayName}' ${com.example.util.AppStrings.t("berhasil dihapus!", "deleted successfully!")}", Toast.LENGTH_SHORT).show()
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),
                                     shape = RoundedCornerShape(8.dp)
@@ -599,7 +599,7 @@ fun AssetTrackerModalDialog(
                     onClick = {
                         onDeleteAsset(asset)
                         assetItemToDelete = null
-                        Toast.makeText(context, "Aset '${asset.name}' berhasil dihapus!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${com.example.util.AppStrings.t("Aset", "Asset")} '${asset.name}' ${com.example.util.AppStrings.t("berhasil dihapus!", "deleted successfully!")}", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {

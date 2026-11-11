@@ -196,7 +196,7 @@ fun GamificationHubDialog(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "🔥 ${state.dailyStreak} Hari", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFB45309))
+                                Text(text = "🔥 ${state.dailyStreak} ${com.example.util.AppStrings.t("Hari", "Days")}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFB45309))
                             }
                         }
                     }
@@ -232,13 +232,13 @@ fun GamificationHubDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "🎁 Reward Streak 7 Hari:",
+                            text = com.example.util.AppStrings.t("🎁 Reward Streak 7 Hari:", "🎁 7-Day Streak Reward:"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color(0xFF92400E)
                         )
                         Text(
-                            text = "5 Jam Smart Member Pass + 3x Action Pass Credits",
+                            text = com.example.util.AppStrings.t("5 Jam Smart Member Pass + 3x Action Pass Credits", "5 Hours Smart Member Pass + 3x Action Pass Credits"),
                             fontSize = 11.sp,
                             color = Color(0xFFB45309)
                         )
@@ -246,8 +246,8 @@ fun GamificationHubDialog(
 
                     val buttonText = when {
                         state.dailyStreak < 7 -> "Streak < 7"
-                        !canClaimStreakReward -> if (streakRewardRemainingHours > 0) "Klaim (${streakRewardRemainingHours}j)" else "Sudah Diklaim"
-                        else -> "Klaim"
+                        !canClaimStreakReward -> if (streakRewardRemainingHours > 0) "${com.example.util.AppStrings.t("Klaim", "Claim")} (${streakRewardRemainingHours}${com.example.util.AppStrings.t("j", "h")})" else com.example.util.AppStrings.t("Sudah Diklaim", "Already Claimed")
+                        else -> com.example.util.AppStrings.t("Klaim", "Claim")
                     }
 
                     Button(
@@ -255,7 +255,7 @@ fun GamificationHubDialog(
                             if (canClaimStreakReward) {
                                 onClaimStreakReward()
                             } else {
-                                Toast.makeText(context, "Reward streak 7 hari belum dapat diklaim saat ini.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, com.example.util.AppStrings.t("Reward streak 7 hari belum dapat diklaim saat ini.", "7-day streak reward cannot be claimed at this time."), Toast.LENGTH_SHORT).show()
                             }
                         },
                         enabled = canClaimStreakReward,
@@ -287,13 +287,13 @@ fun GamificationHubDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "👑 Reward Streak 30 Hari:",
+                            text = com.example.util.AppStrings.t("👑 Reward Streak 30 Hari:", "👑 30-Day Streak Reward:"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color(0xFF92400E)
                         )
                         Text(
-                            text = "Akses Penuh Smart Member Gratis Selama 24 Jam ⚡",
+                            text = com.example.util.AppStrings.t("Akses Penuh Smart Member Gratis Selama 24 Jam ⚡", "Full Free Smart Member Access for 24 Hours ⚡"),
                             fontSize = 11.sp,
                             color = Color(0xFFB45309)
                         )
@@ -301,8 +301,8 @@ fun GamificationHubDialog(
 
                     val button30Text = when {
                         state.dailyStreak < 30 -> "Streak < 30"
-                        !canClaim30DayStreakReward -> if (streak30RewardRemainingHours > 0) "Klaim (${streak30RewardRemainingHours}j)" else "Sudah Diklaim"
-                        else -> "Klaim"
+                        !canClaim30DayStreakReward -> if (streak30RewardRemainingHours > 0) "${com.example.util.AppStrings.t("Klaim", "Claim")} (${streak30RewardRemainingHours}${com.example.util.AppStrings.t("j", "h")})" else com.example.util.AppStrings.t("Sudah Diklaim", "Already Claimed")
+                        else -> com.example.util.AppStrings.t("Klaim", "Claim")
                     }
 
                     Button(
@@ -310,7 +310,7 @@ fun GamificationHubDialog(
                             if (canClaim30DayStreakReward) {
                                 onClaim30DayStreakReward()
                             } else {
-                                Toast.makeText(context, "Reward streak 30 hari belum dapat diklaim saat ini.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, com.example.util.AppStrings.t("Reward streak 30 hari belum dapat diklaim saat ini.", "30-day streak reward cannot be claimed at this time."), Toast.LENGTH_SHORT).show()
                             }
                         },
                         enabled = canClaim30DayStreakReward,

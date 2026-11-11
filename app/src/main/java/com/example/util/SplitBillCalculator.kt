@@ -117,29 +117,38 @@ object SplitBillCalculator {
         val sb = StringBuilder()
         fun formatRp(amount: Double): String = "Rp" + String.format(Locale.forLanguageTag("id-ID"), "%,d", amount.toLong()).replace(",", ".")
 
-        sb.append("🧾 *RINCIAN SPLIT BILL - ${splitResult.merchantName.uppercase()}*\n")
+        val headerTitle = AppStrings.t("RINCIAN SPLIT BILL", "SPLIT BILL BREAKDOWN")
+        val dateLabel = AppStrings.t("Tanggal", "Date")
+        sb.append("🧾 *$headerTitle - ${splitResult.merchantName.uppercase()}*\n")
         if (splitResult.date.isNotBlank()) {
-            sb.append("📅 *Tanggal:* ${splitResult.date}\n")
+            sb.append("📅 *$dateLabel:* ${splitResult.date}\n")
         }
         sb.append("━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+        val dividedText = AppStrings.t("dibagi", "split among")
+        val peopleText = AppStrings.t("orang", "people")
+        val noItemText = AppStrings.t("Belum memilih item pesanan", "No items selected yet")
+        val taxText = AppStrings.t("PB1/Pajak", "Tax")
+        val serviceText = AppStrings.t("Service", "Service")
+        val discountText = AppStrings.t("Diskon", "Discount")
 
         splitResult.breakdowns.forEach { breakdown ->
             sb.append("👤 *${breakdown.person.name}* ➔ *${formatRp(breakdown.totalToPay)}*\n")
             if (breakdown.assignedItems.isNotEmpty()) {
                 breakdown.assignedItems.forEach { item ->
                     val isShared = item.assignedPersonIds.size > 1
-                    val sharedNote = if (isShared) " _(dibagi ${item.assignedPersonIds.size} orang)_" else ""
+                    val sharedNote = if (isShared) " _($dividedText ${item.assignedPersonIds.size} $peopleText)_" else ""
                     val itemPriceShare = if (isShared) item.total / item.assignedPersonIds.size else item.total
                     sb.append("   • ${item.qty}x ${item.name}: ${formatRp(itemPriceShare)}$sharedNote\n")
                 }
             } else {
-                sb.append("   • _(Belum memilih item pesanan)_\n")
+                sb.append("   • _($noItemText)_\n")
             }
 
             val extras = mutableListOf<String>()
-            if (breakdown.taxShare > 0) extras.add("PB1/Pajak: ${formatRp(breakdown.taxShare)}")
-            if (breakdown.serviceShare > 0) extras.add("Service: ${formatRp(breakdown.serviceShare)}")
-            if (breakdown.discountShare > 0) extras.add("Diskon: -${formatRp(breakdown.discountShare)}")
+            if (breakdown.taxShare > 0) extras.add("$taxText: ${formatRp(breakdown.taxShare)}")
+            if (breakdown.serviceShare > 0) extras.add("$serviceText: ${formatRp(breakdown.serviceShare)}")
+            if (breakdown.discountShare > 0) extras.add("$discountText: -${formatRp(breakdown.discountShare)}")
 
             if (extras.isNotEmpty()) {
                 sb.append("   └ _${extras.joinToString(", ")}_\n")
@@ -149,18 +158,23 @@ object SplitBillCalculator {
 
         if (splitResult.unassignedItems.isNotEmpty()) {
             val unassignedSum = splitResult.unassignedItems.sumOf { it.total }
-            sb.append("⚠️ *Item Belum Dibagi (${formatRp(unassignedSum)}):*\n")
+            val unassignedLabel = AppStrings.t("Item Belum Dibagi", "Unassigned Items")
+            sb.append("⚠️ *$unassignedLabel (${formatRp(unassignedSum)}):*\n")
             splitResult.unassignedItems.forEach { item ->
                 sb.append("   • ${item.qty}x ${item.name}: ${formatRp(item.total)}\n")
             }
             sb.append("\n")
         }
 
+        val totalLabel = AppStrings.t("Total Tagihan Keseluruhan", "Grand Total Bill")
+        val transferLabel = AppStrings.t("Transfer Pembayaran ke Penyelenggara", "Payment Transfer to Organizer")
+        val footerLabel = AppStrings.t("Dihitung & Dibagi Otomatis via DompetNalar AI", "Automatically calculated & split via DompetNalar AI")
+
         sb.append("━━━━━━━━━━━━━━━━━━━━━━━━\n")
-        sb.append("💰 *Total Tagihan Keseluruhan:* *${formatRp(splitResult.grandTotal)}*\n\n")
-        sb.append("💳 *Transfer Pembayaran ke Penyelenggara:*\n")
+        sb.append("💰 *$totalLabel:* *${formatRp(splitResult.grandTotal)}*\n\n")
+        sb.append("💳 *$transferLabel:*\n")
         sb.append("👉 *${splitResult.paymentTargetInfo}*\n\n")
-        sb.append("⚡ _Dihitung & Dibagi Otomatis via DompetNalar AI_")
+        sb.append("⚡ _${footerLabel}_")
 
         return sb.toString()
     }

@@ -88,8 +88,8 @@ object GoogleDriveService {
     fun getLastBackupTime(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val timestamp = prefs.getLong(KEY_LAST_BACKUP, 0L)
-        if (timestamp == 0L) return "Belum pernah dicadangkan"
-        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm 'WIB'", Locale("id", "ID"))
+        if (timestamp == 0L) return AppStrings.t("Belum pernah dicadangkan", "Never backed up")
+        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", LocaleHelper.getActiveLocale())
         return sdf.format(Date(timestamp))
     }
 
@@ -110,12 +110,12 @@ object GoogleDriveService {
     fun getNextBackupTime(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val isAuto = prefs.getBoolean(KEY_AUTO_SYNC, false)
-        if (!isAuto) return "Pencadangan otomatis nonaktif"
+        if (!isAuto) return AppStrings.t("Pencadangan otomatis nonaktif", "Auto-backup disabled")
         val lastTimestamp = prefs.getLong(KEY_LAST_BACKUP, 0L)
         val intervalHours = getAutoBackupIntervalHours(context)
         val baseTime = if (lastTimestamp > 0L) lastTimestamp else System.currentTimeMillis()
         val nextTime = baseTime + (intervalHours * 3600000L)
-        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm 'WIB'", Locale("id", "ID"))
+        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", LocaleHelper.getActiveLocale())
         return sdf.format(Date(nextTime))
     }
 

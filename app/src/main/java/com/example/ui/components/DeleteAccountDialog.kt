@@ -98,9 +98,15 @@ fun DeleteAccountDialog(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = if (isGuest) {
-                                "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, dan data lokal sesi tamu akan dihapus secara permanen dari perangkat dan database."
+                                AppStrings.t(
+                                    "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, dan data lokal sesi tamu akan dihapus secara permanen dari perangkat dan database.",
+                                    "This action cannot be undone. All transaction history, wallet balances, and local guest session data will be permanently deleted from this device and database."
+                                )
                             } else {
-                                "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username ?: currentUser?.email}' akan dihapus secara permanen dari perangkat, database lokal, dan server cloud."
+                                AppStrings.t(
+                                    "Tindakan ini tidak dapat dibatalkan. Seluruh riwayat mutasi, data saldo dompet, preferensi, dan kredensial akun '${currentUser?.username ?: currentUser?.email}' akan dihapus secara permanen dari perangkat, database lokal, dan server cloud.",
+                                    "This action cannot be undone. All transaction history, wallet balances, preferences, and account credentials for '${currentUser?.username ?: currentUser?.email}' will be permanently deleted from this device, local database, and cloud server."
+                                )
                             },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -162,12 +168,19 @@ fun DeleteAccountDialog(
             Button(
                 onClick = {
                     if (requiresPassword && passwordInput.isBlank()) {
-                        localErrorMessage = "Kata sandi wajib diisi untuk konfirmasi keamanan."
+                        localErrorMessage = AppStrings.t(
+                            "Kata sandi wajib diisi untuk konfirmasi keamanan.",
+                            "Password is required for security confirmation."
+                        )
                         return@Button
                     }
                     val isSuccess = onConfirmDelete(if (requiresPassword) passwordInput.trim() else "")
                     if (!isSuccess && localErrorMessage == null) {
-                        localErrorMessage = if (requiresPassword) "Kata sandi salah. Penghapusan akun dibatalkan." else "Gagal menghapus akun. Silakan coba beberapa saat lagi."
+                        localErrorMessage = if (requiresPassword) {
+                            AppStrings.t("Kata sandi salah. Penghapusan akun dibatalkan.", "Incorrect password. Account deletion canceled.")
+                        } else {
+                            AppStrings.t("Gagal menghapus akun. Silakan coba beberapa saat lagi.", "Failed to delete account. Please try again later.")
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed),

@@ -197,7 +197,7 @@ fun SmartMasterPaywallDialog(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Upgrade ke Smart Master untuk menikmati seluruh fitur eksklusif AI, pemindaian nota otomatis, dan analitik finansial tanpa batas.",
+                text = com.example.util.AppStrings.t("Upgrade ke Smart Master untuk menikmati seluruh fitur eksklusif AI, pemindaian nota otomatis, dan analitik finansial tanpa batas.", "Upgrade to Smart Master to enjoy all exclusive AI features, automatic receipt scanning, and unlimited financial analytics."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -214,10 +214,10 @@ fun SmartMasterPaywallDialog(
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PaywallFeatureRow("Input Transaksi via Chat AI & Voice Logging Tanpa Batas")
+                PaywallFeatureRow(AppStrings.t("Input Transaksi via Chat AI & Voice Logging Tanpa Batas", "Unlimited AI Chat & Voice Transaction Logging"))
                 PaywallFeatureRow(AppStrings.t("Scan & OCR Nota/Struk Otomatis via DompetNalar OCR", "Automatic Receipt Scan & OCR via DompetNalar OCR"))
-                PaywallFeatureRow("AI Cashflow Health Score & Laporan Mendalam (PDF/Excel)")
-                PaywallFeatureRow("Pengalaman 100% Bebas Iklan (Ad-Free)")
+                PaywallFeatureRow(AppStrings.t("AI Cashflow Health Score & Laporan Mendalam (PDF/Excel)", "AI Cashflow Health Score & In-Depth Reports (PDF/Excel)"))
+                PaywallFeatureRow(AppStrings.t("Pengalaman 100% Bebas Iklan (Ad-Free)", "100% Ad-Free Experience"))
             }
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -264,7 +264,7 @@ fun SmartMasterPaywallDialog(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "HEMAT 45%",
+                                text = com.example.util.AppStrings.t("HEMAT 45%", "SAVE 45%"),
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -287,7 +287,7 @@ fun SmartMasterPaywallDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "/ tahun",
+                            text = com.example.util.AppStrings.t("/ tahun", "/ year"),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFB45309),
@@ -297,7 +297,7 @@ fun SmartMasterPaywallDialog(
 
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "💡 Hanya ~Rp12.400/bln. Paling hemat untuk kelola finansial setahun penuh!",
+                        text = com.example.util.AppStrings.t("💡 Hanya ~Rp12.400/bln. Paling hemat untuk kelola finansial setahun penuh!", "💡 Only ~Rp12,400/mo. Best value for full year financial control!"),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFFB45309)
@@ -346,7 +346,7 @@ fun SmartMasterPaywallDialog(
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Text(
-                                text = "/ bln",
+                                text = com.example.util.AppStrings.t("/ bln", "/ mo"),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -379,15 +379,15 @@ fun SmartMasterPaywallDialog(
                             if (result.responseCode != com.android.billingclient.api.BillingClient.BillingResponseCode.OK) {
                                 val msg = result.debugMessage.ifBlank {
                                     if (result.responseCode == com.android.billingclient.api.BillingClient.BillingResponseCode.ITEM_UNAVAILABLE) {
-                                        "Produk langganan sedang dipersiapkan di Google Play Console."
+                                        com.example.util.AppStrings.t("Produk langganan sedang dipersiapkan di Google Play Console.", "Subscription products are being configured in Google Play Console.")
                                     } else {
-                                        "Layanan Google Play belum siap (Kode: ${result.responseCode})."
+                                        com.example.util.AppStrings.t("Layanan Google Play belum siap (Kode: ${result.responseCode}).", "Google Play service is not ready (Code: ${result.responseCode}).")
                                     }
                                 }
                                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                             }
                         } else {
-                            Toast.makeText(context, "Konteks aktivitas tidak valid untuk peluncuran billing.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, com.example.util.AppStrings.t("Konteks aktivitas tidak valid untuk peluncuran billing.", "Invalid activity context for launching billing."), Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier
@@ -410,7 +410,7 @@ fun SmartMasterPaywallDialog(
                         Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Beli via Google Play",
+                            text = com.example.util.AppStrings.t("Beli via Google Play", "Purchase via Google Play"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = Color.White

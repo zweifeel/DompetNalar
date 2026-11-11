@@ -38,11 +38,11 @@ data class UserEntitlementStatus(
 ) {
     fun getFormattedExpiry(): String {
         return when {
-            effectiveRole == UserRole.MASTER_DEV -> "Permanen (Master Developer)"
-            expiresAt == null -> "Tidak Terbatas"
+            effectiveRole == UserRole.MASTER_DEV -> AppStrings.t("Permanen (Master Developer)", "Permanent (Master Developer)")
+            expiresAt == null -> AppStrings.t("Tidak Terbatas", "Unlimited")
             expiresAt <= 0L -> "-"
             else -> {
-                val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+                val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", LocaleHelper.getActiveLocale())
                 sdf.format(Date(expiresAt))
             }
         }

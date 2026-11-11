@@ -406,17 +406,11 @@ fun AddTransactionSheet(
                             ) {
 
                                 Text(
-
                                     text = when (tabType) {
-
-                                        TransactionType.EXPENSE -> "Pengeluaran"
-
-                                        TransactionType.INCOME -> "Pemasukan"
-
-                                        TransactionType.TRANSFER -> "Transfer"
-
+                                        TransactionType.EXPENSE -> com.example.util.AppStrings.t("Pengeluaran", "Expense")
+                                        TransactionType.INCOME -> com.example.util.AppStrings.t("Pemasukan", "Income")
+                                        TransactionType.TRANSFER -> com.example.util.AppStrings.t("Transfer", "Transfer")
                                     },
-
                                     maxLines = 1,
 
                                     softWrap = false,
@@ -621,7 +615,7 @@ fun AddTransactionSheet(
 
                 Text(
 
-                    text = if (currentType == TransactionType.EXPENSE) "Sumber Dana (Dompet / Bank):" else "Disimpan ke Dompet:",
+                    text = if (currentType == TransactionType.EXPENSE) com.example.util.AppStrings.t("Sumber Dana (Dompet / Bank):", "Source of Funds (Wallet / Bank):") else com.example.util.AppStrings.t("Disimpan ke Dompet:", "Save to Wallet:"),
 
                     fontSize = 12.sp,
 
@@ -645,7 +639,7 @@ fun AddTransactionSheet(
 
                     OutlinedTextField(
 
-                        value = selectedWallet?.let { "${it.name} (${CurrencyFormatter.formatRupiah(it.balance)})" } ?: "Pilih Dompet",
+                        value = selectedWallet?.let { "${it.name} (${CurrencyFormatter.formatRupiah(it.balance)})" } ?: com.example.util.AppStrings.t("Pilih Dompet", "Select Wallet"),
 
                         onValueChange = {},
 
@@ -749,7 +743,7 @@ fun AddTransactionSheet(
 
                             OutlinedTextField(
 
-                                value = selectedWallet?.name ?: "Pilih",
+                                value = selectedWallet?.name ?: AppStrings.t("Pilih", "Select"),
 
                                 onValueChange = {},
 
@@ -803,7 +797,7 @@ fun AddTransactionSheet(
 
                         imageVector = Icons.Default.ArrowForward,
 
-                        contentDescription = "ke",
+                        contentDescription = com.example.util.AppStrings.t("Ke", "To"),
 
                         tint = MaterialTheme.colorScheme.primary,
 
@@ -827,7 +821,7 @@ fun AddTransactionSheet(
 
                             OutlinedTextField(
 
-                                value = selectedTargetWallet?.name ?: "Pilih",
+                                value = selectedTargetWallet?.name ?: com.example.util.AppStrings.t("Pilih", "Select"),
 
                                 onValueChange = {},
 
@@ -967,7 +961,7 @@ fun AddTransactionSheet(
 
                                 Text(
 
-                                    text = cat.name,
+                                    text = com.example.util.AppStrings.translateCategory(cat.name),
 
                                     fontSize = 12.sp,
 
@@ -1099,38 +1093,26 @@ fun AddTransactionSheet(
 
                     if (amt <= 0) {
 
-                        errorMessage = "Masukkan nominal transaksi yang valid (> 0)."
+                        errorMessage = AppStrings.t("Masukkan nominal transaksi yang valid (> 0).", "Enter a valid transaction amount (> 0).")
 
                         return@Button
 
                     }
 
                     if (selectedWallet == null) {
-
-                        errorMessage = "Pilih dompet terlebih dahulu."
-
+                        errorMessage = com.example.util.AppStrings.t("Pilih dompet terlebih dahulu.", "Please select a wallet first.")
                         return@Button
-
                     }
 
                     if (currentType == TransactionType.TRANSFER && (selectedTargetWallet == null || selectedTargetWallet?.id == selectedWallet?.id)) {
-
-                        errorMessage = "Pilih dompet tujuan transfer yang berbeda."
-
+                        errorMessage = com.example.util.AppStrings.t("Pilih dompet tujuan transfer yang berbeda.", "Please select a different target wallet for transfer.")
                         return@Button
-
                     }
 
-
-
-                    val catName = if (currentType == TransactionType.TRANSFER) "Transfer Saldo" else (selectedCategory?.name ?: "Lain-lain")
-
+                    val catName = if (currentType == TransactionType.TRANSFER) com.example.util.AppStrings.t("Transfer Saldo", "Balance Transfer") else (selectedCategory?.name ?: com.example.util.AppStrings.t("Lain-lain", "Others"))
                     val catIcon = if (currentType == TransactionType.TRANSFER) "swap_horiz" else (selectedCategory?.iconName ?: "category")
-
                     val txTitle = if (title.isBlank()) {
-
-                        if (currentType == TransactionType.TRANSFER) "Transfer ke ${selectedTargetWallet?.name}" else catName
-
+                        if (currentType == TransactionType.TRANSFER) "${com.example.util.AppStrings.t("Transfer ke", "Transfer to")} ${selectedTargetWallet?.name}" else catName
                     } else title.trim()
 
 
@@ -1192,23 +1174,14 @@ fun AddTransactionSheet(
             ) {
 
                 Text(
-
                     text = when (currentType) {
-
-                        TransactionType.EXPENSE -> "Catat Pengeluaran"
-
-                        TransactionType.INCOME -> "Catat Pemasukan"
-
-                        TransactionType.TRANSFER -> "Simpan Transfer Saldo"
-
+                        TransactionType.EXPENSE -> com.example.util.AppStrings.t("Catat Pengeluaran", "Record Expense")
+                        TransactionType.INCOME -> com.example.util.AppStrings.t("Catat Pemasukan", "Record Income")
+                        TransactionType.TRANSFER -> com.example.util.AppStrings.t("Simpan Transfer Saldo", "Save Balance Transfer")
                     },
-
                     fontSize = 15.sp,
-
                     fontWeight = FontWeight.Bold,
-
                     color = Color.White
-
                 )
 
             }

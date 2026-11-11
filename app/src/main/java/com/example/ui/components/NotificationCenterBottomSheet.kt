@@ -264,7 +264,7 @@ fun NotificationCenterBottomSheet(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Text("Belum Ada Notifikasi Baru", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(com.example.util.AppStrings.t("Belum Ada Notifikasi Baru", "No New Notifications"), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
 
                     }
 

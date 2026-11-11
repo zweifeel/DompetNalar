@@ -380,13 +380,14 @@ fun DashboardScreen(
         val overbudgetAlerts = mutableListOf<String>()
 
         if (totalLimitAmount > 0.0 && totalExpenseAmount > totalLimitAmount) {
-            overbudgetAlerts.add("Total pengeluaran bulanan melampaui limit anggaran!")
+            overbudgetAlerts.add(AppStrings.t("Total pengeluaran bulanan melampaui limit anggaran!", "Total monthly expenses exceeded budget limit!"))
         }
 
         categoryLimitsMap.forEach { (catName, limit) ->
             val spent = categoryExpensesMap[catName] ?: 0.0
             if (limit > 0.0 && spent > limit) {
-                overbudgetAlerts.add(AppStrings.t("Kategori [$catName] telah overbudget!", "Category [$catName] is over budget!"))
+                val localizedCat = AppStrings.translateCategory(catName)
+                overbudgetAlerts.add(AppStrings.t("Kategori [$catName] telah overbudget!", "Category [$localizedCat] is over budget!"))
             }
         }
 
@@ -427,7 +428,7 @@ fun DashboardScreen(
                             )
                         }
                         Text(
-                            text = "Detail ->",
+                            text = AppStrings.t("Detail ->", "Details ->"),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = ExpenseRed

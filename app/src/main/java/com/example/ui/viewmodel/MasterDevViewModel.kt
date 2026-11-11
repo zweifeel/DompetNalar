@@ -20,10 +20,17 @@ class MasterDevViewModel : ViewModel() {
     val targetVersionName: StateFlow<String> = _targetVersionName.asStateFlow()
 
     private val _changelogText = MutableStateFlow(
-        "• Pembaruan performa engine sinkronisasi Google Drive\n" +
-        "• Peningkatan akurasi AI Date Recognition pada transaksi\n" +
-        "• Dukungan multi-currency & format angka lokal baru\n" +
-        "• Pilihan tema tampilan & background kustom galeri"
+        if (com.example.util.LocaleHelper.isEnglish()) {
+            "• Google Drive sync engine performance improvement\n" +
+            "• Enhanced AI Date Recognition accuracy on transactions\n" +
+            "• Multi-currency support & local numeric formatting\n" +
+            "• Visual themes & custom gallery background"
+        } else {
+            "• Pembaruan performa engine sinkronisasi Google Drive\n" +
+            "• Peningkatan akurasi AI Date Recognition pada transaksi\n" +
+            "• Dukungan multi-currency & format angka lokal baru\n" +
+            "• Pilihan tema tampilan & background kustom galeri"
+        }
     )
     val changelogText: StateFlow<String> = _changelogText.asStateFlow()
 

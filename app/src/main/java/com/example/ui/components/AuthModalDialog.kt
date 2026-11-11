@@ -128,13 +128,13 @@ fun AuthModalDialog(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = if (isLoginTab) AppStrings.t("Masuk ke DompetNalar", "Log In to DompetNalar") else "Daftar Akun Baru",
+                text = if (isLoginTab) AppStrings.t("Masuk ke DompetNalar", "Log In to DompetNalar") else AppStrings.t("Daftar Akun Baru", "Create New Account"),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Kelola finansial cerdas dengan sinkronisasi & AI",
+                text = AppStrings.t("Kelola finansial cerdas dengan sinkronisasi & AI", "Manage smart finances with sync & AI"),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -316,7 +316,7 @@ fun AuthModalDialog(
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "Kode OTP telah dikirim ke:",
+                                text = AppStrings.t("Kode OTP telah dikirim ke:", "OTP code has been sent to:"),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -329,7 +329,7 @@ fun AuthModalDialog(
                             pendingOtpCode?.let { code ->
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "💡 Kode OTP Simulasi: $code",
+                                    text = AppStrings.t("💡 Kode OTP Simulasi: $code", "💡 Simulated OTP Code: $code"),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary
@@ -382,7 +382,7 @@ fun AuthModalDialog(
             ) {
                 Divider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 Text(
-                    text = "  atau  ",
+                    text = AppStrings.t("  atau  ", "  or  "),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -444,7 +444,7 @@ fun AuthModalDialog(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Kendala Autentikasi / Google Sign-In",
+                                    text = AppStrings.t("Kendala Autentikasi / Google Sign-In", "Authentication Issue / Google Sign-In"),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = ExpenseRed
@@ -457,7 +457,7 @@ fun AuthModalDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Tutup pesan",
+                                        contentDescription = AppStrings.t("Tutup pesan", "Dismiss message"),
                                         tint = ExpenseRed,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -482,7 +482,7 @@ fun AuthModalDialog(
                 modifier = Modifier.testTag("btn_guest_mode")
             ) {
                 Text(
-                    "Coba Mode Tamu (Guest Mode)",
+                    AppStrings.t("Coba Mode Tamu (Guest Mode)", "Try Guest Mode"),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold

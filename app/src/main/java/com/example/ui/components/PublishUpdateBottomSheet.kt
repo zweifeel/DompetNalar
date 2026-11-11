@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import com.example.util.AppStrings
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -122,13 +123,13 @@ fun PublishUpdateBottomSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Publish Application Update",
+                            text = AppStrings.t("Publikasikan Pembaruan Aplikasi", "Publish Application Update"),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "MasterDev Google Drive Release Pipeline",
+                            text = AppStrings.t("Saluran Rilis Google Drive MasterDev", "MasterDev Google Drive Release Pipeline"),
                             fontSize = 11.sp,
                             color = Color(0xFFD97706),
                             fontWeight = FontWeight.SemiBold
@@ -163,7 +164,10 @@ fun PublishUpdateBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Target Google Drive Folder:\nDompetNalar/App Updates/ (version.json & DompetNalar_v$targetName.apk)",
+                        text = AppStrings.t(
+                            "Folder Tujuan Google Drive:\nDompetNalar/App Updates/ (version.json & DompetNalar_v$targetName.apk)",
+                            "Target Google Drive Folder:\nDompetNalar/App Updates/ (version.json & DompetNalar_v$targetName.apk)"
+                        ),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -180,8 +184,8 @@ fun PublishUpdateBottomSheet(
                 OutlinedTextField(
                     value = targetName,
                     onValueChange = { masterDevViewModel.setTargetVersionName(it) },
-                    label = { Text("Target Version Name") },
-                    placeholder = { Text("Contoh: 1.0.4") },
+                    label = { Text(AppStrings.t("Nama Versi Target", "Target Version Name")) },
+                    placeholder = { Text(AppStrings.t("Contoh: 1.0.4", "Example: 1.0.4")) },
                     singleLine = true,
                     enabled = !isPublishing,
                     modifier = Modifier
@@ -195,7 +199,7 @@ fun PublishUpdateBottomSheet(
                         val num = it.toIntOrNull() ?: 1
                         masterDevViewModel.setTargetVersionCode(num)
                     },
-                    label = { Text("Version Code") },
+                    label = { Text(AppStrings.t("Kode Versi", "Version Code")) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     enabled = !isPublishing,
@@ -211,8 +215,8 @@ fun PublishUpdateBottomSheet(
             OutlinedTextField(
                 value = changelog,
                 onValueChange = { masterDevViewModel.setChangelogText(it) },
-                label = { Text("Catatan Rilis / Changelog (1 baris = 1 poin)") },
-                placeholder = { Text("• Fitur baru...\n• Perbaikan bug...") },
+                label = { Text(AppStrings.t("Catatan Rilis / Changelog (1 baris = 1 poin)", "Changelog / Release Notes (1 line = 1 point)")) },
+                placeholder = { Text(AppStrings.t("• Fitur baru...\n• Perbaikan bug...", "• New features...\n• Bug fixes...")) },
                 minLines = 4,
                 maxLines = 6,
                 enabled = !isPublishing,
@@ -243,9 +247,9 @@ fun PublishUpdateBottomSheet(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (selectedApkUri != null) {
-                        "APK Dipilih: ${selectedApkFileName ?: "File Siap"}"
+                        AppStrings.t("APK Dipilih: ${selectedApkFileName ?: "File Siap"}", "APK Selected: ${selectedApkFileName ?: "File Ready"}")
                     } else {
-                        "Pilih File APK Release (.apk dari memori HP)"
+                        AppStrings.t("Pilih File APK Release (.apk dari memori HP)", "Select Release APK File (.apk from device storage)")
                     },
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
@@ -265,7 +269,7 @@ fun PublishUpdateBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Mengunggah ke Google Drive...",
+                            text = AppStrings.t("Mengunggah ke Google Drive...", "Uploading to Google Drive..."),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = FinSmartPrimary
@@ -309,7 +313,7 @@ fun PublishUpdateBottomSheet(
                 Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (isPublishing) "Memproses Publikasi..." else "Publikasikan Pembaruan ke Google Drive",
+                    text = if (isPublishing) AppStrings.t("Memproses Publikasi...", "Processing Publication...") else AppStrings.t("Publikasikan Pembaruan ke Google Drive", "Publish Update to Google Drive"),
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )

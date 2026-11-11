@@ -12,22 +12,20 @@ import java.util.Locale
  */
 object ReceiptFormatter {
 
-    private val LOCALE_ID = Locale("id", "ID")
-
     fun formatReceiptReference(id: Long): String {
         return "FSM-${id.toString().padStart(6, '0')}"
     }
 
     fun formatTransactionDate(timestamp: Long): String {
-        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", LOCALE_ID)
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", LocaleHelper.getActiveLocale())
         return sdf.format(Date(timestamp))
     }
 
     fun getTransactionTypeLabel(type: TransactionType): String {
         return when (type) {
-            TransactionType.EXPENSE -> "PENGELUARAN"
-            TransactionType.INCOME -> "PEMASUKAN"
-            TransactionType.TRANSFER -> "TRANSFER ANTAR DOMPET"
+            TransactionType.EXPENSE -> AppStrings.t("PENGELUARAN", "EXPENSE")
+            TransactionType.INCOME -> AppStrings.t("PEMASUKAN", "INCOME")
+            TransactionType.TRANSFER -> AppStrings.t("TRANSFER ANTAR DOMPET", "WALLET TRANSFER")
         }
     }
 
@@ -48,41 +46,41 @@ object ReceiptFormatter {
         val amountStr = CurrencyFormatter.formatRupiah(transaction.amount)
 
         val sb = StringBuilder()
-        sb.append(centerText("BUKTI TRANSAKSI DIGITAL", width)).append("\n")
+        sb.append(centerText(AppStrings.t("BUKTI TRANSAKSI DIGITAL", "DIGITAL TRANSACTION RECEIPT"), width)).append("\n")
         sb.append(centerText("DOMPETNALAR PERSONAL FINANCE", width)).append("\n")
         sb.append(divider).append("\n")
 
-        sb.append(formatKeyValue("No. Bukti", reference, width)).append("\n")
-        sb.append(formatKeyValue("Tanggal", dateStr, width)).append("\n")
-        sb.append(formatKeyValue("Jenis", typeLabel, width)).append("\n")
+        sb.append(formatKeyValue(AppStrings.t("No. Bukti", "Receipt No"), reference, width)).append("\n")
+        sb.append(formatKeyValue(AppStrings.t("Tanggal", "Date"), dateStr, width)).append("\n")
+        sb.append(formatKeyValue(AppStrings.t("Jenis", "Type"), typeLabel, width)).append("\n")
         sb.append(divider).append("\n")
 
-        sb.append(formatKeyValue("Deskripsi", transaction.title, width)).append("\n")
-        sb.append(formatKeyValue("Kategori", transaction.category, width)).append("\n")
+        sb.append(formatKeyValue(AppStrings.t("Deskripsi", "Description"), transaction.title, width)).append("\n")
+        sb.append(formatKeyValue(AppStrings.t("Kategori", "Category"), AppStrings.translateCategory(transaction.category), width)).append("\n")
 
         if (transaction.type == TransactionType.TRANSFER) {
-            val target = transaction.targetWalletName ?: "Dompet Tujuan"
-            sb.append(formatKeyValue("Dari", transaction.walletName, width)).append("\n")
-            sb.append(formatKeyValue("Ke", target, width)).append("\n")
+            val target = transaction.targetWalletName ?: AppStrings.t("Dompet Tujuan", "Target Wallet")
+            sb.append(formatKeyValue(AppStrings.t("Dari", "From"), transaction.walletName, width)).append("\n")
+            sb.append(formatKeyValue(AppStrings.t("Ke", "To"), target, width)).append("\n")
         } else {
-            sb.append(formatKeyValue("Sumber Dana", transaction.walletName, width)).append("\n")
+            sb.append(formatKeyValue(AppStrings.t("Sumber Dana", "Source Account"), transaction.walletName, width)).append("\n")
         }
 
         if (transaction.note.isNotBlank()) {
-            sb.append(formatKeyValue("Catatan", transaction.note, width)).append("\n")
+            sb.append(formatKeyValue(AppStrings.t("Catatan", "Notes"), transaction.note, width)).append("\n")
         }
 
         sb.append(divider).append("\n")
         val totalLabel = when (transaction.type) {
-            TransactionType.EXPENSE -> "TOTAL KELUAR"
-            TransactionType.INCOME -> "TOTAL MASUK"
-            TransactionType.TRANSFER -> "TOTAL TRANSFER"
+            TransactionType.EXPENSE -> AppStrings.t("TOTAL KELUAR", "TOTAL EXPENSE")
+            TransactionType.INCOME -> AppStrings.t("TOTAL MASUK", "TOTAL INCOME")
+            TransactionType.TRANSFER -> AppStrings.t("TOTAL TRANSFER", "TOTAL TRANSFER")
         }
         sb.append(formatKeyValue(totalLabel, amountStr, width)).append("\n")
         sb.append(divider).append("\n")
 
-        sb.append(centerText("Simpan bukti ini sebagai referensi", width)).append("\n")
-        sb.append(centerText("pencatatan keuangan Anda.", width)).append("\n")
+        sb.append(centerText(AppStrings.t("Simpan bukti ini sebagai referensi", "Keep this receipt as reference"), width)).append("\n")
+        sb.append(centerText(AppStrings.t("pencatatan keuangan Anda.", "for your financial records."), width)).append("\n")
         sb.append(centerText("--- DompetNalar App ---", width))
 
         return sb.toString()

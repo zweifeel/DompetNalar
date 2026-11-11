@@ -158,7 +158,7 @@ fun ExportFormatManagementDialog(
                                     activeFormatId = format.id
                                     ExportFormatManager.setActiveFormatId(context, format.id)
                                     onFormatSelected(format)
-                                    Toast.makeText(context, "Format aktif: ${format.name}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "${com.example.util.AppStrings.t("Format aktif:", "Active format:")} ${format.name}", Toast.LENGTH_SHORT).show()
                                 },
                             shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(
@@ -198,7 +198,7 @@ fun ExportFormatManagementDialog(
                                                 shape = RoundedCornerShape(6.dp)
                                             ) {
                                                 Text(
-                                                    text = if (format.isBuiltIn) "Bawaan" else "Kustom",
+                                                    text = if (format.isBuiltIn) com.example.util.AppStrings.t("Bawaan", "Built-in") else com.example.util.AppStrings.t("Kustom", "Custom"),
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = if (format.isBuiltIn) Color(0xFF374151) else FinSmartPrimary,
@@ -208,9 +208,9 @@ fun ExportFormatManagementDialog(
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))
                                         val details = if (format.type == "PDF") {
-                                            "PDF Formal • ${format.columns.size} Kolom"
+                                            "${com.example.util.AppStrings.t("PDF Formal", "Formal PDF")} • ${format.columns.size} ${com.example.util.AppStrings.t("Kolom", "Columns")}"
                                         } else {
-                                            "CSV • Delimiter '${format.delimiter}' • ${format.columns.size} Kolom"
+                                            "CSV • ${com.example.util.AppStrings.t("Pemisah", "Delimiter")} '${format.delimiter}' • ${format.columns.size} ${com.example.util.AppStrings.t("Kolom", "Columns")}"
                                         }
                                         Text(text = details, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
@@ -218,7 +218,7 @@ fun ExportFormatManagementDialog(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (isSelected) {
-                                        Icon(Icons.Default.CheckCircle, contentDescription = "Aktif", tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
+                                        Icon(Icons.Default.CheckCircle, contentDescription = com.example.util.AppStrings.t("Aktif", "Active"), tint = FinSmartPrimary, modifier = Modifier.size(20.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
                                     }
 
@@ -230,7 +230,7 @@ fun ExportFormatManagementDialog(
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {
-                                            Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = FinSmartPrimary)
+                                            Icon(Icons.Default.Edit, contentDescription = com.example.util.AppStrings.t("Edit", "Edit"), modifier = Modifier.size(16.dp), tint = FinSmartPrimary)
                                         }
 
                                         IconButton(
@@ -238,16 +238,16 @@ fun ExportFormatManagementDialog(
                                                 ExportFormatManager.deleteFormat(context, format.id)
                                                 formats = ExportFormatManager.getAllFormats(context)
                                                 activeFormatId = ExportFormatManager.getActiveFormatId(context)
-                                                Toast.makeText(context, "Format dihapus", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, com.example.util.AppStrings.t("Format dihapus", "Format deleted"), Toast.LENGTH_SHORT).show()
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Hapus", modifier = Modifier.size(16.dp), tint = Color(0xFFDC2626))
+                                            Icon(Icons.Default.Delete, contentDescription = com.example.util.AppStrings.t("Hapus", "Delete"), modifier = Modifier.size(16.dp), tint = Color(0xFFDC2626))
                                         }
                                     } else {
                                         Icon(
                                             Icons.Default.Lock,
-                                            contentDescription = "Format bawaan dilindungi",
+                                            contentDescription = com.example.util.AppStrings.t("Format bawaan dilindungi", "Built-in format is protected"),
                                             modifier = Modifier.size(16.dp).padding(4.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                         )
@@ -279,7 +279,7 @@ fun ExportFormatManagementDialog(
                 ExportFormatManager.saveFormat(context, newFormat)
                 formats = ExportFormatManager.getAllFormats(context)
                 isEditorOpen = false
-                Toast.makeText(context, "Format berhasil disimpan", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, com.example.util.AppStrings.t("Format berhasil disimpan", "Format saved successfully"), Toast.LENGTH_SHORT).show()
             }
         )
     }
