@@ -225,7 +225,9 @@ fun DebtPlannerModalDialog(
     var inputDebtAmount by remember { mutableStateOf("") }
     var inputDebtInterest by remember { mutableStateOf("") }
     var inputDebtCategory by remember { mutableStateOf("Kartu Kredit") }
-    var inputDebtDueDate by remember { mutableStateOf("Tgl 15 tiap bulan") }
+    var inputDebtDueDate by remember {
+        mutableStateOf(if (com.example.util.LocaleHelper.isEnglish()) "Day 15 each month" else "Tgl 15 tiap bulan")
+    }
 
     // Dialog states
     var isResetConfirmDialogOpen by remember { mutableStateOf(false) }
@@ -1298,15 +1300,22 @@ fun DebtPlannerModalDialog(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         val datePresets = listOf(
-                            "Tgl 5" to "Day 5",
-                            "Tgl 10" to "Day 10",
-                            "Tgl 15" to "Day 15",
-                            "Tgl 20" to "Day 20",
-                            "Akhir Bulan" to "End of Month"
+                            Triple("Tgl 5", "Day 5", 5),
+                            Triple("Tgl 10", "Day 10", 10),
+                            Triple("Tgl 15", "Day 15", 15),
+                            Triple("Tgl 20", "Day 20", 20),
+                            Triple("Akhir", "End", null)
                         )
-                        datePresets.forEach { (idPreset, enPreset) ->
-                            val label = if (com.example.util.LocaleHelper.isEnglish()) enPreset else idPreset
+                        datePresets.forEach { (idLabel, enLabel, dayNum) ->
+                            val label = if (com.example.util.LocaleHelper.isEnglish()) enLabel else idLabel
                             Surface(
+                                onClick = {
+                                    inputDebtDueDate = if (dayNum != null) {
+                                        if (com.example.util.LocaleHelper.isEnglish()) "Day $dayNum each month" else "Tgl $dayNum tiap bulan"
+                                    } else {
+                                        if (com.example.util.LocaleHelper.isEnglish()) "End of each month" else "Akhir tiap bulan"
+                                    }
+                                },
                                 shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.surface,
                                 border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
@@ -1314,13 +1323,20 @@ fun DebtPlannerModalDialog(
                                     .weight(1f)
                                     .padding(vertical = 2.dp)
                             ) {
-                                TextButton(
-                                    onClick = {
-                                        inputDebtDueDate = if (com.example.util.LocaleHelper.isEnglish()) "$enPreset each month" else "$idPreset tiap bulan"
-                                    },
-                                    modifier = Modifier.padding(0.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 2.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(label, fontSize = 9.sp, maxLines = 1)
+                                    Text(
+                                        text = label,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
                             }
                         }

@@ -91,7 +91,7 @@ fun TransactionItemRow(
                     } else {
                         FinSmartIcons.getCategoryIcon(transaction.categoryIcon)
                     },
-                    contentDescription = transaction.category,
+                    contentDescription = com.example.util.AppStrings.translateCategory(transaction.category),
                     tint = iconTint,
                     modifier = Modifier.size(22.dp)
                 )
@@ -113,9 +113,9 @@ fun TransactionItemRow(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 val subtitle = if (transaction.type == TransactionType.TRANSFER) {
-                    "${transaction.walletName} → ${transaction.targetWalletName ?: "Dompet"} • ${CurrencyFormatter.formatRelativeDate(transaction.timestamp)}"
+                    "${transaction.walletName} → ${transaction.targetWalletName ?: com.example.util.AppStrings.t("Dompet", "Wallet")} • ${CurrencyFormatter.formatRelativeDate(transaction.timestamp)}"
                 } else {
-                    "${transaction.category} • ${CurrencyFormatter.formatRelativeDate(transaction.timestamp)}"
+                    "${com.example.util.AppStrings.translateCategory(transaction.category)} • ${CurrencyFormatter.formatRelativeDate(transaction.timestamp)}"
                 }
                 Text(
                     text = subtitle,

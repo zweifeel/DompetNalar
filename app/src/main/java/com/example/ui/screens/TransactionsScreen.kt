@@ -229,7 +229,7 @@ fun TransactionsScreen(
                             onClick = {
                                 onCategoryFilterChange(if (selectedCategoryFilter == cat.name) null else cat.name)
                             },
-                            label = { Text(cat.name, fontSize = 11.sp) }
+                            label = { Text(com.example.util.AppStrings.translateCategory(cat.name), fontSize = 11.sp) }
                         )
                     }
                 }
@@ -254,7 +254,7 @@ fun TransactionsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = com.example.util.AppStrings.t("Rekapitulasi Arus Kas (${selectedTimeframe.label})", "Cashflow Recapitulation (${selectedTimeframe.label})"),
+                            text = com.example.util.AppStrings.t("Rekap Arus Kas (${selectedTimeframe.label})", "Cashflow Summary (${selectedTimeframe.label})"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurface,

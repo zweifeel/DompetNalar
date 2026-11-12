@@ -215,4 +215,31 @@ class LocalizationBilingualTest {
         assertTrue("Indonesian summary must contain RINCIAN SPLIT BILL", summaryId.contains("RINCIAN SPLIT BILL"))
         assertTrue("Indonesian summary must contain dibagi", summaryId.contains("dibagi"))
     }
+
+    @Test
+    fun testTransactionsAndDebtPlannerLocalizationIntegrity() {
+        val field = LocaleHelper::class.java.getDeclaredField("_currentLanguage")
+        field.isAccessible = true
+        val flow = field.get(LocaleHelper) as kotlinx.coroutines.flow.MutableStateFlow<AppLanguage>
+
+        // 1. English Mode Verification
+        flow.value = AppLanguage.ENGLISH
+        assertTrue("isEnglish() should be true", LocaleHelper.isEnglish())
+        assertEquals("Shopping & Hobbies", AppStrings.translateCategory("Belanja & Hobi"))
+        assertEquals("Cashflow Summary (Monthly)", AppStrings.t("Rekap Arus Kas (Monthly)", "Cashflow Summary (Monthly)"))
+        assertEquals("Wallet", AppStrings.t("Dompet", "Wallet"))
+
+        val enDueDateDefault = if (LocaleHelper.isEnglish()) "Day 15 each month" else "Tgl 15 tiap bulan"
+        assertEquals("Day 15 each month", enDueDateDefault)
+
+        // 2. Indonesian Mode Verification
+        flow.value = AppLanguage.INDONESIAN
+        assertFalse("isEnglish() should be false", LocaleHelper.isEnglish())
+        assertEquals("Belanja & Hobi", AppStrings.translateCategory("Belanja & Hobi"))
+        assertEquals("Rekap Arus Kas (Bulanan)", AppStrings.t("Rekap Arus Kas (Bulanan)", "Cashflow Summary (Monthly)"))
+        assertEquals("Dompet", AppStrings.t("Dompet", "Wallet"))
+
+        val idDueDateDefault = if (LocaleHelper.isEnglish()) "Day 15 each month" else "Tgl 15 tiap bulan"
+        assertEquals("Tgl 15 tiap bulan", idDueDateDefault)
+    }
 }

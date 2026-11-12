@@ -84,7 +84,7 @@ object LocaleHelper {
     /**
      * Inisialisasi awal saat aplikasi atau Activity dimulai.
      * Membaca bahasa tersimpan dari SharedPreferences dan menerapkannya.
-     * Menyelaraskan LocaleManager Android 13+ agar tidak terkunci pada konfigurasi usang.
+     * Tidak memutasi LocaleManager agar tidak memicu restart/recreate loop saat startup.
      */
     fun initialize(context: Context) {
         appContext = context.applicationContext
@@ -94,26 +94,6 @@ object LocaleHelper {
         val savedCode = prefs?.getString(KEY_LANGUAGE, AppLanguage.SYSTEM.code) ?: AppLanguage.SYSTEM.code
         val lang = AppLanguage.fromCode(savedCode)
         _currentLanguage.value = lang
-
-        // Sinkronisasi LocaleManager Android 13+ (API 33+) secara aman saat inisialisasi
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            try {
-                val localeManager = context.getSystemService(LocaleManager::class.java)
-                if (localeManager != null) {
-                    val currentLocales = localeManager.applicationLocales
-                    val targetLocales = when (lang) {
-                        AppLanguage.SYSTEM -> LocaleList.getEmptyLocaleList()
-                        AppLanguage.INDONESIAN -> LocaleList(Locale("id", "ID"))
-                        AppLanguage.ENGLISH -> LocaleList(Locale.US)
-                    }
-                    if (currentLocales != targetLocales) {
-                        localeManager.applicationLocales = targetLocales
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Gagal sinkronisasi LocaleManager saat init: ${e.message}")
-            }
-        }
 
         applyLocaleResourcesOnly(context.applicationContext, lang)
     }
@@ -131,26 +111,7 @@ object LocaleHelper {
         prefs?.edit()?.putString(KEY_LANGUAGE, language.code)?.commit()
         _currentLanguage.value = language
 
-        // Sinkronisasi ke LocaleManager Android 13+ (API 33+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            try {
-                val localeManager = context.getSystemService(LocaleManager::class.java)
-                if (localeManager != null) {
-                    val targetLocales = when (language) {
-                        AppLanguage.SYSTEM -> LocaleList.getEmptyLocaleList()
-                        AppLanguage.INDONESIAN -> LocaleList(Locale("id", "ID"))
-                        AppLanguage.ENGLISH -> LocaleList(Locale.US)
-                    }
-                    if (localeManager.applicationLocales != targetLocales) {
-                        localeManager.applicationLocales = targetLocales
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Gagal mengupdate LocaleManager: ${e.message}")
-            }
-        }
-
-        // Terapkan locale ke Locale Java default dan Resources secara non-destruktif
+        // Terapkan locale ke Locale Java default dan Resources secara non-destruktif (Zero Activity Recreate)
         applyLocaleInternal(context.applicationContext, language, isUserExplicitChange = true)
     }
 

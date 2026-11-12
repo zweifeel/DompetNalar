@@ -16,7 +16,6 @@ import java.io.File
 class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
-        LocaleHelper.initialize(newBase)
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
     }
 
