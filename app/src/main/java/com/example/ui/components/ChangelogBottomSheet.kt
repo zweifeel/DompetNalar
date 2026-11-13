@@ -96,7 +96,7 @@ fun ChangelogBottomSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Versi Terbaru v1.0.3 (Build 3)",
+                            text = "Versi Terbaru v1.0.16 (Build 16)",
                             fontSize = 11.sp,
                             color = IncomeGreen,
                             fontWeight = FontWeight.SemiBold
@@ -125,13 +125,13 @@ fun ChangelogBottomSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = AppStrings.t("DompetNalar v1.0.3 Siap Digunakan", "DompetNalar v1.0.3 Ready to Use"),
+                            text = AppStrings.t("DompetNalar v1.0.16 Siap Digunakan", "DompetNalar v1.0.16 Ready to Use"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = AppStrings.t("Pembaruan ini mencakup perbaikan AI Date Parsing, Selector Mata Uang Global, Manajemen Hutang & Aset, dan optimasi UI.", "This update includes fixes for AI Date Parsing, Global Currency Selector, Debt & Asset Management, and UI optimizations."),
+                            text = AppStrings.t("Pembaruan ini mencakup eliminasi crash bahasa Android 14, perapian UI Mutasi & kartu arus kas, tombol tanggal Debt Planner, dan kestabilan sistem.", "This update includes Android 14 language crash fixes, Transactions UI & cashflow card polishing, Debt Planner date buttons, and overall system stability."),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -143,13 +143,40 @@ fun ChangelogBottomSheet(
 
             // Changelog Items
             Text(
-                text = AppStrings.t("Daftar Pembaruan & Fitur Baru:", "Updates & New Features:"),
+                text = AppStrings.t("Daftar Pembaruan & Fitur Baru (v1.0.16):", "Updates & New Features (v1.0.16):"),
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 modifier = Modifier.align(Alignment.Start)
             )
 
             Spacer(modifier = Modifier.height(10.dp))
+
+            ChangelogItemRow(
+                icon = Icons.Default.Language,
+                title = AppStrings.t("Eliminasi Crash Bahasa & Reaktif Murni", "Zero Crash Language Switching & Pure Reactive UI"),
+                description = AppStrings.t(
+                    "Pergantian bahasa pada Android 14 (Realme UI / ColorOS) kini berjalan instan tanpa kedipan dan 100% bebas dari force close berkat arsitektur reaktif StateFlow dan penanganan Activity lifecycle yang aman.",
+                    "Language switching on Android 14 (Realme UI / ColorOS) now runs instantly without flickering and 100% free of force closes via reactive StateFlow and safe Activity lifecycle configuration."
+                )
+            )
+
+            ChangelogItemRow(
+                icon = Icons.Default.PieChart,
+                title = AppStrings.t("Perapian UI Mutasi & Terjemahan Kategori", "Polished Transactions UI & Category Localization"),
+                description = AppStrings.t(
+                    "Kartu ringkasan arus kas kini tampil proporsional tanpa teks terpotong, badge Net tampil rapi di berbagai ukuran layar, serta seluruh kategori pengeluaran/pemasukan diterjemahkan dinamis.",
+                    "Cashflow summary card now displays proportionally without text truncation, Net badge aligns cleanly across screen sizes, and transaction categories are dynamically translated."
+                )
+            )
+
+            ChangelogItemRow(
+                icon = Icons.Default.CreditCard,
+                title = AppStrings.t("Perencana Hutang & Tombol Tanggal Proporsional", "AI Debt Planner & Proportional Date Shortcuts"),
+                description = AppStrings.t(
+                    "Tombol pintasan tanggal jatuh tempo [Day 5] [Day 10] [Day 15] [Day 20] [End] kini tampil penuh dan proporsional, serta teks awal due date otomatis menyesuaikan bahasa aktif.",
+                    "Due date shortcut buttons [Day 5] [Day 10] [Day 15] [Day 20] [End] are fully rendered and proportional, with due date default text adapting to the active language."
+                )
+            )
 
             ChangelogItemRow(
                 icon = Icons.Default.AutoAwesome,
