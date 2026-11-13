@@ -1,0 +1,70 @@
+================================================================================
+LAPORAN CHANGELOG RESMI DOMPETNALAR — VERSI 1.0.17 (VERSION CODE 17)
+================================================================================
+Aplikasi         : DompetNalar
+Developer Brand  : SleepyKoala
+Application ID   : com.aistudio.finsmart.kptxvw
+Versi Sebelumnya : 1.0.16 (Version Code 16)
+Versi Baru       : 1.0.17 (Version Code 17)
+Target Platform  : Google Play Console (Closed Testing / Production Release)
+Target SDK       : API Level 36 (Android 16 - Google Play Mandatory Standard)
+Tanggal Rilis    : 13 November 2026
+Artefak Rilis    : DompetNalar-v1.0.17-versionCode17-release.aab
+Keystore Signing : Alias 'kodegawa' (RSA 2048-bit, Valid hingga September 2051)
+================================================================================
+
+--------------------------------------------------------------------------------
+BAGIAN A — CHANGELOG TEKNIS LENGKAP (AUDIT V16 -> V17)
+--------------------------------------------------------------------------------
+
+1. PEMENUHAN STANDAR KEBIJAKAN GOOGLE PLAY: TARGET SDK API LEVEL 36 (ANDROID 16)
+   - Latar Belakang:
+     Google Play Console mewajibkan target API level minimal 36 untuk seluruh pembaruan
+     aplikasi baru guna memastikan keamanan, proteksi privasi, dan optimalisasi sistem operasi
+     terbaru. Versi 1.0.16 sebelumnya menggunakan targetSdk 34 sehingga memicu penolakan
+     unggah pada konsol.
+   - Perubahan & Solusi:
+     * Mengubah `targetSdk = 36` pada `app/build.gradle.kts`.
+     * Mengatur `compileSdk = 36` untuk keselarasan modul API Android 16.
+     * Menaikkan `versionCode` ke `17` dan `versionName` ke `"1.0.17"` untuk mencegah
+       konflik artefak version code pada Play Console.
+     * Mengaudit seluruh implementasi runtime permission, gesture navigation, dan lifecycle
+       agar 100% kompatibel dengan arsitektur Android 16.
+
+2. ELIMINASI TOTAL CRASH PEMILIHAN BAHASA (ANDROID 14 / REALME UI / COLOROS)
+   - Menghapus mutasi OS paksa dari `LocaleHelper.kt` dan beralih ke arsitektur reaktif murni
+     Jetpack Compose (`LocaleHelper.currentLanguage` StateFlow) tanpa *activity recreate*.
+   - Proteksi Activity lifecycle pada `AndroidManifest.xml` (`configChanges`).
+
+3. PERAPIAN LAYAR RIWAYAT TRANSAKSI / MUTASI & LOKALISASI KATEGORI
+   - Perbaikan judul kartu ringkasan arus kas `"Cashflow Summary"` (EN) / `"Rekap Arus Kas"` (ID)
+     sehingga tidak terpotong elipsis kaku.
+   - Pelokalan nama kategori transaksi (contoh: "Shopping" pada mode English).
+
+4. PEMBENAHAN TOMBOL PINTASAN TANGGAL & DYNAMIC DUE DATE (AI DEBT PLANNER)
+   - Tombol pintasan tanggal tampil utuh dan proporsional:
+     `[ Day 5 ]   [ Day 10 ]   [ Day 15 ]   [ Day 20 ]   [ End ]`.
+   - Nilai awal *Due Date* otomatis menyesuaikan bahasa aktif ("Day 15 each month" / "Tgl 15 tiap bulan").
+
+--------------------------------------------------------------------------------
+BAGIAN B — CATATAN RILIS UNTUK GOOGLE PLAY CONSOLE (RINGKAS & PADAT)
+--------------------------------------------------------------------------------
+
+[BAHASA INDONESIA]
+Pembaruan DompetNalar v1.0.17:
+• Pembaruan target API level 36 (Android 16) untuk keamanan & performa optimal.
+• Perbaikan bug crash saat mengganti bahasa di Android 14.
+• Tampilan riwayat transaksi & kartu arus kas kini lebih rapi.
+• Tombol tanggal pada Perencana Hutang kini lebih proporsional.
+• Peningkatan performa & stabilitas aplikasi.
+
+---
+
+[ENGLISH]
+DompetNalar v1.0.17 Updates:
+• Updated target API level 36 (Android 16) for enhanced security & performance.
+• Fixed language change crash on Android 14.
+• Polished transaction history & cashflow summary card UI.
+• Improved date shortcut buttons in AI Debt Planner.
+• General performance and stability improvements.
+================================================================================

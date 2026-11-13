@@ -84,26 +84,22 @@ BAGIAN A — CHANGELOG TEKNIS LENGKAP (AUDIT V15 -> V16)
        dengan optimasi ProGuard/R8 dan tanda tangan Keystore resmi `my-release-key.jks`.
 
 --------------------------------------------------------------------------------
-BAGIAN B — CATATAN RILIS UNTUK GOOGLE PLAY CONSOLE (TESTER & PUBLIK)
+BAGIAN B — CATATAN RILIS UNTUK GOOGLE PLAY CONSOLE (RINGKAS & PADAT)
 --------------------------------------------------------------------------------
 
 [BAHASA INDONESIA]
-Catatan Rilis DompetNalar Versi 1.0.16:
-• Peningkatan Stabilitas Bahasa: Menghilangkan kendala penutupan paksa (force close) saat mengganti bahasa di perangkat Android 14.
-• Penyempurnaan Tampilan Riwayat Transaksi: Kartu ringkasan arus kas kini lebih rapi tanpa teks terpotong dan terjemahan kategori otomatis.
-• Optimalisasi Perencana Hutang (AI Debt Planner): Tombol pintasan tanggal jatuh tempo kini tampil lebih proporsional dan mudah digunakan.
-• Performa & Kestabilan Sistem: Peningkatan responsivitas antarmuka dan penyelarasan tema visual.
-
-Terima kasih telah menggunakan DompetNalar untuk mengelola keuangan cerdas Anda!
+Pembaruan DompetNalar v1.0.16:
+• Perbaikan bug crash saat mengganti bahasa di Android 14.
+• Tampilan riwayat transaksi & kartu ringkasan arus kas kini lebih rapi.
+• Tombol tanggal pada Perencana Hutang kini lebih proporsional.
+• Peningkatan performa & stabilitas aplikasi.
 
 ---
 
 [ENGLISH]
-Release Notes for DompetNalar Version 1.0.16:
-• Language Switching Stability: Fixed an issue causing force close when changing languages on Android 14 devices.
-• Polished Transaction History: Cashflow summary cards are now neatly formatted without text truncation, with full category localization.
-• Enhanced AI Debt Planner: Due date shortcut buttons are now fully visible, proportional, and dynamically localized.
-• Overall Performance & Stability: Enhanced UI responsiveness and consistent visual presentation across all devices.
-
-Thank you for choosing DompetNalar for your smart financial management!
+DompetNalar v1.0.16 Updates:
+• Fixed language change crash on Android 14.
+• Polished transaction history & cashflow summary card UI.
+• Improved date shortcut buttons in AI Debt Planner.
+• General performance and stability improvements.
 ================================================================================

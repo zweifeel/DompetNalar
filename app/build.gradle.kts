@@ -17,9 +17,9 @@ android {
     defaultConfig {
         applicationId = "com.aistudio.finsmart.kptxvw"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 16
-        versionName = "1.0.16"
+        targetSdk = 36
+        versionCode = 17
+        versionName = "1.0.17"
 
         buildConfigField("boolean", "IS_PLAY_STORE_BUILD", "false")
         buildConfigField("String", "ADMOB_APP_ID", "\"ca-app-pub-3940256099942544~3347511713\"")

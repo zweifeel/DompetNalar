@@ -56,8 +56,8 @@ class AdMobIntegrationSecurityTest {
 
     @Test
     fun versionIncrements_areReflectedInAppConfig() {
-        assertEquals("Version code must be 16", 16, AppConfig.APP_VERSION_CODE)
-        assertEquals("Version name must be 1.0.16", "1.0.16", AppConfig.APP_VERSION_NAME)
+        assertEquals("Version code must be 17", 17, AppConfig.APP_VERSION_CODE)
+        assertEquals("Version name must be 1.0.17", "1.0.17", AppConfig.APP_VERSION_NAME)
     }
 
     @Test

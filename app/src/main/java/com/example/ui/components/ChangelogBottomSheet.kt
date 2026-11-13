@@ -96,7 +96,7 @@ fun ChangelogBottomSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Versi Terbaru v1.0.16 (Build 16)",
+                            text = "Versi Terbaru v1.0.17 (Build 17)",
                             fontSize = 11.sp,
                             color = IncomeGreen,
                             fontWeight = FontWeight.SemiBold
@@ -125,13 +125,13 @@ fun ChangelogBottomSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = AppStrings.t("DompetNalar v1.0.16 Siap Digunakan", "DompetNalar v1.0.16 Ready to Use"),
+                            text = AppStrings.t("DompetNalar v1.0.17 Siap Digunakan", "DompetNalar v1.0.17 Ready to Use"),
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = AppStrings.t("Pembaruan ini mencakup eliminasi crash bahasa Android 14, perapian UI Mutasi & kartu arus kas, tombol tanggal Debt Planner, dan kestabilan sistem.", "This update includes Android 14 language crash fixes, Transactions UI & cashflow card polishing, Debt Planner date buttons, and overall system stability."),
+                            text = AppStrings.t("Pembaruan ini mencakup pemenuhan standar Google Play API Level 36 (Android 16), eliminasi crash bahasa, perapian UI Mutasi, dan tombol Debt Planner.", "This update includes Google Play API Level 36 (Android 16) compliance, language crash elimination, Transactions UI polish, and Debt Planner buttons."),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -143,7 +143,7 @@ fun ChangelogBottomSheet(
 
             // Changelog Items
             Text(
-                text = AppStrings.t("Daftar Pembaruan & Fitur Baru (v1.0.16):", "Updates & New Features (v1.0.16):"),
+                text = AppStrings.t("Daftar Pembaruan & Fitur Baru (v1.0.17):", "Updates & New Features (v1.0.17):"),
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 modifier = Modifier.align(Alignment.Start)

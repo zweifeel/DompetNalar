@@ -10,11 +10,12 @@
 ## 📌 1. Identitas & Status Proyek Detik Ini
 - **Nama Aplikasi:** DompetNalar (Sebelumnya: FinSmart)
 - **Paket Aplikasi:** `com.aistudio.finsmart.kptxvw.debug`
-- **Versi Rilis Terakhir:** v1.0.16 (versionCode 16)
+- **Versi Rilis Terakhir:** v1.0.17 (versionCode 17)
+- **Target SDK:** API Level 36 (Android 16 - Standar Wajib Google Play Console)
 - **Status Database:** Room v11 (Utuh, Aman, 0 modifikasi manual)
 - **Status Git:** Branch `main` (Terkoneksi ke `https://github.com/zweifeel/DompetNalar.git`)
 - **Status Proteksi:** Template Proyek Aman aktif (`auto_sync.py`, `.antigravityrules`, `GEMINI.md`)
-- **Status Fase Terakhir:** **Pembuatan Berkas Rilis Android App Bundle (AAB v1.0.16 / Build 16) & Penerbitan Changelog Resmi Play Store — SELESAI 100% (PASS 998 Unit Test, 0 Fake-Pass, Signed AAB Ready)**
+- **Status Fase Terakhir:** **Pemenuhan Syarat Google Play API Level 36, Rilis Bundle AAB v1.0.17 (Build 17) & Changelog Ringkas — SELESAI 100% (PASS 998 Unit Test, 0 Fake-Pass, Signed AAB Ready)**
 
 ---
 
@@ -60,6 +61,8 @@
 - [2026-11-10 01:55:00] Berhasil menyelesaikan Fase 1 (Anti-Crash Bahasa Android 14, Hapus "(Otomatis)", & Penyelarasan Sistem HP Internasional). Seluruh unit test 970+ lulus 100%.
 
 ## 📜 Log Riwayat Selesai (Verified E2E)
+- [2026-11-13 20:51:31] Verified E2E: Pembaruan Target SDK 36 (Android 16) & Rilis Bundle AAB v1.0.17 (Build 17)
+- [2026-11-13 20:45:00] Verified E2E: Upgrade Target SDK 36 (Android 16), Rilis Bundle AAB v1.0.17 (Build 17), 998 Unit Test LULUS, Google Play Ready.
 - [2026-11-13 19:49:35] Verified E2E: Rilis Produksi AAB v1.0.16 (Build 16) & Dokumen Changelog Resmi
 - [2026-11-13 19:40:00] Verified E2E: Rilis Produksi AAB v1.0.16 (versionCode 16), Signing Keystore Sukses, 998 Unit Test LULUS, In-App & Official Changelog Terbit.
 - [2026-11-13 06:35:55] Verified E2E: Perbaikan Bug UI Mutasi, Debt Planner & Eliminasi Bug Crash Bahasa
